@@ -1,4 +1,5 @@
 import tweepy
+import configparser
 
 # TODO: write functions to generate spot tweets based on adsbexchange api data
 # TODO: write functions to pull supplementary information (registration, photos) for spots and add in tweet replies
