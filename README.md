@@ -5,11 +5,11 @@ twitter posts. It uses [Tweepy](https://www.tweepy.org/) and the [adsbexchange.c
 ## Configuring
 airspotbot has two files that must be configured before use: `asb.config` and `watchlist.csv`
 
-###`asb.config` 
+### asb.config
 Used to set your API keys and other bot configuration, such as tweeting interval.
  You must have valid API keys for twitter.com and adsbexchange.com in order to deploy airspotbot for your own use. Please operate your installation of airspotbot in accordance with all relevant terms of service.
   
-###`watchlist.csv` 
+### watchlist.csv
 Used to specify which active aircraft cause the bot to tweet spots. Currently, airspotbot supports specifying aircraft by registration number or ICAO aircraft type code. Please note that setting `spot_unknown` and/or `spot_mil` options to "Y" in `asb.config` will cause unknown and/or military aircraft to generate tweets regardless of what is set in `watchlist.csv`.
 * "Key" column sets the ICAO aircraft type code or registration number. 
 * "Type" should be either "RN" for registration number or "TC" for ICAO type code.
