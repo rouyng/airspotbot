@@ -1,10 +1,11 @@
 Key,Type,Mil Only,Description
-R22,TC,N,Robinson R22
-N924NN ,RN,,Boeing 737-823 owned by American Airlines
 U60,TC,N,UH-60 Black Hawk
-EC45 ,TC,Y,UH-72 Lakota
-94-0262,RN,,USAF RC-26B spy plane
+EC45,TC,Y,UH-72 Lakota
+SW4,TC,Y,USAF RC-26B spy plane
 N357FB,RN,,Eurocopter AS350 owned by Phoenix PD
 N125HD,RN,,Eurocopter AS350 KPHO-TV/KTVK/KPNX news helicopter
-N357FB,RN,,Eurocopter AS350 owned by Phoenix PD
+N351FB,RN,,Eurocopter AS350 owned by Phoenix PD
 N911AZ,RN,,Bell 429 owned by AZ DPS
+N620FB,RN,,Pilatus PC12 surveillance plane owned by City of Phoenix
+P28A,TC,N,
+C172,TC,N,

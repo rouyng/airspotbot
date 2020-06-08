@@ -73,10 +73,13 @@ class SpotBot:
         except (configparser.NoOptionError, configparser.NoSectionError) as e:
             logging.critical(f'Configuration file error: {e}')
 
-    def tweet_spot(self, type_code: str, reg_num: str, location: str, link: str, description=None):
+    def tweet_spot(self, icao: str, type_code: str, reg_num: str, location: str, link: str, description=None):
         # TODO: function to tweet out aircraft spots
-        description_empty = description != ''
-        tweet = f"{description if not description_empty else type_code}, registration {reg_num} is near {location}. {link}"
+        if reg_num.strip() == '':
+            reg = 'unknown'
+        else:
+            reg = reg_num
+        tweet = f"{description if description else type_code} (ICAO {icao}, RN {reg}) is near {location}. {link}"
         logging.info(f'Tweeting: {tweet}')
         self.api.update_status(tweet)
 
@@ -94,13 +97,13 @@ if __name__ == "__main__":
         bot_time = time()
         spot_time = time()
         while True:
-            if ime() > spot_time + spots.interval:
+            if time() > spot_time + spots.interval:
                 spots.check_spots()
                 spot_time = time()
             if time() > bot_time + bot.interval:
                 for i in range(1, len(spots.spot_queue)):
                     spot = spots.spot_queue.pop(0)
-                    bot.tweet_spot(spot['type'], spot['reg'], spot['location'], spot['link'], spot['description'])
+                    bot.tweet_spot(spot['icao'], spot['type'], spot['reg'], spot['location'], spot['link'], spot['desc'])
                     bot_time = time()
             sleep(1)
 

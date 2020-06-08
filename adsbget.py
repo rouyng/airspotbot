@@ -82,7 +82,7 @@ class Spotter:
         icao = aircraft['icao']
         logging.info(f'Craft added to queue. ICAO #: {icao}')
         aircraft['link'] = f'https://tar1090.adsbexchange.com/?icao={icao}'
-        aircraft['location'] = str(round(float(aircraft['lat']), 2)) + ' ,' + str(round(float(aircraft['lon']), 4))
+        aircraft['location'] = str(round(float(aircraft['lat']), 2)) + ', ' + str(round(float(aircraft['lon']), 4))
         self.spot_queue.append(aircraft)
         self.seen[icao] = time()
 
@@ -117,20 +117,31 @@ class Spotter:
                     continue
                 else:
                     if craft['reg'] in self.watchlist_rn.keys():
-                        craft['desc'] = self.watchlist_rn[craft['reg']]['desc']
+                        if self.watchlist_rn[craft['reg']]['desc'] != '':
+                            craft['desc'] = self.watchlist_rn[craft['reg']]['desc']
+                        else:
+                            craft['desc'] = False
                         self.append_craft(craft)
                     elif craft['type'] in self.watchlist_tc.keys():
                         if self.watchlist_tc[craft['type']]['mil_only'] is True and craft['mil'] == '1':
-                            craft['desc'] = self.watchlist_tc[craft['type']]['desc']
+                            if self.watchlist_tc[craft['type']]['desc'] != '':
+                                craft['desc'] = self.watchlist_tc[craft['type']]['desc']
+                            else:
+                                craft['desc'] = False
                             self.append_craft(craft)
                         elif self.watchlist_tc[craft['type']]['mil_only'] is True and craft['mil'] == '0':
                             continue
                         else:
-                            craft['desc'] = self.watchlist_tc[craft['type']]['desc']
+                            if self.watchlist_tc[craft['type']]['desc'] != '':
+                                craft['desc'] = self.watchlist_tc[craft['type']]['desc']
+                            else:
+                                craft['desc'] = False
                             self.append_craft(craft)
                     elif craft['reg'] == '' and self.spot_unknown is True:
+                        craft['desc'] = False
                         self.append_craft(craft)
                     elif craft['mil'] == '1' and self.spot_mil is True:
+                        craft['desc'] = False
                         self.append_craft(craft)
                     else:
                         continue
