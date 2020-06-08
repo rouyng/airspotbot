@@ -82,7 +82,7 @@ class Spotter:
         icao = aircraft['icao']
         logging.info(f'Craft added to queue. ICAO #: {icao}')
         aircraft['link'] = f'https://tar1090.adsbexchange.com/?icao={icao}'
-        aircraft['location'] = str(round(float(aircraft['lat']), 2)) + ', ' + str(round(float(aircraft['lon']), 4))
+        aircraft['location'] = str(round(float(aircraft['lat']), 4)) + ', ' + str(round(float(aircraft['lon']), 4))
         self.spot_queue.append(aircraft)
         self.seen[icao] = time()
 
