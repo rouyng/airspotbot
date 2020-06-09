@@ -89,9 +89,12 @@ class Spotter:
     def check_seen(self):
         # before checking for new spots, this function is run to clear aircraft off the "seen" list
         # so aircraft that loiter longer than the cooldown time will generate new tweets
+        del_list = []
         for k, t in self.seen.items():
             if t < time() - self.cooldown:
-                del self.seen[k]
+                del_list.append(k)
+        for d in del_list:
+            del self.seen[d]
 
     def check_spots(self):
         logging.info('Checking for aircraft via ADSB exchange API')
