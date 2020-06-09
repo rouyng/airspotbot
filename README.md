@@ -2,7 +2,7 @@
 airspotbot is a Twitter bot designed to provide simple, flexible way to report interesting aircraft activity in a designated area via twitter posts. It uses [Tweepy](https://www.tweepy.org/) and the [adsbexchange.com API](https://www.adsbexchange.com/data/). airspotbot is designed to be extremely configurable, so it can be used to monitor diverse kinds of activity.
 
 ## Examples
-airspotbot currently runs [@phxairspots on twitter](https://wwww.twitter.com/phxairspots). If you use airspotbot to run a twitter account and would like it listed here, let me know via opening an issue or create a pull request adding it to this section in README.md.
+airspotbot currently runs [@phxairspots on twitter](https://www.twitter.com/phxairspots). If you use airspotbot to run a twitter account and would like it listed here, let me know via opening an issue or create a pull request adding it to this section in README.md.
 
 ## Configuring
 airspotbot has two files that must be configured before use: `asb.config` and `watchlist.csv`
