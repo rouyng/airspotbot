@@ -1,5 +1,5 @@
 Key,Type,Mil Only,Description
-U60,TC,N,UH-60 Black Hawk
+H60,TC,N,UH-60 Black Hawk
 EC45,TC,Y,USAF/US Army/National Guard UH-72 Lakota
 SW4,TC,Y,USAF RC-26B spy plane
 N357FB,RN,,Eurocopter AS350 owned by Phoenix PD
@@ -9,3 +9,6 @@ N911AZ,RN,,Bell 429 owned by AZ Department of Public Safety
 N620FB,RN,,Pilatus PC12 surveillance plane owned by City of Phoenix
 N662CV,RN,,Bell 407 DEA surveillance helicopter (Silver Creek Aviation)
 AD9ECA,IA,,Bell 407 owned by Maricopa County Sheriff's Office
+Q1,TC,,MQ-1 Predator drone
+Q9,TC,,MQ-9 Predator B drone
+Q4,TC,,Global Hawk drone
