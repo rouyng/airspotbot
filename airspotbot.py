@@ -108,7 +108,7 @@ if __name__ == "__main__":
     spot_time = time()
     # check for aircraft and tweet any when bot first starts
     spots.check_spots()
-    for i in range(1, len(spots.spot_queue)):
+    for i in range(0, len(spots.spot_queue)):
         spot = spots.spot_queue.pop(0)
         bot.tweet_spot(spot)
     # perpetually loop through checking aircraft spots and tweeting according to time intervals set in asb.config
@@ -117,7 +117,7 @@ if __name__ == "__main__":
             spots.check_spots()
             spot_time = time()
         elif time() > bot_time + bot.interval:
-            for i in range(1, len(spots.spot_queue)):
+            for i in range(0, len(spots.spot_queue)):
                 spot = spots.spot_queue.pop(0)
                 bot.tweet_spot(spot)
             bot_time = time()
