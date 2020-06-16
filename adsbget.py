@@ -3,6 +3,7 @@ from time import time
 import requests
 import configparser
 import csv
+import json
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
@@ -112,59 +113,63 @@ class Spotter:
                 response.raise_for_status()
             except (requests.exceptions.HTTPError, requests.exceptions.Timeout) as err:
                 logging.error(err)
-            spotted_aircraft = response.json()['ac']
-            self.check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
-            for c in spotted_aircraft:
-                # This loop checks all spotted aircraft against your watchlist and preferences to determine
-                # if it should be added to the tweet queue
-                craft = dict(c)  # convert json object provided by API to dictionary
-                if craft['icao'] in self.seen.keys() or craft['gnd'] == '1':
-                    # if craft icao number is in seen list, do not queue
-                    # if craft is on ground, do not queue
-                    continue
-                else:
-                    if craft['icao'] in self.watchlist_ia.keys():
-                        # if the aircraft's ICAO address is on the watchlist, add it to the queue
-                        if self.watchlist_ia[craft['icao']]['desc'] != '':
-                            # if there is a description in the watchlist entry for this ICAO address, add it to the dict
-                            craft['desc'] = self.watchlist_ia[craft['icao']]['desc']
-                        else:
-                            craft['desc'] = False
-                        self.append_craft(craft)
-                    elif craft['reg'] in self.watchlist_rn.keys():
-                        # if the aircraft's registration number is on the watchlist, add it to the queue
-                        if self.watchlist_rn[craft['reg']]['desc'] != '':
-                            # if there is a description in the watchlist entry for this reg number, add it to the dict
-                            craft['desc'] = self.watchlist_rn[craft['reg']]['desc']
-                        else:
-                            craft['desc'] = False
-                        self.append_craft(craft)
-                    elif craft['type'] in self.watchlist_tc.keys():
-                        if self.watchlist_tc[craft['type']]['mil_only'] is True and craft['mil'] == '1':
-                            if self.watchlist_tc[craft['type']]['desc'] != '':
-                                craft['desc'] = self.watchlist_tc[craft['type']]['desc']
-                            else:
-                                craft['desc'] = False
-                            self.append_craft(craft)
-                        elif self.watchlist_tc[craft['type']]['mil_only'] is True and craft['mil'] == '0':
-                            continue
-                        else:
-                            if self.watchlist_tc[craft['type']]['desc'] != '':
-                                craft['desc'] = self.watchlist_tc[craft['type']]['desc']
-                            else:
-                                craft['desc'] = False
-                            self.append_craft(craft)
-                    elif craft['reg'] == '' and self.spot_unknown is True:
-                        # if there's no registration number and spot_unknown is set, add to tweet queue
-                        craft['desc'] = False
-                        self.append_craft(craft)
-                    elif craft['mil'] == '1' and self.spot_mil is True:
-                        # if craft is designated military by ADS-B exchange and spot_mil is set, add to tweet queue
-                        craft['desc'] = False
-                        self.append_craft(craft)
-                    else:
-                        # if none of these criteria are met, iterate to next aircraft in the spotted list
+            try:
+                spotted_aircraft = response.json()['ac']
+                self.check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
+                for c in spotted_aircraft:
+                    # This loop checks all spotted aircraft against your watchlist and preferences to determine
+                    # if it should be added to the tweet queue
+                    craft = dict(c)  # convert json object provided by API to dictionary
+                    if craft['icao'] in self.seen.keys() or craft['gnd'] == '1':
+                        # if craft icao number is in seen list, do not queue
+                        # if craft is on ground, do not queue
                         continue
+                    else:
+                        if craft['icao'] in self.watchlist_ia.keys():
+                            # if the aircraft's ICAO address is on the watchlist, add it to the queue
+                            if self.watchlist_ia[craft['icao']]['desc'] != '':
+                                # if there is a description in the watchlist entry for this ICAO address, add it to the dict
+                                craft['desc'] = self.watchlist_ia[craft['icao']]['desc']
+                            else:
+                                craft['desc'] = False
+                            self.append_craft(craft)
+                        elif craft['reg'] in self.watchlist_rn.keys():
+                            # if the aircraft's registration number is on the watchlist, add it to the queue
+                            if self.watchlist_rn[craft['reg']]['desc'] != '':
+                                # if there is a description in the watchlist entry for this reg number, add it to the dict
+                                craft['desc'] = self.watchlist_rn[craft['reg']]['desc']
+                            else:
+                                craft['desc'] = False
+                            self.append_craft(craft)
+                        elif craft['type'] in self.watchlist_tc.keys():
+                            if self.watchlist_tc[craft['type']]['mil_only'] is True and craft['mil'] == '1':
+                                if self.watchlist_tc[craft['type']]['desc'] != '':
+                                    craft['desc'] = self.watchlist_tc[craft['type']]['desc']
+                                else:
+                                    craft['desc'] = False
+                                self.append_craft(craft)
+                            elif self.watchlist_tc[craft['type']]['mil_only'] is True and craft['mil'] == '0':
+                                continue
+                            else:
+                                if self.watchlist_tc[craft['type']]['desc'] != '':
+                                    craft['desc'] = self.watchlist_tc[craft['type']]['desc']
+                                else:
+                                    craft['desc'] = False
+                                self.append_craft(craft)
+                        elif craft['reg'] == '' and self.spot_unknown is True:
+                            # if there's no registration number and spot_unknown is set, add to tweet queue
+                            craft['desc'] = False
+                            self.append_craft(craft)
+                        elif craft['mil'] == '1' and self.spot_mil is True:
+                            # if craft is designated military by ADS-B exchange and spot_mil is set, add to tweet queue
+                            craft['desc'] = False
+                            self.append_craft(craft)
+                        else:
+                            # if none of these criteria are met, iterate to next aircraft in the spotted list
+                            continue
+            except json.decoder.JSONDecodeError as e:
+                logging.error(f'Error decoding JSON, likely due to ADSBX API error')
+                logging.error(e)
 
         elif self.adsb_api_endpoint == 'free':
             # TODO: add support for ADS-B Exchange free endpoint
