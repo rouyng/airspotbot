@@ -108,9 +108,9 @@ class Spotter:
                 'x-rapidapi-key': self.adsb_api_key
             }
             try:
-                response = requests.request("GET", url, headers=headers)
+                response = requests.request("GET", url, headers=headers, timeout=2)
                 response.raise_for_status()
-            except requests.exceptions.HTTPError as err:
+            except (requests.exceptions.HTTPError, requests.exceptions.Timeout) as err:
                 logging.error(err)
             spotted_aircraft = response.json()['ac']
             self.check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
