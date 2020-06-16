@@ -8,10 +8,11 @@ airspotbot currently runs [@phxairspots on twitter](https://www.twitter.com/phxa
 ### Use cases
 airspotbot is designed to be configurable for multiple use cases. The list below provides some examples. Please note that due to limitations of the ADS-B Exchange API, airspotbot is designed to only track spots within a 1, 5, 10, 25, 100 or 250 nautical mile radius of the latitude and longitude specified in the configuration file. See the configuring section for details on how to configure airspotbot for one of these use cases. airspotbot is designed so that a single bot can be configured to fulfill multiple use cases simultaneously.
 
-* I want to tweet when an aircraft with a specific registration number is active in a certain area
-* I want to tweet when an aircraft with a specific unique ICAO transponder address is active in a certain area
+* I want to tweet when an aircraft with a specific civil [registration number](https://en.wikipedia.org/wiki/Aircraft_registration) is active in a certain area
+* I want to tweet when a military aircraft with a specific serial number (for example, see [US](https://en.wikipedia.org/wiki/United_States_military_aircraft_serial_numbers) and [UK](https://en.wikipedia.org/wiki/United_Kingdom_military_aircraft_serial_numbers) serial numbers) is active in a certain area
+* I want to tweet when an aircraft with a specific [unique ICAO transponder address](https://en.wikipedia.org/wiki/Aviation_transponder_interrogation_modes#ICAO_24-bit_address) is active in a certain area
 * I want to tweet all military aircraft activity in a certain area
-* I want to tweet when any aircraft with a certain type code is active in my area
+* I want to tweet when any aircraft with a certain [type code](https://en.wikipedia.org/wiki/List_of_aircraft_type_designators) is active in my area
 * I want to tweet when any aircraft with a certain type code is active in my area, but only if they are military
 
 ## Running
@@ -30,7 +31,7 @@ Used to set your API keys and other bot configuration, such as tweeting interval
 ### watchlist.csv
 Used to specify which active aircraft cause the bot to tweet spots. Currently, airspotbot supports specifying aircraft by registration number or ICAO aircraft type code. Please note that setting `spot_unknown` and/or `spot_mil` options to "Y" in `asb.config` will cause unknown and/or military aircraft to generate tweets regardless of what is set in `watchlist.csv`.
 * "Key" column sets the ICAO aircraft type code or registration number. 
-* "Type" should be either "RN" for registration number, "TC" for ICAO type code, or "IA" for unique ICAO address.
+* "Type" should be either "RN" for registration number/serial number, "TC" for ICAO type code, or "IA" for unique ICAO address.
 * "Mil Only" should be set to Y or N. This column only has an effect for rows with type set to "TC". When set to Y, only military aircraft with that type code will be tweeted. This feature exists because many military aircraft show up on ADS-B Exchange with civilian type codes. For example, a UH-72 Lakota will appear with a EC45 type code (referring to the Eurocopter EC145 civilian model it is based on). If you are only interested in spotting military UH-72s but not civilian EC145 helicopters, setting "Mil only" to Y will only show those aircraft with a type code of EC45 that are flagged as military.
 * The "Description" field is optional, if filled in this will replace the type code in the tweet's text. 
 
