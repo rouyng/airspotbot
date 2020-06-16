@@ -112,6 +112,7 @@ class Spotter:
                 response = requests.request("GET", url, headers=headers, timeout=2)
                 response.raise_for_status()
             except (requests.exceptions.HTTPError, requests.exceptions.Timeout) as err:
+                logging.error('Error with ADSBX API request')
                 logging.error(err)
             try:
                 spotted_aircraft = response.json()['ac']
