@@ -38,7 +38,6 @@ Used to specify which active aircraft cause the bot to tweet spots. Currently, a
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
 * Better location representation, including map and text description. Something along the lines of how [Advisory Circular](https://gitlab.com/jjwiseman/advisory-circular/) does it.
-* Add ability to use ADS-B exchange free API keys. airspotbot currently is only able to use the paid ADS-B Exchange API available through rapidAPI. Therefore the only valid option for `adsb_api` in the config file is `rapidapi.` This is simply because I do not currently meet the requirements to receive a free key from ADS-B exchange. I plan to add the ability to use these free keys when I qualify for one and can test it.
 * Add new "reply" column to watchlist. This will automatically reply to the spot tweet with the content entered in the reply cell. Sometimes, you want to add additional context such as an explanation or link.
 * Add ability to specify an image to include with a spot tweet
 * Add automatic lookup of photos by registration number with jetphotos.com (`reply_jetphotos` option in config file is a placeholder for this)
