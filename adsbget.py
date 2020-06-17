@@ -112,8 +112,7 @@ class Spotter:
                 response = requests.request("GET", url, headers=headers, timeout=4)
                 response.raise_for_status()
             except (requests.exceptions.HTTPError, requests.exceptions.Timeout) as err:
-                logging.error('Error with ADSBX API request')
-                logging.error(err)
+                logging.error(f'Error with ADSBX API request: {err}')
                 response = None
             try:
                 spotted_aircraft = response.json()['ac']
@@ -169,10 +168,8 @@ class Spotter:
                         else:
                             # if none of these criteria are met, iterate to next aircraft in the spotted list
                             continue
-            except AttributeError as e:
-                logging.error(f'Error decoding JSON, likely due to ADSBX API error')
-                logging.error(e)
-
+            except AttributeError as err:
+                logging.error(f'Error decoding JSON, likely due to ADSBX API error: {err}')
         elif self.adsb_api_endpoint == 'free':
             # TODO: add support for ADS-B Exchange free endpoint
             logging.critical('ADS-B Exchange free api endpoint is currently not supported. This feature is planned, see README.md')
