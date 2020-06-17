@@ -113,7 +113,7 @@ class Spotter:
                 response.raise_for_status()
             except (requests.exceptions.HTTPError, requests.exceptions.Timeout) as err:
                 logging.error(f'Error with ADSBX API request: {err}')
-                response = None
+                response = []
             try:
                 spotted_aircraft = response.json()['ac']
                 self.check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
