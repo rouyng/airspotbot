@@ -46,8 +46,8 @@ class Spotter:
             logging.debug(f"Setting longitude to {self.longitude}")
             self.radius = int(parser.get('ADSB', 'radius'))
             logging.debug(f"Setting radius to {self.radius}")
-            self.adsb_api_endpoint = parser.get('ADSB', 'adsb_api')
-            self.adsb_api_key = parser.get('ADSB', 'adsb_api_key')
+            self.adsb_api_endpoint = parser.get('ADSB', 'adsb_api').strip()
+            self.adsb_api_key = parser.get('ADSB', 'adsb_api_key').strip()
             if self.adsb_api_endpoint == 'rapidapi':
                 # create url and headers for RapidAPI request
                 logging.debug("Setting api endpoint to rapidapi")
