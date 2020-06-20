@@ -137,6 +137,9 @@ class Spotter:
             response.raise_for_status()
             logging.debug('API request appears successful')
             spotted_aircraft = response.json()['ac']
+            if spotted_aircraft is None:
+                # prevent an empty list of spots from creating a TypeError in the next for loop
+                spotted_aircraft = []
         except (requests.exceptions.HTTPError, requests.exceptions.Timeout, AttributeError) as err:
             logging.error(f'Error with API request: {err}')
             spotted_aircraft = []
