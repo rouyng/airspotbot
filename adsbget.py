@@ -41,7 +41,7 @@ class Spotter:
             self.cooldown = int(parser.get('ADSB', 'cooldown'))
             logging.debug(f"Setting interval to {self.cooldown}")
             self.latitude = float(parser.get('ADSB', 'lat'))
-            logging.debug(f"Setting latitude to {self.lat}")
+            logging.debug(f"Setting latitude to {self.latitude}")
             self.longitude = float(parser.get('ADSB', 'long'))
             logging.debug(f"Setting longitude to {self.longitude}")
             self.radius = int(parser.get('ADSB', 'radius'))
