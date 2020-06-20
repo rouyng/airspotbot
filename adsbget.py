@@ -139,6 +139,7 @@ class Spotter:
             spotted_aircraft = response.json()['ac']
             if spotted_aircraft is None:
                 # prevent an empty list of spots from creating a TypeError in the next for loop
+                logging.info('No aircraft detected in spotting area')
                 spotted_aircraft = []
         except (requests.exceptions.HTTPError, requests.exceptions.Timeout, AttributeError) as err:
             logging.error(f'Error with API request: {err}')
