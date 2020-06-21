@@ -18,6 +18,8 @@ airspotbot is designed to be configurable for multiple use cases. The list below
 ## Running
 airspotbot was developed and tested using Python 3.7. Ensure a compatible Python version is installed in your system/virtual environment and install package requirements using `pip install -r requirements.txt`. Configure `asb.config` with your API keys and preferences and `watchlist.csv` with your desired watchlist. You can then start airspotbot by running `python airspotbot.py`.
 
+A basic `Dockerfile` is also included for deployment via Docker container. 
+
 ## Configuring
 airspotbot has two files that must be configured before use: `asb.config` and `watchlist.csv`
 
@@ -43,7 +45,6 @@ Here are some planned features/fixes. You are welcome to work on these if you ar
 * Add ability to specify an image to include with a spot tweet
 * Add automatic lookup of photos by registration number with jetphotos.com (`reply_jetphotos` option in config file is a placeholder for this)
 * Add automatic tweeting to notify followers of ADS-B Exchange API outage/error. Users should be informed if an error/outage is preventing spots from being tweeted. (`down_tweet` option in config file is a placeholder for this)
-* Create Dockerfile for easy containerized deployment of airspotbot
 
  
  ## Contributing
