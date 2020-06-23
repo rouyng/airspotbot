@@ -5,7 +5,7 @@ import configparser
 import csv
 import json
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
 
 class Spotter:
