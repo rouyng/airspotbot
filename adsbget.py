@@ -27,6 +27,7 @@ class Spotter:
         self.spot_unknown = True  # always spot unknown reg #s
         self.spot_mil = True  # always spot mil-format serial numbers
         self.url = ""
+        self.logging_level = "INFO"  # verbosity level of log messages
         self.headers = {}
         self.read_adsb_config()
         self.read_watchlist()
@@ -35,6 +36,16 @@ class Spotter:
         logging.info(f'Loading ADSB exchange configuration from {self.config_file_path}')
         parser = configparser.ConfigParser()
         parser.read(self.config_file_path)  # read config file at path
+        try:
+            # set logging verbosity level from config file
+            self.logging_level = str(parser.get('MISC', 'logging_level')).upper()
+            assert self.logging_level != ''
+            assert self.logging_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+            logging.getLogger().setLevel(self.logging_level)
+            logging.warning(f"Set logging level to {self.logging_level}")
+        except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
+            logging.warning(f"Logging verbosity level is not set in {self.config_file_path}, defaulting to DEBUG")
+            logging.getLogger().setLevel('DEBUG')
         try:
             self.interval = int(parser.get('ADSB', 'adsb_interval'))
             logging.debug(f"Setting interval to {self.interval}")
@@ -48,6 +59,7 @@ class Spotter:
             logging.debug(f"Setting radius to {self.radius}")
             self.adsb_api_endpoint = parser.get('ADSB', 'adsb_api').strip()
             self.adsb_api_key = parser.get('ADSB', 'adsb_api_key').strip()
+            logging.debug(f'Setting API key value to {self.adsb_api_key}')
             if self.adsb_api_endpoint == 'rapidapi':
                 # create url and headers for RapidAPI request
                 logging.debug("Setting api endpoint to rapidapi")
@@ -88,6 +100,7 @@ class Spotter:
                 raise ValueError()
         except (configparser.NoOptionError, configparser.NoSectionError) as e:
             logging.critical(f'Configuration file error: {e}')
+            raise Exception(e)
 
     def read_watchlist(self):
         logging.info(f'Loading watchlist from {self.watchlist_path}')
