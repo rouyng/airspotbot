@@ -163,10 +163,13 @@ class Spotter:
             # if it should be added to the tweet queue
             craft = dict(c)  # convert json object provided by API to dictionary
             logging.debug(f'Spotted aircraft {craft["icao"]}. Full data: {craft}')
-            if craft['icao'] in self.seen.keys() or craft['gnd'] == '1':
+            if craft['icao'] in self.seen.keys():
                 # if craft icao number is in seen list, do not queue
+                logging.debug(f"{craft['icao']} is already spotted, not added to queue")
+                continue
+            elif craft['gnd'] == '1':
                 # if craft is on ground, do not queue
-                logging.debug("Aircraft is grounded or already spotted")
+                logging.debug(f"{craft['icao']} is on the ground, not added to queue")
                 continue
             else:
                 if craft['icao'] in self.watchlist_ia.keys():
@@ -217,6 +220,6 @@ class Spotter:
                     self.append_craft(craft)
                 else:
                     # if none of these criteria are met, iterate to next aircraft in the spotted list
-                    logging.debug("No spotting critera met, not added to queue")
+                    logging.debug(f"{craft['icao']} did not meet any spotting critera, not added to queue")
                     continue
 
