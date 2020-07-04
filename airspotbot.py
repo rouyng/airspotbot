@@ -74,7 +74,7 @@ class SpotBot:
             logging.critical(f'Configuration file error: {e}')
 
     def tweet_spot(self, aircraft: dict):
-        icao, type_code, reg_num, lat, lon, description, alt, speed = aircraft['icao'], aircraft['type'], aircraft['reg'], aircraft['lat'], aircraft['lon'], aircraft['desc'], aircraft['alt'], aircraft['spd']
+        icao, type_code, reg_num, lat, lon, description, alt, speed, callsign = aircraft['icao'], aircraft['type'], aircraft['reg'], aircraft['lat'], aircraft['lon'], aircraft['desc'], aircraft['alt'], aircraft['spd'], aircraft['call']
         link = f'https://tar1090.adsbexchange.com/?icao={icao}'
         location = str(round(float(lat), 4)) + ', ' + str(round(float(lon), 4))
         # TODO: function to tweet out aircraft spots
@@ -82,7 +82,10 @@ class SpotBot:
             reg = 'unknown'
         if type_code.strip() == '':
             type_code = 'Unknown aircraft type'
-        tweet = f"{description if description else type_code} (ICAO {icao}, RN {reg_num}) is near {location}. Altitude {alt} ft, speed {speed} kt. {link}"
+        if callsign == reg_num:
+            # if callsign is same as the registration number, ADSBx is not reporting a callsign
+            callsign = False
+        tweet = f"{description if description else type_code}{', callsign:'+ callsign if callsign else ''} (ICAO {icao}, RN {reg_num}) is near {location}. Altitude {alt} ft, speed {speed} kt. {link}"
         logging.info(f'Tweeting: {tweet}')
         try:
             self.api.update_status(tweet)
