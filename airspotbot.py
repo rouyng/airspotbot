@@ -85,7 +85,7 @@ class SpotBot:
         if callsign == reg_num:
             # if callsign is same as the registration number, ADSBx is not reporting a callsign
             callsign = False
-        tweet = f"{description if description else type_code}{', callsign:'+ callsign if callsign else ''} (ICAO {icao}, RN {reg_num}) is near {location}. Altitude {alt} ft, speed {speed} kt. {link}"
+        tweet = f"{description if description else type_code}{', callsign '+ callsign if callsign else ''} (ICAO {icao}, RN {reg_num}) is near {location}. Altitude {alt} ft, speed {speed} kt. {link}"
         logging.info(f'Tweeting: {tweet}')
         try:
             self.api.update_status(tweet)

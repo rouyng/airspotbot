@@ -169,7 +169,7 @@ class Spotter:
                 continue
             elif craft['gnd'] == '1':
                 # if craft is on ground, do not queue
-                logging.debug(f"{craft['icao']} is grounded, not added to queue")
+                logging.debug(f"{craft['icao']} is on the ground, not added to queue")
                 continue
             else:
                 if craft['icao'] in self.watchlist_ia.keys():
