@@ -32,16 +32,19 @@ Used to set your API keys and other bot configuration, such as tweeting interval
   
 ### watchlist.csv
 Used to specify which active aircraft cause the bot to tweet spots. Currently, airspotbot supports specifying aircraft by registration number or ICAO aircraft type code. Please note that setting `spot_unknown` and/or `spot_mil` options to "Y" in `asb.config` will cause unknown and/or military aircraft to generate tweets regardless of what is set in `watchlist.csv`.
-* "Key" column sets the ICAO aircraft type code or registration number. 
-* "Type" should be either "RN" for registration number/serial number, "TC" for ICAO type code, or "IA" for unique ICAO address.
-* "Mil Only" should be set to Y or N. This column only has an effect for rows with type set to "TC". When set to Y, only military aircraft with that type code will be tweeted. This feature exists because many military aircraft show up on ADS-B Exchange with civilian type codes. For example, a UH-72 Lakota will appear with a EC45 type code (referring to the Eurocopter EC145 civilian model it is based on). If you are only interested in spotting military UH-72s but not civilian EC145 helicopters, setting "Mil only" to Y will only show those aircraft with a type code of EC45 that are flagged as military.
-* The "Description" field is optional, if filled in this will replace the type code in the tweet's text. 
+* "Key": column sets the ICAO aircraft type code or registration number. 
+* "Type": either "RN" for registration number/serial number, "TC" for ICAO type code, or "IA" for unique ICAO address.
+* "Mil Only": should be set to Y or N. This column only has an effect for rows with type set to "TC". When set to Y, only military aircraft with that type code will be tweeted. This feature exists because many military aircraft show up on ADS-B Exchange with civilian type codes. For example, a UH-72 Lakota will appear with a EC45 type code (referring to the Eurocopter EC145 civilian model it is based on). If you are only interested in spotting military UH-72s but not civilian EC145 helicopters, setting "Mil only" to Y will only show those aircraft with a type code of EC45 that are flagged as military.
+* "Description": Optional, if filled in this will replace the type code in the tweet's text. 
+* "Image": filename of image file in the `images/` subdirectory to associate with this watchlist item. The specified image will be added to tweets of that watchlist item. This field is case sensitive.
+
+### Images
+Put any images specified in the Images column of watchlist.csv in the `images/` subdirectory. Any media type accepted by Twitter is allowable (JPEG, GIF, and PNG).
 
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
 * Better location representation, including map and text description. Something along the lines of how [Advisory Circular](https://gitlab.com/jjwiseman/advisory-circular/) does it.
 * Add new "reply" column to watchlist. This will automatically reply to the spot tweet with the content entered in the reply cell. Sometimes, you want to add additional context such as an explanation or link.
-* Add ability to specify an image to include with a spot tweet
 * Add automatic lookup of photos by registration number with jetphotos.com (`reply_jetphotos` option in config file is a placeholder for this)
 * Add automatic tweeting to notify followers of ADS-B Exchange API outage/error. Users should be informed if an error/outage is preventing spots from being tweeted. (`down_tweet` option in config file is a placeholder for this)
 
