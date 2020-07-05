@@ -85,10 +85,31 @@ class SpotBot:
         if callsign == reg_num:
             # if callsign is same as the registration number, ADSBx is not reporting a callsign
             callsign = False
-        tweet = f"{description if description else type_code}{', callsign '+ callsign if callsign else ''} (ICAO {icao}, RN {reg_num}) is near {location}. Altitude {alt} ft, speed {speed} kt. {link}"
+        tweet = f"{description if description else type_code}{', callsign '+ callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is near {location}. Altitude {alt} ft, speed {speed} kt. {link}"
+        if aircraft['img']:
+            image_path = "images/" + aircraft['img'] # always look for images in the /images subfolder of working directory
+            try:
+                # if an image path is specified, upload it
+                logging.debug(f"Uploading image from {image_path}")
+                image = self.api.media_upload(image_path)
+            except tweepy.error.TweepError:
+                # if upload fails, handle exception and proceed gracefully without an image
+                logging.warning(f"Error uploading image from {image_path}, check if file exists")
+                image = False
+        else:
+            image = False
         logging.info(f'Tweeting: {tweet}')
         try:
-            self.api.update_status(tweet)
+            if image:
+                try:
+                    self.api.update_status(tweet, media_ids=[image.media_id])
+                except AttributeError as e:
+                    # catch an attribute error, in case media upload fails in an unexpected way
+                    logging.warning("Attribute error when sending tweet")
+                    logging.warning(e)
+                    self.api.update_status(tweet)
+            else:
+                self.api.update_status(tweet)
         except tweepy.error.TweepError as e:
             logging.critical('Error sending tweet')
             raise e
