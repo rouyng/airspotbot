@@ -1,25 +1,25 @@
 Key,Type,Mil Only,Description,Image
-H60,TC,N,UH-60 Black Hawk
+H60,TC,N,UH-60 Black Hawk,uh60.jpg
 EC45,TC,Y,USAF/US Army/National Guard UH-72 Lakota,uh72.jpg
-SW4,TC,Y,USAF RC-26B spy plane,rc26b.jph
-N351FB,RN,,Eurocopter AS350 owned by Phoenix PD
-N352FB,RN,,Eurocopter AS350 owned by Phoenix PD
-N353FB,RN,,Eurocopter AS350 owned by Phoenix PD
-N357FB,RN,,Eurocopter AS350 owned by Phoenix PD
-N359FB,RN,,Eurocopter AS350 owned by Phoenix PD
-N125HD,RN,,Eurocopter AS350 KPHO-TV/KTVK/KPNX news helicopter
+SW4,TC,Y,USAF RC-26B spy plane,rc26b.jpg
+N351FB,RN,,Eurocopter AS350 owned by Phoenix PD,
+N352FB,RN,,Eurocopter AS350 owned by Phoenix PD,
+N353FB,RN,,Eurocopter AS350 owned by Phoenix PD,
+N357FB,RN,,Eurocopter AS350 owned by Phoenix PD,
+N359FB,RN,,Eurocopter AS350 owned by Phoenix PD,
+N125HD,RN,,Eurocopter AS350 KPHO-TV/KTVK/KPNX news helicopter,n125hd.jpg
 N507MP,RN,,MD 530F owned by Mesa PD,n507mp.jpg
-N911AZ,RN,,Bell 429 owned by AZ Department of Public Safety
-N42AZ,RN,,Bell 407 owned by AZ DPS (Air Rescue)
-N52AZ,RN,,Bell 407 owned by AZ DPS (Air Rescue)
-N54AZ,RN,,Bell 407 owned by AZ DPS (Air Rescue)
-N56AZ,RN,,Bell 407 owned by AZ DPS (Air Rescue)
-N58AZ,RN,,Bell 407 owned by AZ DPS (Air Rescue)
-N620FB,RN,,Pilatus PC12 surveillance plane owned by Phoenix PD
-N662CV,RN,,Bell 407 DEA surveillance helicopter (Silver Creek Aviation)
-AD9ECA,IA,,Bell 407 owned by Maricopa County Sheriff's Office
-AE6482,IA,,National Guard UH-60 Black Hawk
-N557PG,RN,,Cessna Citation FBI surveillance plane
+N911AZ,RN,,Bell 429 owned by AZ Department of Public Safety,n911az.png
+N42AZ,RN,,Bell 407 owned by AZ DPS (Air Rescue),
+N52AZ,RN,,Bell 407 owned by AZ DPS (Air Rescue),
+N54AZ,RN,,Bell 407 owned by AZ DPS (Air Rescue),
+N56AZ,RN,,Bell 407 owned by AZ DPS (Air Rescue),
+N58AZ,RN,,Bell 407 owned by AZ DPS (Air Rescue),
+N620FB,RN,,Pilatus PC12 surveillance plane owned by Phoenix PD,n620fb.jpg
+N662CV,RN,,Bell 407 DEA surveillance helicopter (Silver Creek Aviation),
+AD9ECA,IA,,Bell 407 owned by Maricopa County Sheriff's Office,
+AE6482,IA,,National Guard UH-60 Black Hawk,
+N557PG,RN,,Cessna Citation FBI surveillance plane,
 Q1,TC,,MQ-1 Predator drone,mq1.jpg
 Q9,TC,,MQ-9 Reaper drone,mq9.jpg
 Q4,TC,,Global Hawk drone,globalhawk.jpg
