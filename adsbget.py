@@ -111,18 +111,18 @@ class Spotter:
                     continue
                 else:
                     if row[1] == 'RN':
-                        self.watchlist_rn[row[0]] = {'desc': row[3]}
-                        logging.info(f'Added {row[0]} to reg num watchlist. Description: "{row[3]}"')
+                        self.watchlist_rn[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
+                        logging.info(f'Added {row[0]} to reg num watchlist. Description: "{row[3]}", image: {row[4]}')
                     elif row[1] == 'TC':
                         if row[2].lower() == 'y':
                             mil_only = True
                         else:
                             mil_only = False
-                        self.watchlist_tc[row[0]] = {'desc': row[3], 'mil_only': mil_only}
-                        logging.info(f'Added {row[0]} to type code watchlist. Military only: {mil_only} Description: "{row[3]}"')
+                        self.watchlist_tc[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip(), 'mil_only': mil_only}
+                        logging.info(f'Added {row[0]} to type code watchlist. Military only: {mil_only} Description: "{row[3]}", image: {row[4]}')
                     elif row[1] == 'IA':
-                        self.watchlist_ia[row[0]] = {'desc': row[3]}
-                        logging.info(f'Added {row[0]} to ICAO address watchlist. Description: "{row[3]}"')
+                        self.watchlist_ia[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
+                        logging.info(f'Added {row[0]} to ICAO address watchlist. Description: "{row[3]}", image: {row[4]}')
             logging.info(f'Added {len(self.watchlist_rn) + len(self.watchlist_tc) + len(self.watchlist_ia)} entries to the watchlist')
 
     def append_craft(self, aircraft):
@@ -180,6 +180,10 @@ class Spotter:
                         craft['desc'] = self.watchlist_ia[craft['icao']]['desc']
                     else:
                         craft['desc'] = False
+                    if self.watchlist_ia[craft['icao']]['img'] != '':
+                        craft['img'] = self.watchlist_ia[craft['icao']]['img']
+                    else:
+                        craft['img'] = False
                     self.append_craft(craft)
                 elif craft['reg'] in self.watchlist_rn.keys():
                     logging.debug(f'{craft["reg"]} in watchlist, adding to spot queue')
@@ -189,6 +193,10 @@ class Spotter:
                         craft['desc'] = self.watchlist_rn[craft['reg']]['desc']
                     else:
                         craft['desc'] = False
+                    if self.watchlist_rn[craft['reg']]['img'] != '':
+                        craft['img'] = self.watchlist_rn[craft['reg']]['img']
+                    else:
+                        craft['img'] = False
                     self.append_craft(craft)
                 elif craft['type'] in self.watchlist_tc.keys():
                     if self.watchlist_tc[craft['type']]['mil_only'] is True and craft['mil'] == '1':
@@ -196,6 +204,10 @@ class Spotter:
                             craft['desc'] = self.watchlist_tc[craft['type']]['desc']
                         else:
                             craft['desc'] = False
+                        if self.watchlist_tc[craft['type']]['img'] != '':
+                            craft['img'] = self.watchlist_tc[craft['type']]['img']
+                        else:
+                            craft['img'] = False
                         logging.debug(f'{craft["type"]} in watchlist as military-only and mil=1, adding to spot queue')
                         self.append_craft(craft)
                     elif self.watchlist_tc[craft['type']]['mil_only'] is True and craft['mil'] == '0':
@@ -206,16 +218,22 @@ class Spotter:
                             craft['desc'] = self.watchlist_tc[craft['type']]['desc']
                         else:
                             craft['desc'] = False
+                        if self.watchlist_tc[craft['type']]['img'] != '':
+                            craft['img'] = self.watchlist_tc[craft['type']]['img']
+                        else:
+                            craft['img'] = False
                         logging.debug(f'{craft["type"]} in watchlist, adding to spot queue')
                         self.append_craft(craft)
                 elif craft['reg'] == '' and self.spot_unknown is True:
                     # if there's no registration number and spot_unknown is set, add to tweet queue
                     craft['desc'] = False
+                    craft['img'] = False
                     logging.debug(f'Unknown registration number, adding to spot queue')
                     self.append_craft(craft)
                 elif craft['mil'] == '1' and self.spot_mil is True:
                     # if craft is designated military by ADS-B exchange and spot_mil is set, add to tweet queue
                     craft['desc'] = False
+                    craft['img'] = False
                     logging.debug("Aircraft is designated as military, adding to spot queue")
                     self.append_craft(craft)
                 else:
