@@ -41,9 +41,19 @@ Used to specify which active aircraft cause the bot to tweet spots. Currently, a
 ### Images
 Put any images specified in the Images column of watchlist.csv in the `images/` subdirectory. Any media type accepted by Twitter is allowable (JPEG, GIF, and PNG).
 
+
+### Location information
+airspotbot has several options for representing the geographical location of spotted aircraft. This is configured in the `[LOCATION]` section of `asb.config`.
+* "location_type": enter one of the following options:
+    * "manual": Use some string of text, like a place/region name. This is useful if your spotting coordinates and radius is close to a distinct landmark/area and you don't need any more granular location representation. For example, if airspotbot is set up to spot aircraft in a 1 nm radius of 51.4736, -0.4688, you might set this option to "manual" and "location_description" to "Heathrow Airport" so the bot just reports "*aircraft* is near Heathrow Airport".
+    * "coordinate": Tweets latitude/longitude coordinates, rounded to 4 decimal places.
+    * "pelias": Use pelias geocoder to reverse-lookup nearby landmarks based on the lat/long reported by ADSBx. Useful if you need airspotbot to cover a large area, such as a city with many neighborhoods and landmarks. The "pelias_host" option must also have a valid url to access a running instance of Pelias.
+* "location_description": If "location_type" is set to "manual", enter the text string you want to be tweeted along with the spot to identify the location (such as "Heathrow Airport", "Downtown Los Angeles", etc).
+* "pelias_host": Enter the url/port of an active Pelias instance, such as "http://192.168.1.5:4000". Required if you are using "location_type = pelias". [Find more information about Pelias here](https://github.com/pelias/documentation).
+    
+
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
-* Better location representation, including map and text description. Something along the lines of how [Advisory Circular](https://gitlab.com/jjwiseman/advisory-circular/) does it.
 * Add new "reply" column to watchlist. This will automatically reply to the spot tweet with the content entered in the reply cell. Sometimes, you want to add additional context such as an explanation or link.
 * Add automatic lookup of photos by registration number with jetphotos.com (`reply_jetphotos` option in config file is a placeholder for this)
 * Add automatic tweeting to notify followers of ADS-B Exchange API outage/error. Users should be informed if an error/outage is preventing spots from being tweeted. (`down_tweet` option in config file is a placeholder for this)
