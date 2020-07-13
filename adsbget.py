@@ -1,3 +1,6 @@
+# this script contains functionality that interfaces with the ADSBx API to pull information about active aircraft
+# also contains code to filter valid aircraft spots based on configuration of asb.config and watchlist.csv
+
 import logging
 from time import time
 import requests

@@ -1,11 +1,12 @@
+# this script contains functionality that interfaces with the twitter API to generate tweets
+# this also contains the main program loop of airspotbot
+
 import tweepy
 import configparser
 import logging
 from time import sleep, time
 import adsbget
 
-# TODO: write functions to generate spot tweets based on adsbexchange api data
-# TODO: write functions to pull supplementary information (registration, photos) for spots and add in tweet replies
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
