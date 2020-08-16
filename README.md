@@ -41,16 +41,17 @@ Used to specify which active aircraft cause the bot to tweet spots. Currently, a
 ### Images
 Put any images specified in the Images column of watchlist.csv in the `images/` subdirectory. Any media type accepted by Twitter is allowable (JPEG, GIF, and PNG).
 
-
 ### Location information
 airspotbot has several options for representing the geographical location of spotted aircraft. This is configured in the `[LOCATION]` section of `asb.config`.
-* "location_type": enter one of the following options:
-    * "manual": Use some string of text, like a place/region name. This is useful if your spotting coordinates and radius is close to a distinct landmark/area and you don't need any more granular location representation. For example, if airspotbot is set up to spot aircraft in a 1 nm radius of 51.4736, -0.4688, you might set this option to "manual" and "location_description" to "Heathrow Airport" so the bot just reports "*aircraft* is near Heathrow Airport".
+* `location_type`: enter one of the following options:
+    * "manual": Use some string of text, like a place/region name. This is useful if your spotting coordinates and radius is close to a distinct landmark/area and you don't need any more granular location representation. For example, if airspotbot is set up to spot aircraft in a 1 nm radius of 51.4736, -0.4688, you might set this option to "manual" and "location_description" to "near Heathrow Airport" so the bot just reports "*aircraft* is near Heathrow Airport".
     * "coordinate": Tweets latitude/longitude coordinates, rounded to 4 decimal places.
     * "pelias": Use pelias geocoder to reverse-lookup nearby landmarks based on the lat/long reported by ADSBx. Useful if you need airspotbot to cover a large area, such as a city with many neighborhoods and landmarks. The "pelias_host" option must also have a valid url to access a running instance of Pelias.
-* "location_description": If "location_type" is set to "manual", enter the text string you want to be tweeted along with the spot to identify the location (such as "Heathrow Airport", "Downtown Los Angeles", etc).
-* "pelias_host": Enter the url/port of an active Pelias instance, such as "http://192.168.1.5:4000". Required if you are using "location_type = pelias". [Find more information about Pelias here](https://github.com/pelias/documentation).
-    
+* `location_description`: If "location_type" is set to "manual", enter the text string you want to be tweeted along with the spot to identify the location (such as "near Heathrow Airport", "over Downtown Los Angeles", etc).
+* `pelias_host`: Enter the url/port of an active Pelias instance running a reverse geocoding endpoint, such as "http://192.168.1.5:4000". Required if you are using "location_type = pelias". [Find more information about Pelias here](https://github.com/pelias/documentation).
+* `pelias_port`: Port for API endpoint at host
+* `pelias_area_layer`: Contains the pelias layer name used to determine the nearest area to the spotted aircraft. "neighbourhood" is a good default, but can be changed depending on how coarse/fine you need. If empty, the description will not include an area. See [the Pelias docs](https://github.com/pelias/documentation/blob/master/reverse.md) for information on valid layers for the reverse geocoding endpoint. 
+* `pelias_point_layer`: Contains the pelias layer name used to determine the closest point of interest to the spotted aircraft. "venue" is a good default, but can be changed depending on how coarse/fine you need. If empty, the description will not include a nearby point of interest. See [the Pelias docs](https://github.com/pelias/documentation/blob/master/reverse.md) for information on valid layers for the reverse geocoding endpoint. 
 
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
@@ -60,7 +61,7 @@ Here are some planned features/fixes. You are welcome to work on these if you ar
 
  
  ## Contributing
- Contributions are welcome, including those from new/novice contributors (I'm still a Python novice myself!). Source code contributions should be via pull requests. Bug reports and feature requests via opening issues. If you want to suggest a specific aircraft type or registration number for @phxairspots or another airspotbot-powered account to monitor, please contact the account directly rather than changing `watchlist.csv` in this repository.
+ Contributions are welcome, including those from new/novice contributors. Source code contributions should be via pull requests. Bug reports and feature requests via opening issues. If you want to suggest a specific aircraft type or registration number for @phxairspots or another airspotbot-powered account to monitor, please contact the account directly rather than changing `watchlist.csv` in this repository.
  
  ## License
  airspotbot is licensed under GNU General Public License v3.0. See `LICENSE.md` for details.

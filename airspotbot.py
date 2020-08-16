@@ -1,12 +1,14 @@
-# this script contains functionality that interfaces with the twitter API to generate tweets
-# this also contains the main program loop of airspotbot
+"""
+This module contains the class SpotBot, which interfaces with the twitter API to generate airspotbot's tweets.
+It also has the main program loop of airspotbot, so executing this module starts airspotbot.
+"""
 
 import tweepy
 import configparser
 import logging
 from time import sleep, time
 import adsbget
-
+import location
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
@@ -24,9 +26,10 @@ class SpotBot:
         self.down_tweet = False
         self.twitter_config = self.read_twitter_config()
         self.api = self.initialize_twitter_api()
+        self.loc = location.Locator(self.config_file_path)
 
     def initialize_twitter_api(self):
-        # Authenticate to Twitter
+        """Authenticate to Twitter API, check credentials and connection"""
         logging.info(f'Twitter consumer key: {self.consumer_key}')
         logging.info(f'Twitter consumer secret: {self.consumer_secret}')
         logging.info(f'Twitter access token: {self.access_token}')
@@ -45,6 +48,7 @@ class SpotBot:
         return api
 
     def read_twitter_config(self):
+        """Read configuration values from file and check whether values are sane"""
         parser = configparser.ConfigParser()
         parser.read(self.config_file_path)  # read config file at path
         try:
@@ -77,8 +81,7 @@ class SpotBot:
     def tweet_spot(self, aircraft: dict):
         icao, type_code, reg_num, lat, lon, description, alt, speed, callsign = aircraft['icao'], aircraft['type'], aircraft['reg'], aircraft['lat'], aircraft['lon'], aircraft['desc'], aircraft['alt'], aircraft['spd'], aircraft['call']
         link = f'https://tar1090.adsbexchange.com/?icao={icao}'
-        location = str(round(float(lat), 4)) + ', ' + str(round(float(lon), 4))
-        # TODO: function to tweet out aircraft spots
+        location = self.loc.get_location_description(lat, lon)
         if reg_num.strip() == '':
             reg = 'unknown'
         if type_code.strip() == '':
@@ -86,7 +89,7 @@ class SpotBot:
         if callsign == reg_num:
             # if callsign is same as the registration number, ADSBx is not reporting a callsign
             callsign = False
-        tweet = f"{description if description else type_code}{', callsign '+ callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is near {location}. Altitude {alt} ft, speed {speed} kt. {link}"
+        tweet = f"{description if description else type_code}{', callsign '+ callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is {location}. Altitude {alt} ft, speed {speed} kt. {link}"
         if aircraft['img']:
             image_path = "images/" + aircraft['img'] # always look for images in the /images subfolder of working directory
             try:
