@@ -154,7 +154,7 @@ class Locator:
                 pelias_result.raise_for_status()
                 try:
                     point_name = pelias_result.json()["features"][0]["properties"]["name"]
-                except (AttributeError, KeyError):
+                except (AttributeError, KeyError, IndexError):
                     logging.warning("No point feature found")
                     point_name = None
             else:
@@ -164,7 +164,7 @@ class Locator:
                 pelias_result.raise_for_status()
                 try:
                     area_name = pelias_result.json()["features"][0]["properties"]["name"]
-                except (AttributeError, KeyError):
+                except (AttributeError, KeyError, IndexError):
                     logging.warning("No area feature found")
                     area_name = None
             else:
