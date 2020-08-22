@@ -130,14 +130,14 @@ class Locator:
         """Return a human-readable location description, based on settings in config file"""
         coord_string = str(round(float(lat), 4)) + ', ' + str(round(float(long), 4))
         if self.location_type == 'COORDINATE':
-            return "near " + coord_string
+            return f"near {coord_string}"
         elif self.location_type == 'MANUAL':
             return self.location_manual_description
         elif self.location_type == 'PELIAS':
             geocode = self._reverse_geocode(lat, long)
             if geocode['area'] is None and geocode['point'] is None:
                 logging.warning("No reverse geocoding results returned, defaulting to coordinate location")
-                return coord_string
+                return f"near {coord_string}"
             elif geocode['area'] is None:
                 return f"near {geocode['point']}"
             elif geocode['point'] is None:
