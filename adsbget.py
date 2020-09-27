@@ -7,7 +7,6 @@ from time import time
 import requests
 import configparser
 import csv
-import json
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
