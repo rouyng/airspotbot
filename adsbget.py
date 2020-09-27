@@ -105,7 +105,7 @@ class Spotter:
                 raise ValueError()
         except (configparser.NoOptionError, configparser.NoSectionError) as e:
             logging.critical(f'Configuration file error: {e}')
-            raise Exception(e)
+            raise e
 
     def _read_watchlist(self):
         """Load aircraft to watch from watchlist csv file"""
