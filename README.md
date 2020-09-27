@@ -28,7 +28,7 @@ Used to set your API keys and other bot configuration, such as tweeting interval
 
 `radius` parameter indicates the radius in nautical miles around the specified latitude/longitude that will be queried for aircraft activity. It must have a value of 1, 5, 10, 25, 100 or 250. Due to ADS-B Exchange API limitations, any values larger, smaller or in between these will cause an error and cannot be used.
  
-`down_tweet` and `reply_jetphotos` parameters are currently nonfunctional placeholders for planned features. See TODO section for more information.
+`down_tweet` is a currently nonfunctional placeholder for a planned feature. See TODO section for more information.
   
 ### watchlist.csv
 Used to specify which active aircraft cause the bot to tweet spots. Currently, airspotbot supports specifying aircraft by registration number or ICAO aircraft type code. Please note that setting `spot_unknown` and/or `spot_mil` options to "Y" in `asb.config` will cause unknown and/or military aircraft to generate tweets regardless of what is set in `watchlist.csv`.
