@@ -17,25 +17,25 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(m
 class SpotBot:
     def __init__(self, config_file_path):
         self.config_file_path = config_file_path
-        self.interval = 5
-        self.consumer_key = None
-        self.consumer_secret = None
-        self.access_token = None
-        self.access_token_secret = None
-        self.use_descriptions = False
-        self.down_tweet = False
-        self.read_twitter_config()
-        self.api = self.initialize_twitter_api()
-        self.loc = location.Locator(self.config_file_path)
+        self._interval = 5
+        self._consumer_key = None
+        self._consumer_secret = None
+        self._access_token = None
+        self._access_token_secret = None
+        self._use_descriptions = False
+        self._down_tweet = False
+        self._read_twitter_config()
+        self._api = self._initialize_twitter_api()
+        self._loc = location.Locator(self.config_file_path)
 
-    def initialize_twitter_api(self):
+    def _initialize_twitter_api(self):
         """Authenticate to Twitter API, check credentials and connection"""
-        logging.info(f'Twitter consumer key: {self.consumer_key}')
-        logging.info(f'Twitter consumer secret: {self.consumer_secret}')
-        logging.info(f'Twitter access token: {self.access_token}')
-        logging.info(f'Twitter access token secret: {self.access_token_secret}')
-        auth = tweepy.OAuthHandler(self.consumer_key, self.consumer_secret)
-        auth.set_access_token(self.access_token, self.access_token_secret)
+        logging.info(f'Twitter consumer key: {self._consumer_key}')
+        logging.info(f'Twitter consumer secret: {self._consumer_secret}')
+        logging.info(f'Twitter access token: {self._access_token}')
+        logging.info(f'Twitter access token secret: {self._access_token_secret}')
+        auth = tweepy.OAuthHandler(self._consumer_key, self._consumer_secret)
+        auth.set_access_token(self._access_token, self._access_token_secret)
         api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True) # Create API object
         try:
             # test that authentication worked
@@ -47,26 +47,26 @@ class SpotBot:
         logging.info('Twitter API created')
         return api
 
-    def read_twitter_config(self):
+    def _read_twitter_config(self):
         """Read configuration values from file and check whether values are sane"""
         parser = configparser.ConfigParser()
         parser.read(self.config_file_path)  # read config file at path
         try:
-            self.interval = int(parser.get('TWITTER', 'tweet_interval'))
-            self.consumer_key = parser.get('TWITTER', 'consumer_key')
-            self.consumer_secret = parser.get('TWITTER', 'consumer_secret')
-            self.access_token = parser.get('TWITTER', 'access_token')
-            self.access_token_secret = parser.get('TWITTER', 'access_token_secret')
+            self._interval = int(parser.get('TWITTER', 'tweet_interval'))
+            self._consumer_key = parser.get('TWITTER', 'consumer_key')
+            self._consumer_secret = parser.get('TWITTER', 'consumer_secret')
+            self._access_token = parser.get('TWITTER', 'access_token')
+            self._access_token_secret = parser.get('TWITTER', 'access_token_secret')
             if parser.get('TWITTER', 'use_descriptions').lower() == 'y':
-                self.use_descriptions = True
+                self._use_descriptions = True
             elif parser.get('TWITTER', 'use_descriptions').lower() == 'n':
-                self.use_descriptions = False
+                self._use_descriptions = False
             else:
                 raise ValueError()
             if parser.get('TWITTER', 'down_tweet').lower() == 'y':
-                self.down_tweet = True
+                self._down_tweet = True
             elif parser.get('TWITTER', 'down_tweet').lower() == 'n':
-                self.down_tweet = False
+                self._down_tweet = False
             else:
                 raise ValueError()
         except (configparser.NoOptionError, configparser.NoSectionError) as e:
@@ -75,7 +75,7 @@ class SpotBot:
     def tweet_spot(self, aircraft: dict):
         icao, type_code, reg_num, lat, lon, description, alt, speed, callsign = aircraft['icao'], aircraft['type'], aircraft['reg'], aircraft['lat'], aircraft['lon'], aircraft['desc'], aircraft['alt'], aircraft['spd'], aircraft['call']
         link = f'https://tar1090.adsbexchange.com/?icao={icao}'
-        location_description = self.loc.get_location_description(lat, lon)
+        location_description = self._loc.get_location_description(lat, lon)
         if reg_num.strip() == '':
             reg_num = 'unknown'
         if type_code.strip() == '':
@@ -85,11 +85,11 @@ class SpotBot:
             callsign = False
         tweet = f"{description if description else type_code}{', callsign '+ callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is {location_description}. Altitude {alt} ft, speed {speed} kt. {link}"
         if aircraft['img']:
-            image_path = "images/" + aircraft['img'] # always look for images in the /images subfolder of working directory
+            image_path = "images/" + aircraft['img'] # always look for images in the /images subfolder
             try:
                 # if an image path is specified, upload it
                 logging.debug(f"Uploading image from {image_path}")
-                image = self.api.media_upload(image_path)
+                image = self._api.media_upload(image_path)
             except tweepy.error.TweepError:
                 # if upload fails, handle exception and proceed gracefully without an image
                 logging.warning(f"Error uploading image from {image_path}, check if file exists")
@@ -100,19 +100,19 @@ class SpotBot:
         try:
             if image:
                 try:
-                    self.api.update_status(tweet, media_ids=[image.media_id])
+                    self._api.update_status(tweet, media_ids=[image.media_id])
                 except AttributeError as e:
                     # catch an attribute error, in case media upload fails in an unexpected way
                     logging.warning("Attribute error when sending tweet")
                     logging.warning(e)
-                    self.api.update_status(tweet)
+                    self._api.update_status(tweet)
             else:
-                self.api.update_status(tweet)
+                self._api.update_status(tweet)
         except tweepy.error.TweepError as e:
             logging.critical('Error sending tweet')
             raise e
 
-    def link_reply(self):
+    def _link_reply(self):
         # TODO: function to reply to to a tweet generated by tweet_spot with a link defined in watchlist.csv
         pass
 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
         if time() > spot_time + spots.interval:
             spots.check_spots()
             spot_time = time()
-        elif time() > bot_time + bot.interval:
+        elif time() > bot_time + bot._interval:
             for i in range(0, len(spots.spot_queue)):
                 spot = spots.spot_queue.pop(0)
                 bot.tweet_spot(spot)
