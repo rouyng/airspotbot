@@ -3,10 +3,11 @@ This module contains the class SpotBot, which interfaces with the twitter API to
 It also has the main program loop of airspotbot, so executing this module starts airspotbot.
 """
 
-import tweepy
+
 import configparser
 import logging
 from time import sleep, time
+import tweepy
 import adsbget
 import location
 
