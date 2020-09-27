@@ -42,7 +42,7 @@ class SpotBot:
             api.verify_credentials()
             logging.info("Authentication OK")
         except tweepy.error.TweepError as e:
-            logging.critical(f'Error during Twitter API authentication')
+            logging.critical('Error during Twitter API authentication')
             raise e
         logging.info('Twitter API created')
         return api
