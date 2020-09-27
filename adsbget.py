@@ -118,20 +118,19 @@ class Spotter:
                         # Cell A1 should be the the first cell of the title row
                         # If the expected value of "Key" is present, move to the next row
                         continue
-                    else:
-                        if row[1] == 'RN':
-                            self.watchlist_rn[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
-                            logging.info(f'Added {row[0]} to reg num watchlist. Description: "{row[3]}", image: {row[4]}')
-                        elif row[1] == 'TC':
-                            if row[2].lower() == 'y':
-                                mil_only = True
-                            else:
-                                mil_only = False
-                            self.watchlist_tc[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip(), 'mil_only': mil_only}
-                            logging.info(f'Added {row[0]} to type code watchlist. Military only: {mil_only} Description: "{row[3]}", image: {row[4]}')
-                        elif row[1] == 'IA':
-                            self.watchlist_ia[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
-                            logging.info(f'Added {row[0]} to ICAO address watchlist. Description: "{row[3]}", image: {row[4]}')
+                    elif row[1] == 'RN':
+                        self.watchlist_rn[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
+                        logging.info(f'Added {row[0]} to reg num watchlist. Description: "{row[3]}", image: {row[4]}')
+                    elif row[1] == 'TC':
+                        if row[2].lower() == 'y':
+                            mil_only = True
+                        else:
+                            mil_only = False
+                        self.watchlist_tc[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip(), 'mil_only': mil_only}
+                        logging.info(f'Added {row[0]} to type code watchlist. Military only: {mil_only} Description: "{row[3]}", image: {row[4]}')
+                    elif row[1] == 'IA':
+                        self.watchlist_ia[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
+                        logging.info(f'Added {row[0]} to ICAO address watchlist. Description: "{row[3]}", image: {row[4]}')
                 except IndexError as e:
                     logging.error("Error reading watchlist.csv, please check the watchlist file.")
                     raise e
