@@ -252,4 +252,3 @@ class Spotter:
                     # if none of these criteria are met, iterate to next aircraft in the spotted list
                     logging.debug(f"{craft['icao']} did not meet any spotting critera, not added to queue")
                     continue
-
