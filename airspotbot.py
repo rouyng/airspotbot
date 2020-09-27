@@ -24,7 +24,7 @@ class SpotBot:
         self.access_token_secret = None
         self.use_descriptions = False
         self.down_tweet = False
-        self.twitter_config = self.read_twitter_config()
+        self.read_twitter_config()
         self.api = self.initialize_twitter_api()
         self.loc = location.Locator(self.config_file_path)
 
