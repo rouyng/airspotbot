@@ -1,3 +1,7 @@
+"""This module contains functionality that interfaces with the ADSBx API to pull information about active aircraft
+Also contains code to filter valid aircraft spots based on configuration of asb.config and watchlist.csv
+"""
+
 import logging
 from time import time
 import requests
@@ -9,6 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(m
 
 
 class Spotter:
+    """Class for fetching active aircraft from ADSBx API and returning those that meet watchlist criteria"""
     def __init__(self, config_file_path, watchlist_path):
         self.config_file_path = config_file_path
         self.watchlist_path = watchlist_path
@@ -30,9 +35,10 @@ class Spotter:
         self.logging_level = "INFO"  # verbosity level of log messages
         self.headers = {}
         self.read_adsb_config()
-        self.read_watchlist()
+        self._read_watchlist()
 
     def read_adsb_config(self):
+        """Read configuration values from file and check whether values are sane"""
         logging.info(f'Loading ADSB exchange configuration from {self.config_file_path}')
         parser = configparser.ConfigParser()
         parser.read(self.config_file_path)  # read config file at path
@@ -102,39 +108,45 @@ class Spotter:
             logging.critical(f'Configuration file error: {e}')
             raise Exception(e)
 
-    def read_watchlist(self):
+    def _read_watchlist(self):
+        """Load aircraft to watch from watchlist csv file"""
         logging.info(f'Loading watchlist from {self.watchlist_path}')
         with open(self.watchlist_path) as watchlist_file:
             csv_reader = csv.reader(watchlist_file, delimiter=',')
             for row in csv_reader:
-                if row[0] == 'Key':
-                    continue
-                else:
-                    if row[1] == 'RN':
-                        self.watchlist_rn[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
-                        logging.info(f'Added {row[0]} to reg num watchlist. Description: "{row[3]}", image: {row[4]}')
-                    elif row[1] == 'TC':
-                        if row[2].lower() == 'y':
-                            mil_only = True
-                        else:
-                            mil_only = False
-                        self.watchlist_tc[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip(), 'mil_only': mil_only}
-                        logging.info(f'Added {row[0]} to type code watchlist. Military only: {mil_only} Description: "{row[3]}", image: {row[4]}')
-                    elif row[1] == 'IA':
-                        self.watchlist_ia[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
-                        logging.info(f'Added {row[0]} to ICAO address watchlist. Description: "{row[3]}", image: {row[4]}')
+                try:
+                    if row[0] == 'Key':
+                        continue
+                    else:
+                        if row[1] == 'RN':
+                            self.watchlist_rn[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
+                            logging.info(f'Added {row[0]} to reg num watchlist. Description: "{row[3]}", image: {row[4]}')
+                        elif row[1] == 'TC':
+                            if row[2].lower() == 'y':
+                                mil_only = True
+                            else:
+                                mil_only = False
+                            self.watchlist_tc[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip(), 'mil_only': mil_only}
+                            logging.info(f'Added {row[0]} to type code watchlist. Military only: {mil_only} Description: "{row[3]}", image: {row[4]}')
+                        elif row[1] == 'IA':
+                            self.watchlist_ia[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
+                            logging.info(f'Added {row[0]} to ICAO address watchlist. Description: "{row[3]}", image: {row[4]}')
+                except IndexError as e:
+                    logging.error("Error reading watchlist.csv, please check the watchlist file.")
+                    raise e
             logging.info(f'Added {len(self.watchlist_rn) + len(self.watchlist_tc) + len(self.watchlist_ia)} entries to the watchlist')
 
-    def append_craft(self, aircraft):
-        # add aircraft to spot queue and seen list
+    def _append_craft(self, aircraft):
+        """Add aircraft to spot queue and seen list"""
         icao = aircraft['icao']
         logging.info(f'Aircraft added to queue. ICAO #: {icao}')
         self.spot_queue.append(aircraft)
         self.seen[icao] = time()
 
-    def check_seen(self):
-        # before checking for new spots, this function is run to clear aircraft off the "seen" list
-        # so aircraft that loiter longer than the cooldown time will generate new tweets
+    def _check_seen(self):
+        """Before checking for new spots, this function is run to clear aircraft off the "seen" list
+        so aircraft that loiter longer than the cooldown time will generate new tweets
+        """
         del_list = []
         for k, t in self.seen.items():
             if t < time() - self.cooldown:
@@ -144,6 +156,7 @@ class Spotter:
             del self.seen[d]
 
     def check_spots(self):
+        """Check for new spotted aircraft that meet watchlist criteria"""
         logging.info(f'Checking for aircraft via ADSBx API (endpoint: {self.adsb_api_endpoint})')
         try:
             response = requests.request("GET", self.url, headers=self.headers, timeout=4)
@@ -157,7 +170,7 @@ class Spotter:
         except (requests.exceptions.HTTPError, requests.exceptions.Timeout, AttributeError) as err:
             logging.error(f'Error with API request: {err}')
             spotted_aircraft = []
-        self.check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
+        self._check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
         for c in spotted_aircraft:
             # This loop checks all spotted aircraft against your watchlist and preferences to determine
             # if it should be added to the tweet queue
@@ -184,7 +197,7 @@ class Spotter:
                         craft['img'] = self.watchlist_ia[craft['icao']]['img']
                     else:
                         craft['img'] = False
-                    self.append_craft(craft)
+                    self._append_craft(craft)
                 elif craft['reg'] in self.watchlist_rn.keys():
                     logging.debug(f'{craft["reg"]} in watchlist, adding to spot queue')
                     # if the aircraft's registration number is on the watchlist, add it to the queue
@@ -197,7 +210,7 @@ class Spotter:
                         craft['img'] = self.watchlist_rn[craft['reg']]['img']
                     else:
                         craft['img'] = False
-                    self.append_craft(craft)
+                    self._append_craft(craft)
                 elif craft['type'] in self.watchlist_tc.keys():
                     if self.watchlist_tc[craft['type']]['mil_only'] is True and craft['mil'] == '1':
                         if self.watchlist_tc[craft['type']]['desc'] != '':
@@ -209,7 +222,7 @@ class Spotter:
                         else:
                             craft['img'] = False
                         logging.debug(f'{craft["type"]} in watchlist as military-only and mil=1, adding to spot queue')
-                        self.append_craft(craft)
+                        self._append_craft(craft)
                     elif self.watchlist_tc[craft['type']]['mil_only'] is True and craft['mil'] == '0':
                         logging.debug(f'{craft["type"]} in watchlist as military-only and mil=0, not adding to spot queue')
                         continue
@@ -223,19 +236,19 @@ class Spotter:
                         else:
                             craft['img'] = False
                         logging.debug(f'{craft["type"]} in watchlist, adding to spot queue')
-                        self.append_craft(craft)
+                        self._append_craft(craft)
                 elif craft['reg'] == '' and self.spot_unknown is True:
                     # if there's no registration number and spot_unknown is set, add to tweet queue
                     craft['desc'] = False
                     craft['img'] = False
                     logging.debug(f'Unknown registration number, adding to spot queue')
-                    self.append_craft(craft)
+                    self._append_craft(craft)
                 elif craft['mil'] == '1' and self.spot_mil is True:
                     # if craft is designated military by ADS-B exchange and spot_mil is set, add to tweet queue
                     craft['desc'] = False
                     craft['img'] = False
                     logging.debug("Aircraft is designated as military, adding to spot queue")
-                    self.append_craft(craft)
+                    self._append_craft(craft)
                 else:
                     # if none of these criteria are met, iterate to next aircraft in the spotted list
                     logging.debug(f"{craft['icao']} did not meet any spotting critera, not added to queue")
