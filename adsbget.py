@@ -115,6 +115,8 @@ class Spotter:
             for row in csv_reader:
                 try:
                     if row[0] == 'Key':
+                        # Cell A1 should be the the first cell of the title row
+                        # If the expected value of "Key" is present, move to the next row
                         continue
                     else:
                         if row[1] == 'RN':
