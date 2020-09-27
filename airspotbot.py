@@ -77,7 +77,7 @@ class SpotBot:
         link = f'https://tar1090.adsbexchange.com/?icao={icao}'
         location_description = self.loc.get_location_description(lat, lon)
         if reg_num.strip() == '':
-            reg = 'unknown'
+            reg_num = 'unknown'
         if type_code.strip() == '':
             type_code = 'Unknown aircraft type'
         if callsign == reg_num:
