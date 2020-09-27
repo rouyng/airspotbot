@@ -30,7 +30,7 @@ class SpotBot:
 
     def __init__(self, config_file_path):
         self.config_file_path = config_file_path
-        self._interval = 5
+        self.interval = 5
         self._consumer_key = None
         self._consumer_secret = None
         self._access_token = None
@@ -65,7 +65,7 @@ class SpotBot:
         parser = configparser.ConfigParser()
         parser.read(self.config_file_path)  # read config file at path
         try:
-            self._interval = int(parser.get('TWITTER', 'tweet_interval'))
+            self.interval = int(parser.get('TWITTER', 'tweet_interval'))
             self._consumer_key = parser.get('TWITTER', 'consumer_key')
             self._consumer_secret = parser.get('TWITTER', 'consumer_secret')
             self._access_token = parser.get('TWITTER', 'access_token')
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         if time() > spot_time + spots.interval:
             spots.check_spots()
             spot_time = time()
-        elif time() > bot_time + bot._interval:
+        elif time() > bot_time + bot.interval:
             for i in range(0, len(spots.spot_queue)):
                 spot = spots.spot_queue.pop(0)
                 bot.tweet_spot(spot)
