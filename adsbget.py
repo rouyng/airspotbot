@@ -118,7 +118,7 @@ class Spotter:
                         # Cell A1 should be the the first cell of the title row
                         # If the expected value of "Key" is present, move to the next row
                         continue
-                    elif row[1] == 'RN':
+                    if row[1] == 'RN':
                         self.watchlist_rn[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
                         logging.info(f'Added {row[0]} to reg num watchlist. Description: "{row[3]}", image: {row[4]}')
                     elif row[1] == 'TC':
