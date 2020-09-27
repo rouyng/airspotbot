@@ -15,6 +15,19 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(m
 
 
 class SpotBot:
+    """Generates formatted tweet text and interfaces with the twitter API.
+
+        simple usage example:
+
+        bot = SpotBot('asb.config')   # initialize class (API connection created at this time)
+        spots = adsbget.Spotter('asb.config', 'watchlist.csv')
+        while True:
+            spots.check_spots()
+            spot = spots.spot_queue.pop(0)
+            bot.tweet_spot(spot)
+            sleep(30)
+    """
+
     def __init__(self, config_file_path):
         self.config_file_path = config_file_path
         self._interval = 5
@@ -73,6 +86,9 @@ class SpotBot:
             logging.critical(f'Configuration file error: {e}')
 
     def tweet_spot(self, aircraft: dict):
+        """Generate tweet based on aircraft data returned in dictionary format from the adsbget module's
+        Spotter.spot_queue list of dictionaries.
+        """
         icao, type_code, reg_num, lat, lon, description, alt, speed, callsign = aircraft['icao'], aircraft['type'], aircraft['reg'], aircraft['lat'], aircraft['lon'], aircraft['desc'], aircraft['alt'], aircraft['spd'], aircraft['call']
         link = f'https://tar1090.adsbexchange.com/?icao={icao}'
         location_description = self._loc.get_location_description(lat, lon)
