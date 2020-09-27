@@ -241,7 +241,7 @@ class Spotter:
                     # if there's no registration number and spot_unknown is set, add to tweet queue
                     craft['desc'] = False
                     craft['img'] = False
-                    logging.debug(f'Unknown registration number, adding to spot queue')
+                    logging.debug('Unknown registration number, adding to spot queue')
                     self._append_craft(craft)
                 elif craft['mil'] == '1' and self.spot_mil is True:
                     # if craft is designated military by ADS-B exchange and spot_mil is set, add to tweet queue
