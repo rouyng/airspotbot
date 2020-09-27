@@ -75,7 +75,7 @@ class SpotBot:
     def tweet_spot(self, aircraft: dict):
         icao, type_code, reg_num, lat, lon, description, alt, speed, callsign = aircraft['icao'], aircraft['type'], aircraft['reg'], aircraft['lat'], aircraft['lon'], aircraft['desc'], aircraft['alt'], aircraft['spd'], aircraft['call']
         link = f'https://tar1090.adsbexchange.com/?icao={icao}'
-        location = self.loc.get_location_description(lat, lon)
+        location_description = self.loc.get_location_description(lat, lon)
         if reg_num.strip() == '':
             reg = 'unknown'
         if type_code.strip() == '':
@@ -83,7 +83,7 @@ class SpotBot:
         if callsign == reg_num:
             # if callsign is same as the registration number, ADSBx is not reporting a callsign
             callsign = False
-        tweet = f"{description if description else type_code}{', callsign '+ callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is {location}. Altitude {alt} ft, speed {speed} kt. {link}"
+        tweet = f"{description if description else type_code}{', callsign '+ callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is {location_description}. Altitude {alt} ft, speed {speed} kt. {link}"
         if aircraft['img']:
             image_path = "images/" + aircraft['img'] # always look for images in the /images subfolder of working directory
             try:
