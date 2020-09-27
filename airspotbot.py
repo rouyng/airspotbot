@@ -139,9 +139,3 @@ if __name__ == "__main__":
             bot_time = time()
         else:
             sleep(1)
-
-
-
-
-
-
