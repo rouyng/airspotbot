@@ -4,9 +4,9 @@ Also contains code to filter valid aircraft spots based on configuration of asb.
 
 import logging
 from time import time
-import requests
 import configparser
 import csv
+import requests
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
