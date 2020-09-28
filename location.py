@@ -39,7 +39,7 @@ class Locator:
                                     'coarse')
         self.pelias_point_layer = ''
         self.pelias_area_layer = ''
-        self._read_pelias_config(self.config_file_path)
+        self._read_pelias_config()
 
     def _read_pelias_config(self):
         """Read configuration values from file and check whether values are sane"""
