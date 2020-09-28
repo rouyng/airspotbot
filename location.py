@@ -67,16 +67,16 @@ class Locator:
             try:
                 self.pelias_host = str(parser.get('LOCATION', 'pelias_host'))
                 assert self.pelias_host != ''
-            except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
+            except (configparser.NoOptionError, configparser.NoSectionError, AssertionError) as e:
                 logging.error(f'pelias is selected as the location type, but pelias_host is not set in {self.config_file_path}. Please enter a url/IP address of a valid pelias instance')
-                raise configparser.NoOptionError
+                raise configparser.NoOptionError from e
             # read pelias API port from config file
             try:
                 self.pelias_port = int(parser.get('LOCATION', 'pelias_port'))
                 assert self.pelias_port != 0
-            except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
+            except (configparser.NoOptionError, configparser.NoSectionError, AssertionError) as e:
                 logging.error(f'Pelias port is not set in {self.config_file_path}')
-                raise configparser.NoOptionError
+                raise configparser.NoOptionError from e
             # construct a url to test the API
             # uses an arbitrary location and just checks that the API response looks like it is in the correct format
             # there is NO check to see whether the pelias host has geolocation data for the lat/longitude used by ASB
