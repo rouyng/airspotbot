@@ -8,9 +8,9 @@ area and/or points of interest. This last option is provided by a requests to th
 For more information on this Pelias endpoint, see https://github.com/pelias/documentation/blob/master/reverse.md
 """
 
+import configparser
 import logging
 import requests
-import configparser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
