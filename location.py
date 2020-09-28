@@ -143,7 +143,6 @@ class Locator:
             return f"over {geocode['area']}, near {geocode['point']}"
         return f"near {coord_string}"
 
-
     def _reverse_geocode(self, lat, long):
         self.pelias_url = f'{self.pelias_host}:{self.pelias_port}/v1/reverse?point.lat={lat}&point.lon={long}'
         geo_results = {}
@@ -177,5 +176,3 @@ class Locator:
             geo_results['point'] = None
             geo_results['area'] = None
         return geo_results
-
-
