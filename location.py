@@ -94,10 +94,10 @@ class Locator:
                     assert 'features' in result_keys
                     logging.info(f'Pelias API at {self.pelias_host}:{self.pelias_port} appears to be functional')
                 except AssertionError:
-                    logging.error(f'Pelias API response was not as expected, reverting location type to coordinates')
+                    logging.error('Pelias API response was not as expected, reverting location type to coordinates')
                     self.location_type = 'COORDINATES'
             except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as e:
-                logging.error(f'Error connecting to Pelias API, reverting location type to coordinates')
+                logging.error('Error connecting to Pelias API, reverting location type to coordinates')
                 logging.error(e)
                 self.location_type = 'COORDINATES'
             # read pelias layers to use from file- see README.md and https://github.com/pelias/documentation/blob/master/reverse.md
@@ -173,7 +173,7 @@ class Locator:
             geo_results['area'] = area_name
             return geo_results
         except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as e:
-            logging.error(f'Error connecting to Pelias API')
+            logging.error('Error connecting to Pelias API')
             logging.error(e)
             geo_results['point'] = None
             geo_results['area'] = None
