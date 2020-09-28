@@ -129,21 +129,20 @@ class Locator:
     def get_location_description(self, lat, long):
         """Return a human-readable location description, based on settings in config file"""
         coord_string = str(round(float(lat), 4)) + ', ' + str(round(float(long), 4))
-        if self.location_type == 'COORDINATE':
-            return f"near {coord_string}"
-        elif self.location_type == 'MANUAL':
-            return self.location_manual_description
-        elif self.location_type == 'PELIAS':
+        if self.location_type == 'MANUAL':
+            return self.location_manual_description  # return string specified in config file
+        if self.location_type == 'PELIAS':
             geocode = self._reverse_geocode(lat, long)
             if geocode['area'] is None and geocode['point'] is None:
                 logging.warning("No reverse geocoding results returned, defaulting to coordinate location")
                 return f"near {coord_string}"
-            elif geocode['area'] is None:
+            if geocode['area'] is None:
                 return f"near {geocode['point']}"
-            elif geocode['point'] is None:
+            if geocode['point'] is None:
                 return f"over {geocode['area']}"
-            else:
-                return f"over {geocode['area']}, near {geocode['point']}"
+            return f"over {geocode['area']}, near {geocode['point']}"
+        return f"near {coord_string}"
+
 
     def _reverse_geocode(self, lat, long):
         self.pelias_url = f'{self.pelias_host}:{self.pelias_port}/v1/reverse?point.lat={lat}&point.lon={long}'
