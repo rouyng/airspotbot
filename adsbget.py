@@ -122,10 +122,7 @@ class Spotter:
                         self.watchlist_rn[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
                         logging.info(f'Added {row[0]} to reg num watchlist. Description: "{row[3]}", image: {row[4]}')
                     elif row[1] == 'TC':
-                        if row[2].lower() == 'y':
-                            mil_only = True
-                        else:
-                            mil_only = False
+                        mil_only = bool(row[2].lower() == 'y')
                         self.watchlist_tc[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip(), 'mil_only': mil_only}
                         logging.info(f'Added {row[0]} to type code watchlist. Military only: {mil_only} Description: "{row[3]}", image: {row[4]}')
                     elif row[1] == 'IA':
