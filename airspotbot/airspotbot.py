@@ -8,8 +8,7 @@ import configparser
 import logging
 from time import sleep, time
 import tweepy
-import adsbget
-import location
+from airspotbot import adsbget, location
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
@@ -133,9 +132,18 @@ class SpotBot:
         pass
 
 
-if __name__ == "__main__":
-    bot = SpotBot('asb.config')
-    spots = adsbget.Spotter('asb.config', 'watchlist.csv')
+def run_bot():
+    """This function runs the main functionality of airspotbot.
+
+    Usage example:
+    import airspotbot
+    airspotbot.run_bot()"""
+
+    config_file_path = './config/asb.config'
+    watchlist_file_path = './config/watchlist.csv'
+
+    bot = SpotBot(config_file_path)
+    spots = adsbget.Spotter(config_file_path, watchlist_file_path)
     bot_time = time()
     spot_time = time()
     # check for aircraft and tweet any when bot first starts
@@ -155,3 +163,7 @@ if __name__ == "__main__":
             bot_time = time()
         else:
             sleep(1)
+
+
+if __name__ == "__main__":
+    run_bot()
