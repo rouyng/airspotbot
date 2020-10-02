@@ -1,3 +1,3 @@
-from .airspotbot import run_bot
-run_bot()
+from . import airspotbot
+airspotbot.run_bot()
 

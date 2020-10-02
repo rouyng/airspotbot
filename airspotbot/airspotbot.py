@@ -8,7 +8,7 @@ import configparser
 import logging
 from time import sleep, time
 import tweepy
-from airspotbot import adsbget, location
+from . import adsbget, location
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
