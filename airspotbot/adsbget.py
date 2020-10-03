@@ -33,17 +33,21 @@ class Spotter:
         self.url = ""
         self.logging_level = "INFO"  # verbosity level of log messages
         self.headers = {}
-        self.read_adsb_config()
+        self.validate_adsb_config(self.read_adsb_config())
         self._read_watchlist()
 
     def read_adsb_config(self):
-        """Read configuration values from file and check whether values are sane"""
+        """Read configuration values from file"""
         logging.info(f'Loading ADSB exchange configuration from {self.config_file_path}')
         parser = configparser.ConfigParser()
         parser.read(self.config_file_path)  # read config file at path
+        return parser
+
+    def validate_adsb_config(self, parsed_config):
+        """Checks values in ConfigParser object and make sure they are sane"""
         try:
             # set logging verbosity level from config file
-            self.logging_level = str(parser.get('MISC', 'logging_level')).upper()
+            self.logging_level = str(parsed_config.get('MISC', 'logging_level')).upper()
             assert self.logging_level != ''
             assert self.logging_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
             logging.getLogger().setLevel(self.logging_level)
@@ -52,18 +56,18 @@ class Spotter:
             logging.warning(f"Logging verbosity level is not set in {self.config_file_path}, defaulting to DEBUG")
             logging.getLogger().setLevel('DEBUG')
         try:
-            self.interval = int(parser.get('ADSB', 'adsb_interval'))
+            self.interval = int(parsed_config.get('ADSB', 'adsb_interval'))
             logging.debug(f"Setting interval to {self.interval}")
-            self.cooldown = int(parser.get('ADSB', 'cooldown'))
+            self.cooldown = int(parsed_config.get('ADSB', 'cooldown'))
             logging.debug(f"Setting interval to {self.cooldown}")
-            self.latitude = float(parser.get('ADSB', 'lat'))
+            self.latitude = float(parsed_config.get('ADSB', 'lat'))
             logging.debug(f"Setting latitude to {self.latitude}")
-            self.longitude = float(parser.get('ADSB', 'long'))
+            self.longitude = float(parsed_config.get('ADSB', 'long'))
             logging.debug(f"Setting longitude to {self.longitude}")
-            self.radius = int(parser.get('ADSB', 'radius'))
+            self.radius = int(parsed_config.get('ADSB', 'radius'))
             logging.debug(f"Setting radius to {self.radius}")
-            self.adsb_api_endpoint = parser.get('ADSB', 'adsb_api').strip()
-            self.adsb_api_key = parser.get('ADSB', 'adsb_api_key').strip()
+            self.adsb_api_endpoint = parsed_config.get('ADSB', 'adsb_api').strip()
+            self.adsb_api_key = parsed_config.get('ADSB', 'adsb_api_key').strip()
             logging.debug(f'Setting API key value to {self.adsb_api_key}')
             if self.adsb_api_endpoint == 'rapidapi':
                 # create url and headers for RapidAPI request
@@ -87,18 +91,18 @@ class Spotter:
                 raise Exception('Invalid API endpoint')
             if self.radius not in (1, 5, 10, 25, 100, 250):
                 raise ValueError('Error in configuration file: radius value is not 1, 5, 10, 25, 100, or 250')
-            if parser.get('ADSB', 'spot_unknown').lower() == 'y':
+            if parsed_config.get('ADSB', 'spot_unknown').lower() == 'y':
                 logging.debug('Set spot_unknown to True')
                 self.spot_unknown = True
-            elif parser.get('ADSB', 'spot_unknown').lower() == 'n':
+            elif parsed_config.get('ADSB', 'spot_unknown').lower() == 'n':
                 logging.debug('Set spot_unknown to False')
                 self.spot_unknown = False
             else:
                 raise ValueError()
-            if parser.get('ADSB', 'spot_mil').lower() == 'y':
+            if parsed_config.get('ADSB', 'spot_mil').lower() == 'y':
                 logging.debug('Set spot_mil to True')
                 self.spot_mil = True
-            elif parser.get('ADSB', 'spot_mil').lower() == 'n':
+            elif parsed_config.get('ADSB', 'spot_mil').lower() == 'n':
                 logging.debug('Set spot_mil to False')
                 self.spot_mil = False
             else:
