@@ -18,8 +18,9 @@ class SpotBot:
 
         simple usage example:
 
-        bot = SpotBot('asb.config')   # initialize class (API connection created at this time)
-        spots = adsbget.Spotter('asb.config', 'watchlist.csv')
+        some_configparser_object = read_config(r"./config/asb.config")
+        bot = SpotBot(some_configparser_object)   # initialize class (API connection created at this time)
+        spots = adsbget.Spotter(some_configparser_object, 'watchlist.csv')
         while True:
             spots.check_spots()
             spot = spots.spot_queue.pop(0)
@@ -27,8 +28,7 @@ class SpotBot:
             sleep(30)
     """
 
-    def __init__(self, config_file_path):
-        self.config_file_path = config_file_path
+    def __init__(self, config_parsed):
         self.interval = 5
         self._consumer_key = None
         self._consumer_secret = None
@@ -36,9 +36,9 @@ class SpotBot:
         self._access_token_secret = None
         self._use_descriptions = False
         self._down_tweet = False
-        self._read_twitter_config()
+        self._validate_twitter_config(config_parsed)
         self._api = self._initialize_twitter_api()
-        self._loc = location.Locator(self.config_file_path)
+        self._loc = location.Locator(config_parsed)
 
     def _initialize_twitter_api(self):
         """Authenticate to Twitter API, check credentials and connection"""
@@ -59,25 +59,23 @@ class SpotBot:
         logging.info('Twitter API created')
         return api
 
-    def _read_twitter_config(self):
-        """Read configuration values from file and check whether values are sane"""
-        parser = configparser.ConfigParser()
-        parser.read(self.config_file_path)  # read config file at path
+    def _validate_twitter_config(self, parsed_config):
+        """Checks values in ConfigParser object and make sure they are sane"""
         try:
-            self.interval = int(parser.get('TWITTER', 'tweet_interval'))
-            self._consumer_key = parser.get('TWITTER', 'consumer_key')
-            self._consumer_secret = parser.get('TWITTER', 'consumer_secret')
-            self._access_token = parser.get('TWITTER', 'access_token')
-            self._access_token_secret = parser.get('TWITTER', 'access_token_secret')
-            if parser.get('TWITTER', 'use_descriptions').lower() == 'y':
+            self.interval = int(parsed_config.get('TWITTER', 'tweet_interval'))
+            self._consumer_key = parsed_config.get('TWITTER', 'consumer_key')
+            self._consumer_secret = parsed_config.get('TWITTER', 'consumer_secret')
+            self._access_token = parsed_config.get('TWITTER', 'access_token')
+            self._access_token_secret = parsed_config.get('TWITTER', 'access_token_secret')
+            if parsed_config.get('TWITTER', 'use_descriptions').lower() == 'y':
                 self._use_descriptions = True
-            elif parser.get('TWITTER', 'use_descriptions').lower() == 'n':
+            elif parsed_config.get('TWITTER', 'use_descriptions').lower() == 'n':
                 self._use_descriptions = False
             else:
                 raise ValueError()
-            if parser.get('TWITTER', 'down_tweet').lower() == 'y':
+            if parsed_config.get('TWITTER', 'down_tweet').lower() == 'y':
                 self._down_tweet = True
-            elif parser.get('TWITTER', 'down_tweet').lower() == 'n':
+            elif parsed_config.get('TWITTER', 'down_tweet').lower() == 'n':
                 self._down_tweet = False
             else:
                 raise ValueError()
@@ -137,13 +135,16 @@ def run_bot():
 
     Usage example:
     import airspotbot
-    airspotbot.run_bot()"""
+    airspotbot.run_bot()
+    """
 
-    config_file_path = './config/asb.config'
+    # hardcoded paths to configuration files
+    config_path = './config/asb.config'
     watchlist_file_path = './config/watchlist.csv'
 
-    bot = SpotBot(config_file_path)
-    spots = adsbget.Spotter(config_file_path, watchlist_file_path)
+    config = read_config(config_path)
+    bot = SpotBot(config)
+    spots = adsbget.Spotter(config, watchlist_file_path)
     bot_time = time()
     spot_time = time()
     # check for aircraft and tweet any when bot first starts
@@ -165,5 +166,14 @@ def run_bot():
             sleep(1)
 
 
+def read_config(config_file_path):
+    """parse asb.config and return a ConfigParser object"""
+    logging.info(f'Loading configuration from {config_file_path}')
+    parser = configparser.ConfigParser()
+    parser.read(config_file_path)  # read config file at path
+    return parser
+
+
 if __name__ == "__main__":
     run_bot()
+    

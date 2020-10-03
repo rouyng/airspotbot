@@ -16,9 +16,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(m
 
 
 class Locator:
-    """Class for generating location descriptions"""
-    def __init__(self, config_file_path):
-        self.config_file_path = config_file_path
+    """Class for generating location descriptions. Requires a ConfigParser object as an argument"""
+    def __init__(self, config_parsed):
         self.location_type = 'MANUAL'
         self.location_manual_description = ''
         self.pelias_host = ''
@@ -39,15 +38,12 @@ class Locator:
                                     'coarse')
         self.pelias_point_layer = ''
         self.pelias_area_layer = ''
-        self._read_location_config()
+        self._validate_location_config(config_parsed)
 
-    def _read_location_config(self):
-        """Read configuration values from file and check whether values are sane"""
-        logging.info(f'Loading location data configuration from {self.config_file_path}')
-        parser = configparser.ConfigParser()
-        parser.read(self.config_file_path)  # read config file at path
+    def _validate_location_config(self, parsed_config):
+        """Checks location-related values in ConfigParser object and make sure they are sane"""
         try:
-            self.location_type = str(parser.get('LOCATION', 'location_type')).upper()
+            self.location_type = str(parsed_config.get('LOCATION', 'location_type')).upper()
             assert self.location_type != ''  # check location type is not blank
             assert self.location_type in ('MANUAL', 'COORDINATE', 'PELIAS')  # check for valid location type
         except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
@@ -56,7 +52,7 @@ class Locator:
             self.location_type = 'COORDINATE'
         if self.location_type == 'MANUAL':
             try:
-                self.location_manual_description = str(parser.get('LOCATION', 'location_description'))
+                self.location_manual_description = str(parsed_config.get('LOCATION', 'location_description'))
                 assert self.location_manual_description != ''  # check location type is not blank
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
                 logging.warning(f"Location type is set to manual, but location_description is not set in {self.config_file_path}. Reverting location type to coordinates")
@@ -65,14 +61,14 @@ class Locator:
             # if location type is PELIAS, configure and test pelias host
             # first, read host url/IP from config file
             try:
-                self.pelias_host = str(parser.get('LOCATION', 'pelias_host'))
+                self.pelias_host = str(parsed_config.get('LOCATION', 'pelias_host'))
                 assert self.pelias_host != ''
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError) as e:
                 logging.error(f'pelias is selected as the location type, but pelias_host is not set in {self.config_file_path}. Please enter a url/IP address of a valid pelias instance')
                 raise configparser.NoOptionError from e
             # read pelias API port from config file
             try:
-                self.pelias_port = int(parser.get('LOCATION', 'pelias_port'))
+                self.pelias_port = int(parsed_config.get('LOCATION', 'pelias_port'))
                 assert self.pelias_port != 0
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError) as e:
                 logging.error(f'Pelias port is not set in {self.config_file_path}')
@@ -103,7 +99,7 @@ class Locator:
             # read pelias layers to use from file- see README.md and https://github.com/pelias/documentation/blob/master/reverse.md
             # first, the area layer
             try:
-                self.pelias_area_layer = str(parser.get('LOCATION', 'pelias_area_layer'))
+                self.pelias_area_layer = str(parsed_config.get('LOCATION', 'pelias_area_layer'))
                 assert self.pelias_area_layer != ''
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
                 logging.warning(f'Pelias area layer is not set in {self.config_file_path}.')
@@ -115,7 +111,7 @@ class Locator:
                 self.pelias_area_layer = None
             # second, the point layer
             try:
-                self.pelias_point_layer = str(parser.get('LOCATION', 'pelias_point_layer'))
+                self.pelias_point_layer = str(parsed_config.get('LOCATION', 'pelias_point_layer'))
                 assert self.pelias_point_layer != ''
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
                 logging.warning(f'Pelias point layer is not set in {self.config_file_path}.')

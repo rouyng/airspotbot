@@ -12,9 +12,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(m
 
 
 class Spotter:
-    """Class for fetching active aircraft from ADSBx API and returning those that meet watchlist criteria"""
-    def __init__(self, config_file_path, watchlist_path):
-        self.config_file_path = config_file_path
+    """Class for fetching active aircraft from ADSBx API and returning those that meet watchlist criteria.
+    Requires a ConfigParser object and path to watchlist.csv as arguments.
+    """
+    def __init__(self, config_parsed, watchlist_path):
         self.watchlist_path = watchlist_path
         self.watchlist_rn = {}
         self.watchlist_tc = {}
@@ -33,17 +34,10 @@ class Spotter:
         self.url = ""
         self.logging_level = "INFO"  # verbosity level of log messages
         self.headers = {}
-        self.validate_adsb_config(self.read_adsb_config())
+        self._validate_adsb_config(config_parsed)
         self._read_watchlist()
 
-    def read_adsb_config(self):
-        """Read configuration values from file"""
-        logging.info(f'Loading ADSB exchange configuration from {self.config_file_path}')
-        parser = configparser.ConfigParser()
-        parser.read(self.config_file_path)  # read config file at path
-        return parser
-
-    def validate_adsb_config(self, parsed_config):
+    def _validate_adsb_config(self, parsed_config):
         """Checks values in ConfigParser object and make sure they are sane"""
         try:
             # set logging verbosity level from config file
