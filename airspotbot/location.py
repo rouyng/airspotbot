@@ -39,9 +39,9 @@ class Locator:
                                     'coarse')
         self.pelias_point_layer = ''
         self.pelias_area_layer = ''
-        self._read_pelias_config()
+        self._read_location_config()
 
-    def _read_pelias_config(self):
+    def _read_location_config(self):
         """Read configuration values from file and check whether values are sane"""
         logging.info(f'Loading location data configuration from {self.config_file_path}')
         parser = configparser.ConfigParser()
