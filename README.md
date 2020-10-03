@@ -16,21 +16,21 @@ airspotbot is designed to be configurable for multiple use cases. The list below
 * I want to tweet when any aircraft with a certain type code is active in my area, but only if they are military
 
 ## Running
-airspotbot was developed and tested using Python 3.7. Ensure a compatible Python version is installed in your system/virtual environment and install package requirements using `pip install -r requirements.txt`. Configure `asb.config` with your API keys and preferences and `watchlist.csv` with your desired watchlist. You can then start airspotbot by running `python airspotbot.py`.
+airspotbot was developed and tested using Python 3.7. Ensure a compatible Python version is installed in your system/virtual environment and install package requirements using `pip install -r requirements.txt`. Configure `asb.config` with your API keys and preferences and `watchlist.csv` with your desired watchlist. You can then start airspotbot by running `python -m airspotbot`.
 
 A basic `Dockerfile` is also included for deployment via Docker container. 
 
 ## Configuring
-airspotbot has two files that must be configured before use: `asb.config` and `watchlist.csv`
+airspotbot has two files that must be configured before use: `config/asb.config` and `config/watchlist.csv`
 
-### asb.config
+### config/asb.config
 Used to set your API keys and other bot configuration, such as tweeting interval, interval to check ADS-B Exchange and some tweeting rules, such as whether to tweet all military activity or all aircraft with unknown registration numbers. You must have valid API keys for Twitter and ADS-B Exchange in order to deploy airspotbot for your own use. Please operate your installation of airspotbot in accordance with all relevant terms of service.
 
 `radius` parameter indicates the radius in nautical miles around the specified latitude/longitude that will be queried for aircraft activity. It must have a value of 1, 5, 10, 25, 100 or 250. Due to ADS-B Exchange API limitations, any values larger, smaller or in between these will cause an error and cannot be used.
  
 `down_tweet` is a currently nonfunctional placeholder for a planned feature. See TODO section for more information.
   
-### watchlist.csv
+### config/watchlist.csv
 Used to specify which active aircraft cause the bot to tweet spots. Currently, airspotbot supports specifying aircraft by registration number or ICAO aircraft type code. Please note that setting `spot_unknown` and/or `spot_mil` options to "Y" in `asb.config` will cause unknown and/or military aircraft to generate tweets regardless of what is set in `watchlist.csv`.
 * "Key": column sets the ICAO aircraft type code or registration number. 
 * "Type": either "RN" for registration number/serial number, "TC" for ICAO type code, or "IA" for unique ICAO address.
