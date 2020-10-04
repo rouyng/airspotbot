@@ -8,14 +8,9 @@ import pytest
 import sys
 
 
-class TestBasics:
-    def test_our_testing(self):
-        """quick sanity check to make sure pytest is working as expected"""
-        assert True is not False
-
-    def test_import(self):
-        """Test whether module to be tested was successfully imported"""
-        assert "airspotbot" in sys.modules
+def test_import():
+    """Test whether module to be tested was successfully imported"""
+    assert "airspotbot" in sys.modules
 
 
 class TestTwitterValidation:
