@@ -40,16 +40,6 @@ class Spotter:
     def _validate_adsb_config(self, parsed_config):
         """Checks values in ConfigParser object and make sure they are sane"""
         try:
-            # set logging verbosity level from config file
-            self.logging_level = str(parsed_config.get('MISC', 'logging_level')).upper()
-            assert self.logging_level != ''
-            assert self.logging_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
-            logging.getLogger().setLevel(self.logging_level)
-            logging.warning(f"Set logging level to {self.logging_level}")
-        except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-            logging.warning(f"Logging verbosity level is not set in {self.config_file_path}, defaulting to DEBUG")
-            logging.getLogger().setLevel('DEBUG')
-        try:
             self.interval = int(parsed_config.get('ADSB', 'adsb_interval'))
             logging.debug(f"Setting interval to {self.interval}")
             self.cooldown = int(parsed_config.get('ADSB', 'cooldown'))

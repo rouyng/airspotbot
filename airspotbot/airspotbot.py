@@ -36,9 +36,22 @@ class SpotBot:
         self._access_token_secret = None
         self._use_descriptions = False
         self._down_tweet = False
+        self._read_logging_config(config_parsed)
         self._validate_twitter_config(config_parsed)
         self._api = self._initialize_twitter_api()
         self._loc = location.Locator(config_parsed)
+
+    def _read_logging_config(self, parsed_config):
+        """set logging verbosity from parsed config file"""
+        try:
+            self.logging_level = str(parsed_config.get('MISC', 'logging_level')).upper()
+            assert self.logging_level != ''
+            assert self.logging_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+            logging.getLogger().setLevel(self.logging_level)
+            logging.warning(f"Set logging level to {self.logging_level}")
+        except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
+            logging.warning(f"Logging verbosity level is not set in config file, defaulting to DEBUG")
+            logging.getLogger().setLevel('DEBUG')
 
     def _initialize_twitter_api(self):
         """Authenticate to Twitter API, check credentials and connection"""
