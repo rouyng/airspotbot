@@ -47,7 +47,7 @@ class Locator:
             assert self.location_type != ''  # check location type is not blank
             assert self.location_type in ('MANUAL', 'COORDINATE', 'PELIAS')  # check for valid location type
         except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-            logging.warning(f"Location type is not set in {self.config_file_path}, defaulting to coordinate. Valid "
+            logging.warning(f"Location type is not set in config , defaulting to coordinate. Valid "
                             f"options are 'manual', 'coordinate', or 'pelias'")
             self.location_type = 'COORDINATE'
         if self.location_type == 'MANUAL':
@@ -55,7 +55,7 @@ class Locator:
                 self.location_manual_description = str(parsed_config.get('LOCATION', 'location_description'))
                 assert self.location_manual_description != ''  # check location type is not blank
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-                logging.warning(f"Location type is set to manual, but location_description is not set in {self.config_file_path}. Reverting location type to coordinates")
+                logging.warning(f"Location type is set to manual, but location_description is not set in config file. Reverting location type to coordinates")
                 self.location_type = 'COORDINATE'
         elif self.location_type == 'PELIAS':
             # if location type is PELIAS, configure and test pelias host
@@ -64,15 +64,15 @@ class Locator:
                 self.pelias_host = str(parsed_config.get('LOCATION', 'pelias_host'))
                 assert self.pelias_host != ''
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError) as e:
-                logging.error(f'pelias is selected as the location type, but pelias_host is not set in {self.config_file_path}. Please enter a url/IP address of a valid pelias instance')
-                raise configparser.NoOptionError from e
+                logging.error(f'pelias is selected as the location type, but pelias_host is not set in config file. Please enter a url/IP address of a valid pelias instance')
+                raise configparser.NoOptionError("pelias_host", "LOCATION") from e
             # read pelias API port from config file
             try:
                 self.pelias_port = int(parsed_config.get('LOCATION', 'pelias_port'))
                 assert self.pelias_port != 0
-            except (configparser.NoOptionError, configparser.NoSectionError, AssertionError) as e:
-                logging.error(f'Pelias port is not set in {self.config_file_path}')
-                raise configparser.NoOptionError from e
+            except (configparser.NoOptionError, configparser.NoSectionError, AssertionError, ValueError) as e:
+                logging.error(f'Pelias port is not set in config file')
+                raise configparser.NoOptionError("pelias_port", "LOCATION") from e
             # construct a url to test the API
             # uses an arbitrary location and just checks that the API response looks like it is in the correct format
             # there is NO check to see whether the pelias host has geolocation data for the lat/longitude used by ASB
