@@ -176,4 +176,3 @@ def read_config(config_file_path):
 
 if __name__ == "__main__":
     run_bot()
-    
