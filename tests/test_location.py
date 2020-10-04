@@ -99,11 +99,13 @@ class TestLocationValidation:
         assert loc.location_type == 'COORDINATE'
 
     def test_empty_host(self, generate_pelias_location_config):
+        """test that pelias location type w/o a host raises an exception"""
         generate_pelias_location_config['LOCATION']['pelias_host'] = ""
         with pytest.raises(configparser.NoOptionError):
             airspotbot.location.Locator(generate_pelias_location_config)
 
     def test_empty_port(self, generate_pelias_location_config):
+        """test that pelias location type w/o a port raises an exception"""
         generate_pelias_location_config['LOCATION']['pelias_port'] = ""
         with pytest.raises(configparser.NoOptionError):
             airspotbot.location.Locator(generate_pelias_location_config)
