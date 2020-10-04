@@ -40,16 +40,37 @@ class Spotter:
     def _validate_adsb_config(self, parsed_config):
         """Checks values in ConfigParser object and make sure they are sane"""
         try:
-            self.interval = int(parsed_config.get('ADSB', 'adsb_interval'))
-            logging.debug(f"Setting interval to {self.interval}")
-            self.cooldown = int(parsed_config.get('ADSB', 'cooldown'))
-            logging.debug(f"Setting interval to {self.cooldown}")
-            self.latitude = float(parsed_config.get('ADSB', 'lat'))
-            logging.debug(f"Setting latitude to {self.latitude}")
-            self.longitude = float(parsed_config.get('ADSB', 'long'))
-            logging.debug(f"Setting longitude to {self.longitude}")
-            self.radius = int(parsed_config.get('ADSB', 'radius'))
-            logging.debug(f"Setting radius to {self.radius}")
+            try:
+                self.interval = int(parsed_config.get('ADSB', 'adsb_interval'))
+                logging.debug(f"Setting interval to {self.interval}")
+            except ValueError:
+                raise ValueError("adsb_interval must be an integer value")
+            try:
+                self.cooldown = int(parsed_config.get('ADSB', 'cooldown'))
+                logging.debug(f"Setting interval to {self.cooldown}")
+            except ValueError:
+                raise ValueError("cooldown must be an integer value")
+            try:
+                self.latitude = float(parsed_config.get('ADSB', 'lat'))
+                if not -90 <= self.latitude <= 90:
+                    raise ValueError
+                logging.debug(f"Setting latitude to {self.latitude}")
+            except ValueError:
+                raise ValueError("latitude must be a float value >= -90 and <= 90")
+            try:
+                self.longitude = float(parsed_config.get('ADSB', 'long'))
+                if not -180 <= self.longitude <= 180:
+                    raise ValueError
+                logging.debug(f"Setting longitude to {self.longitude}")
+            except ValueError as e:
+                raise ValueError("longitude must be a float value >= -180 and <= 180")
+            try:
+                self.radius = int(parsed_config.get('ADSB', 'radius'))
+                if self.radius not in (1, 5, 10, 25, 100, 250):
+                    raise ValueError
+                logging.debug(f"Setting radius to {self.radius}")
+            except ValueError as e:
+                raise ValueError('Error in configuration file: radius value is not 1, 5, 10, 25, 100, or 250')
             self.adsb_api_endpoint = parsed_config.get('ADSB', 'adsb_api').strip()
             self.adsb_api_key = parsed_config.get('ADSB', 'adsb_api_key').strip()
             logging.debug(f'Setting API key value to {self.adsb_api_key}')
@@ -73,8 +94,6 @@ class Spotter:
             else:
                 logging.critical(f"{self.adsb_api_endpoint} is not a valid API endpoint")
                 raise Exception('Invalid API endpoint')
-            if self.radius not in (1, 5, 10, 25, 100, 250):
-                raise ValueError('Error in configuration file: radius value is not 1, 5, 10, 25, 100, or 250')
             if parsed_config.get('ADSB', 'spot_unknown').lower() == 'y':
                 logging.debug('Set spot_unknown to True')
                 self.spot_unknown = True
@@ -92,7 +111,7 @@ class Spotter:
             else:
                 raise ValueError()
         except (configparser.NoOptionError, configparser.NoSectionError) as e:
-            logging.critical(f'Configuration file error: {e}')
+            logging.critical(f'Configuration file error, missing section and/or option: {e}')
             raise e
 
     def _read_watchlist(self):
