@@ -28,7 +28,7 @@ def generate_pelias_location_config():
     dummy_config['LOCATION'] = {"location_type": "pelias",
                                 "location_description": "near somewhere",
                                 "pelias_host": "http://localhost",
-                                "pelias_port": 4000,
+                                "pelias_port": "4000",
                                 "pelias_area_layer": "neighbourhood",
                                 "pelias_point_layer": "venue"}
     return dummy_config
@@ -40,7 +40,7 @@ def generate_coordinate_location_config(scope="module"):
     dummy_config['LOCATION'] = {"location_type": "coordinate",
                                 "location_description": "near somewhere",
                                 "pelias_host": "http://localhost",
-                                "pelias_port": 4000,
+                                "pelias_port": "4000",
                                 "pelias_area_layer": "neighbourhood",
                                 "pelias_point_layer": "venue"}
     return dummy_config
