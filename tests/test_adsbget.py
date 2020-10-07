@@ -7,7 +7,6 @@ from .context import airspotbot
 import pytest
 import random
 import sys
-from io import StringIO
 import configparser
 import string
 
