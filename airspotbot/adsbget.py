@@ -125,7 +125,7 @@ class Spotter:
                         # Cell A1 should be the the first cell of the title row
                         # If the expected value of "Key" is present, move to the next row
                         continue
-                    if row[1] == 'RN':
+                    elif row[1] == 'RN':
                         self.watchlist_rn[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
                         logging.info(f'Added {row[0]} to reg num watchlist. Description: "{row[3]}", image: {row[4]}')
                     elif row[1] == 'TC':
@@ -135,9 +135,11 @@ class Spotter:
                     elif row[1] == 'IA':
                         self.watchlist_ia[row[0]] = {'desc': row[3].strip(), 'img': row[4].strip()}
                         logging.info(f'Added {row[0]} to ICAO address watchlist. Description: "{row[3]}", image: {row[4]}')
-                except IndexError as e:
-                    logging.error("Error reading watchlist.csv, please check the watchlist file.")
-                    raise e
+                    else:
+                        # if none of these are true, watchlist file is likely invalid, so raise an exception
+                        raise IndexError
+                except IndexError:
+                    raise IndexError("Error reading watchlist.csv, please check the watchlist file.")
             logging.info(f'Added {len(self.watchlist_rn) + len(self.watchlist_tc) + len(self.watchlist_ia)} entries to the watchlist')
 
     def _append_craft(self, aircraft):

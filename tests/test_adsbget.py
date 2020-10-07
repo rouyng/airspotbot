@@ -11,6 +11,8 @@ from io import StringIO
 import configparser
 import string
 
+valid_watchlist = "./valid_watchlist.csv"
+invalid_watchlist = "./invalid_watchlist.csv"
 
 @pytest.fixture
 def generate_empty_adsb_config(scope="module"):
@@ -43,14 +45,8 @@ def generate_valid_adsb_config(scope="module"):
 
 
 @pytest.fixture
-def generate_watchlist(scope="module"):
-    csv_string = StringIO("""\
-    Key,Type,Mil Only,Description,Image
-    H60,TC,N,Sikorsky H-60,uh-60
-    EC45,TC,Y,UH-72 Lakota,uh72.jpg
-    NASA941,RN,,NASA Super Guppy,
-    508035,IA,,Antonov AN-225 Mriya,""")
-    return csv_string
+def generate_spotter(generate_valid_adsb_config, scope="module"):
+    return airspotbot.adsbget.Spotter(generate_valid_adsb_config, valid_watchlist)
 
 
 def test_import():
@@ -60,60 +56,60 @@ def test_import():
 
 class TestADSBValidation:
     """Tests validation of ADSB configuration"""
-    def test_empty_interval(self, generate_empty_adsb_config, generate_watchlist):
+    def test_empty_interval(self, generate_empty_adsb_config):
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, generate_watchlist)
+            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
         assert "adsb_interval must be an integer value" in str(exc_info.value)
 
-    def test_empty_cooldown(self, generate_empty_adsb_config, generate_watchlist):
+    def test_empty_cooldown(self, generate_empty_adsb_config):
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, generate_watchlist)
+            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
         assert "cooldown must be an integer value" in str(exc_info.value)
 
-    def test_empty_latitude(self, generate_empty_adsb_config, generate_watchlist):
+    def test_empty_latitude(self, generate_empty_adsb_config):
         generate_empty_adsb_config['ADSB']['cooldown'] = "10"
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, generate_watchlist)
+            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
         assert "latitude must be a float value >= -90 and <= 90" in str(exc_info.value)
 
-    def test_invalid_latitudes(self, generate_empty_adsb_config, generate_watchlist):
+    def test_invalid_latitudes(self, generate_empty_adsb_config):
         """Test impossible latitudes < -90 or > 90 raising an exception"""
         generate_empty_adsb_config['ADSB']['cooldown'] = "10"
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(90.01, 999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, generate_watchlist)
+            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
         assert "latitude must be a float value >= -90 and <= 90" in str(exc_info.value)
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90.01, -999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, generate_watchlist)
+            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
         assert "latitude must be a float value >= -90 and <= 90" in str(exc_info.value)
 
-    def test_empty_longitude(self, generate_empty_adsb_config, generate_watchlist):
+    def test_empty_longitude(self, generate_empty_adsb_config):
         generate_empty_adsb_config['ADSB']['cooldown'] = "10"
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90, 90))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, generate_watchlist)
+            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
         assert "longitude must be a float value >= -180 and <= 180" in str(exc_info.value)
 
-    def test_invalid_longitudes(self, generate_empty_adsb_config, generate_watchlist):
+    def test_invalid_longitudes(self, generate_empty_adsb_config):
         """Test impossible longitudes < -180 or > 180 raising an exception"""
         generate_empty_adsb_config['ADSB']['cooldown'] = "10"
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90, 90))
         generate_empty_adsb_config['ADSB']['long'] = str(random.uniform(180.01, 999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, generate_watchlist)
+            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
         assert "longitude must be a float value >= -180 and <= 180" in str(exc_info.value)
         generate_empty_adsb_config['ADSB']['long'] = str(random.uniform(-180.01, -999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, generate_watchlist)
+            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
         assert "longitude must be a float value >= -180 and <= 180" in str(exc_info.value)
 
-    def test_invalid_radii(self, generate_empty_adsb_config, generate_watchlist):
+    def test_invalid_radii(self, generate_empty_adsb_config):
         """Test invalid radii raising an exception"""
         generate_empty_adsb_config['ADSB']['cooldown'] = "10"
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
@@ -125,10 +121,35 @@ class TestADSBValidation:
             while invalid_radius in (1, 5, 10, 25, 100, 250):
                 invalid_radius = random.randint(0, 9999)
             with pytest.raises(ValueError) as exc_info:
-                airspotbot.adsbget.Spotter(generate_empty_adsb_config, generate_watchlist)
+                airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
             assert "Error in configuration file: radius value is not 1, 5, 10, 25, 100, or 250" in str(exc_info.value)
 
 
 class TestWatchlistImport:
     """Tests import of watchlist.csv"""
-    
+
+    def test_invalid_watchlist_file(self, generate_valid_adsb_config):
+        """Test exception thrown when bogus watchlist file is read"""
+        with pytest.raises(IndexError) as exc_info:
+            airspotbot.adsbget.Spotter(generate_valid_adsb_config, invalid_watchlist)
+        assert "Error reading watchlist.csv, please check the watchlist file." in str(exc_info.value)
+
+    def test_watchlist_length(self, generate_spotter):
+        """Test whether the correct number of watchlist entries were imported"""
+        spots = generate_spotter
+        assert len(spots.watchlist_rn) + len(spots.watchlist_tc) + len(spots.watchlist_ia) == 4
+
+    def test_rn_watchlist_length(self, generate_spotter):
+        """Test registration number watchlist length"""
+        spots = generate_spotter
+        assert len(spots.watchlist_rn) == 1
+
+    def test_ia_watchlist_length(self, generate_spotter):
+        """Test ICAO hex code watchlist length"""
+        spots = generate_spotter
+        assert len(spots.watchlist_ia) == 1
+
+    def test_tc_watchlist_length(self, generate_spotter):
+        """Test type code watchlist length"""
+        spots = generate_spotter
+        assert len(spots.watchlist_tc) == 2
