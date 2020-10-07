@@ -153,3 +153,25 @@ class TestWatchlistImport:
         """Test type code watchlist length"""
         spots = generate_spotter
         assert len(spots.watchlist_tc) == 2
+
+    def test_h60_watchlist(self, generate_spotter):
+        """Check that the H60 entry in valid_watchlist is properly imported"""
+        spots = generate_spotter
+        assert "H60" in spots.watchlist_tc.keys()
+        assert spots.watchlist_tc["H60"]["desc"] == "Sikorsky H-60"
+        assert spots.watchlist_tc["H60"]["mil_only"] is False
+        assert spots.watchlist_tc["H60"]["img"] == "uh-60.jpg"
+
+    def test_guppy_watchlist(self, generate_spotter):
+        """Check that the Super Guppy entry in valid_watchlist is properly imported"""
+        spots = generate_spotter
+        assert "NASA941" in spots.watchlist_rn.keys()
+        assert spots.watchlist_rn["NASA941"]["desc"] == "NASA Super Guppy"
+        assert spots.watchlist_rn["NASA941"]["img"] == ""
+
+    def test_antonov_watchlist(self, generate_spotter):
+        """Check that the AN-225 entry in valid_watchlist is properly imported"""
+        spots = generate_spotter
+        assert "508035" in spots.watchlist_ia.keys()
+        assert spots.watchlist_ia["508035"]["desc"] == "Antonov AN-225 Mriya"
+        assert spots.watchlist_ia["508035"]["img"] == ""
