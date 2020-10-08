@@ -184,8 +184,7 @@ class Spotter:
         del_list = []
         for seen_id, seen_time in self.seen.items():
             if seen_time < time() - self.cooldown:
-                logging.debug(
-                    f'Removing {seen_id} from seen list, cooldown time exceeded')
+                logging.debug(f'Removing {seen_id} from seen list, cooldown time exceeded')
                 del_list.append(seen_id)
         for item_to_delete in del_list:
             del self.seen[item_to_delete]
