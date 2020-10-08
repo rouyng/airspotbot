@@ -1,7 +1,6 @@
-"""
-This module contains the class SpotBot, which interfaces with the twitter API to generate airspotbot's tweets.
-It also has the main program loop of airspotbot, so executing this module starts airspotbot.
-"""
+"""This module contains the class SpotBot, which interfaces with the twitter API to generate
+airspotbot's tweets. It also has the main program loop of airspotbot, so executing this module
+starts airspotbot. """
 
 
 import configparser
@@ -10,7 +9,8 @@ from time import sleep, time
 import tweepy
 from . import adsbget, location
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s',
+                    datefmt='%d-%b-%y %H:%M:%S')
 
 
 class SpotBot:
@@ -19,7 +19,7 @@ class SpotBot:
         simple usage example:
 
         some_configparser_object = read_config(r"./config/asb.config")
-        bot = SpotBot(some_configparser_object)   # initialize class (API connection created at this time)
+        bot = SpotBot(some_configparser_object)
         spots = adsbget.Spotter(some_configparser_object, 'watchlist.csv')
         while True:
             spots.check_spots()
@@ -50,7 +50,7 @@ class SpotBot:
             logging.getLogger().setLevel(self.logging_level)
             logging.warning(f"Set logging level to {self.logging_level}")
         except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-            logging.warning(f"Logging verbosity level is not set in config file, defaulting to DEBUG")
+            logging.warning("Logging verbosity level is not set in config, defaulting to DEBUG")
             logging.getLogger().setLevel('DEBUG')
 
     def _initialize_twitter_api(self):
@@ -61,14 +61,14 @@ class SpotBot:
         logging.info(f'Twitter access token secret: {self._access_token_secret}')
         auth = tweepy.OAuthHandler(self._consumer_key, self._consumer_secret)
         auth.set_access_token(self._access_token, self._access_token_secret)
-        api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True) # Create API object
+        api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
         try:
             # test that authentication worked
             api.verify_credentials()
             logging.info("Authentication OK")
-        except tweepy.error.TweepError as e:
+        except tweepy.error.TweepError as tp_error:
             logging.critical('Error during Twitter API authentication')
-            raise e
+            raise tp_error
         logging.info('Twitter API created')
         return api
 
@@ -92,14 +92,22 @@ class SpotBot:
                 self._down_tweet = False
             else:
                 raise ValueError()
-        except (configparser.NoOptionError, configparser.NoSectionError) as e:
-            logging.critical(f'Configuration file error: {e}')
+        except (configparser.NoOptionError, configparser.NoSectionError) as config_error:
+            logging.critical(f'Configuration file error: {config_error}')
 
     def tweet_spot(self, aircraft: dict):
-        """Generate tweet based on aircraft data returned in dictionary format from the adsbget module's
-        Spotter.spot_queue list of dictionaries.
+        """Generate tweet based on aircraft data returned in dictionary format from the adsbget
+        module's Spotter.spot_queue list of dictionaries.
         """
-        icao, type_code, reg_num, lat, lon, description, alt, speed, callsign = aircraft['icao'], aircraft['type'], aircraft['reg'], aircraft['lat'], aircraft['lon'], aircraft['desc'], aircraft['alt'], aircraft['spd'], aircraft['call']
+        icao, type_code, reg_num, lat, lon, description, alt, speed, callsign = aircraft['icao'], \
+                                                                                aircraft['type'], \
+                                                                                aircraft['reg'], \
+                                                                                aircraft['lat'], \
+                                                                                aircraft['lon'], \
+                                                                                aircraft['desc'], \
+                                                                                aircraft['alt'], \
+                                                                                aircraft['spd'], \
+                                                                                aircraft['call']
         link = f'https://tar1090.adsbexchange.com/?icao={icao}'
         location_description = self._loc.get_location_description(lat, lon)
         if reg_num.strip() == '':
@@ -111,7 +119,7 @@ class SpotBot:
             callsign = False
         tweet = f"{description if description else type_code}{', callsign '+ callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is {location_description}. Altitude {alt} ft, speed {speed} kt. {link}"
         if aircraft['img']:
-            image_path = "images/" + aircraft['img'] # always look for images in the /images subfolder
+            image_path = "images/" + aircraft['img'] # always look for images in images subfolder
             try:
                 # if an image path is specified, upload it
                 logging.debug(f"Uploading image from {image_path}")
@@ -127,19 +135,19 @@ class SpotBot:
             if image:
                 try:
                     self._api.update_status(tweet, media_ids=[image.media_id])
-                except AttributeError as e:
+                except AttributeError as upload_error:
                     # catch an attribute error, in case media upload fails in an unexpected way
                     logging.warning("Attribute error when sending tweet")
-                    logging.warning(e)
+                    logging.warning(upload_error)
                     self._api.update_status(tweet)
             else:
                 self._api.update_status(tweet)
-        except tweepy.error.TweepError as e:
+        except tweepy.error.TweepError as tp_error:
             logging.critical('Error sending tweet')
-            raise e
+            raise tp_error
 
     def _link_reply(self):
-        # TODO: function to reply to to a tweet generated by tweet_spot with a link defined in watchlist.csv
+        # TODO: function to reply to to a tweet with a link defined in watchlist.csv
         pass
 
 
@@ -165,7 +173,7 @@ def run_bot():
     for _ in range(0, len(spots.spot_queue)):
         spot = spots.spot_queue.pop(0)
         bot.tweet_spot(spot)
-    # perpetually loop through checking aircraft spots and tweeting according to time intervals set in asb.config
+    # perpetually loop through checking aircraft spots and tweeting according to interval in config
     while True:
         if time() > spot_time + spots.interval:
             spots.check_spots()
