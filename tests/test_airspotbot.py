@@ -7,7 +7,7 @@ from .context import airspotbot
 import pytest
 import sys
 
-valid_config = "./valid_asb.config"
+valid_config = "./tests/valid_asb.config"
 
 
 def test_import():

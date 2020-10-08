@@ -10,8 +10,8 @@ import sys
 import configparser
 import string
 
-valid_watchlist = "./valid_watchlist.csv"
-invalid_watchlist = "./invalid_watchlist.csv"
+valid_watchlist = "./tests/valid_watchlist.csv"
+invalid_watchlist = "./tests/invalid_watchlist.csv"
 
 @pytest.fixture
 def generate_empty_adsb_config(scope="module"):
