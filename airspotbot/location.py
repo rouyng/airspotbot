@@ -87,7 +87,8 @@ class Locator:
             # API response looks like it is in the correct format there is NO check to see
             # whether the pelias host has geolocation data for the lat/longitude used by ASB
             pelias_test_url = \
-                f'{self.pelias_host}:{self.pelias_port}/v1/reverse?point.lat=51.5081124&point.lon=-0.0759493'
+                f'{self.pelias_host}:{self.pelias_port}/v1/reverse?point.lat=51.5081124&' \
+                f'point.lon=-0.0759493'
             # make sure we can connect to the pelias host over http
             try:
                 logging.info(f"Testing Pelias API at {pelias_test_url}")

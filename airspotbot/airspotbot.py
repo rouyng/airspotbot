@@ -99,15 +99,15 @@ class SpotBot:
         """Generate tweet based on aircraft data returned in dictionary format from the adsbget
         module's Spotter.spot_queue list of dictionaries.
         """
-        icao, type_code, reg_num, lat, lon, description, alt, speed, callsign = aircraft['icao'], \
-                                                                                aircraft['type'], \
-                                                                                aircraft['reg'], \
-                                                                                aircraft['lat'], \
-                                                                                aircraft['lon'], \
-                                                                                aircraft['desc'], \
-                                                                                aircraft['alt'], \
-                                                                                aircraft['spd'], \
-                                                                                aircraft['call']
+        icao = aircraft['icao']
+        type_code = aircraft['type']
+        reg_num = aircraft['reg']
+        lat = aircraft['lat']
+        lon = aircraft['lon']
+        description = aircraft['desc']
+        alt = aircraft['alt']
+        speed = aircraft['spd']
+        callsign = aircraft['call']
         link = f'https://tar1090.adsbexchange.com/?icao={icao}'
         location_description = self._loc.get_location_description(lat, lon)
         if reg_num.strip() == '':
@@ -117,9 +117,11 @@ class SpotBot:
         if callsign == reg_num:
             # if callsign is same as the registration number, ADSBx is not reporting a callsign
             callsign = False
-        tweet = f"{description if description else type_code}{', callsign '+ callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is {location_description}. Altitude {alt} ft, speed {speed} kt. {link}"
+        tweet = f"{description if description else type_code}" \
+                f"{', callsign '+ callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is " \
+                f"{location_description}. Altitude {alt} ft, speed {speed} kt. {link}"
         if aircraft['img']:
-            image_path = "images/" + aircraft['img'] # always look for images in images subfolder
+            image_path = "images/" + aircraft['img']  # always look for images in images subfolder
             try:
                 # if an image path is specified, upload it
                 logging.debug(f"Uploading image from {image_path}")
