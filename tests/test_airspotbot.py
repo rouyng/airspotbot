@@ -7,7 +7,7 @@ from .context import airspotbot
 import pytest
 import sys
 
-valid_config = "./tests/valid_asb.config"
+valid_config = "./valid_asb.config"
 
 
 def test_import():
@@ -42,8 +42,10 @@ def test_read_config():
                                  'pelias_point_layer': 'venue'},
                     'MISC': {'logging_level': 'info'}
                      }
+    # Test that expected sections are parsed
     for s in ('ADSB', 'TWITTER', 'LOCATION', 'MISC'):
         assert s in imported_config.sections()
+    # Test that expected values and organization are parsed
     for g, h in config_values.items():
         for j, i in h.items():
             assert i == imported_config[g][j]
