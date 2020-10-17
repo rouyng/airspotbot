@@ -34,6 +34,7 @@ class Spotter:
         self.spot_queue = []
         self.spot_unknown = True  # always spot unknown reg #s
         self.spot_mil = True  # always spot mil-format serial numbers
+        self.spot_interesting = True  # always spot aircraft designated "interesting"
         self.url = ""
         self.logging_level = "INFO"  # verbosity level of log messages
         self.headers = {}
@@ -120,6 +121,14 @@ class Spotter:
             elif parsed_config.get('ADSB', 'spot_mil').lower() == 'n':
                 logging.debug('Set spot_mil to False')
                 self.spot_mil = False
+            else:
+                raise ValueError()
+            if parsed_config.get('ADSB', 'spot_interesting').lower() == 'y':
+                logging.debug('Set spot_interesting to True')
+                self.spot_interesting = True
+            elif parsed_config.get('ADSB', 'spot_interesting').lower() == 'n':
+                logging.debug('Set spot_interesting to False')
+                self.spot_interesting = False
             else:
                 raise ValueError()
         except (configparser.NoOptionError, configparser.NoSectionError) as config_error:
@@ -296,6 +305,14 @@ class Spotter:
                 craft['img'] = False
                 logging.debug(
                     "Aircraft is designated as military, adding to spot queue")
+                self._append_craft(craft)
+            elif craft['interested'] == '1' and self.spot_interesting is True:
+                # if craft is designated military by ADS-B exchange and spot_mil is set,
+                # add to tweet queue
+                craft['desc'] = False
+                craft['img'] = False
+                logging.debug(
+                    "Aircraft is designated as interesting, adding to spot queue")
                 self._append_craft(craft)
             else:
                 # if none of these criteria are met, iterate to next aircraft in the spotted list

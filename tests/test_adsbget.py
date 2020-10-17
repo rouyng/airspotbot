@@ -41,6 +41,7 @@ def generate_valid_adsb_config(scope="module"):
                                 "cooldown": str(random.randint(1, 20)),
                                 "spot_unknown": "y",
                                 "spot_mil": "y",
+                                "spot_interesting": "y",
                                 "adsb_api": "adsbx",
                                 "adsb_api_key": ''.join(random.choices(string.ascii_letters + string.digits, k=16))}
     return dummy_config
@@ -132,7 +133,7 @@ def sample_adsbx_json():
                  'lat': '32.827242', 'lon': '-116.964989', 'vsit': '1', 'vsi': '0', 'trkh': '0',
                  'ttrk': '', 'trak': '8.1', 'sqk': '1200', 'call': 'N711DC', 'gnd': '0', 'trt': '5',
                  'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '11.96'},
+                 'cou': 'United States', 'mil': '0', 'interested': '1', 'dst': '11.96'},
                 {'postime': '1602439568505', 'icao': 'A4CA8C', 'reg': 'N408CA', 'type': 'P28A',
                  'wtc': '1', 'spd': '107.5', 'altt': '0', 'alt': '3825', 'galt': '3905',
                  'talt': '3008', 'lat': '32.708533', 'lon': '-117.221487', 'vsit': '0',
@@ -545,3 +546,10 @@ class TestADSBxCall:
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
         assert 'ABC5E3' in [p['icao'] for p in spots.spot_queue]
+
+    def test_interesting_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
+        """Test whether an aircraft flagged as interesting by ADSBx will be spotted"""
+        spots = generate_spotter
+        requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
+        spots.check_spots()
+        assert 'A98012' in [p['icao'] for p in spots.spot_queue]
