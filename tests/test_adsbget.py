@@ -362,6 +362,42 @@ def sample_adsbx_json():
             'ctime': 1602439574290, 'ptime': 109}
 
 
+@pytest.fixture
+def unexpected_adsbx_json():
+    """A sample JSON response from the ADSBx API with some missing keys"""
+    return {'ac':
+            [
+                {'postime': '1602439568508',
+                 'icao': 'A12986',
+                 'reg': 'N174RF',
+                 'type': 'C414',
+                 'wtc': '1', 'spd': '0', 'altt': '0', 'alt': '300', 'galt': '380', 'talt': '',
+                 'lat': '32.811687', 'lon': '-117.137686', 'vsit': '0', 'vsi': '', 'trkh': '0',
+                 'ttrk': '', 'trak': '', 'sqk': '1200', 'call': 'N174RF', 'gnd': '1', 'trt': '5',
+                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
+                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.05'},
+                {'postime': '1602439570493', 'icao': 'A6FC66', 'reg': 'N5495D', 'type': 'C172',
+                 'wtc': '1', 'spd': '49.7', 'altt': '0', 'alt': '300', 'galt': '380', 'talt': '',
+                 'lat': '32.814905', 'lon': '-117.140322', 'vsit': '1', 'vsi': '0', 'trkh': '0',
+                 'ttrk': '', 'trak': '295', 'sqk': '1200', 'call': 'N5495D', 'gnd': '0', 'trt': '2',
+                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
+                 'cou': 'United States', 'blah': '0', 'foo': '0', 'dst': '6.22'},
+                {'postime': '1602439569723', 'icao': 'AAFA92', 'reg': 'N8060U', 'type': 'P28A',
+                 'wtc': '1', 'spd': '90.3', 'altt': '0', 'alt': '2200', 'galt': '2289', 'talt': '',
+                 'lat': '32.779495', 'lon': '-117.052679', 'vsit': '1', 'vsi': '-576', 'trkh': '0',
+                 'ttrk': '', 'trak': '291.4', 'sqk': '1200', 'call': 'N8060U', 'gnd': '0',
+                 'trt': '2', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
+                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.69'},
+                {'postime': '1602439568699', 'fuzz': 'A321DF', 'reg': 'N3001T', 'type': 'P28A',
+                 'wtc': '1', 'spd': '104.8', 'altt': '0', 'alt': '3400', 'galt': '3489', 'talt': '',
+                 'lat': '32.787532', 'lon': '-116.938701', 'vsit': '1', 'vsi': '128', 'trkh': '0',
+                 'ttrk': '', 'trak': '110.7', 'sqk': '1200', 'call': 'N3001T', 'gnd': '0',
+                 'trt': '2', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
+                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '11.98'}
+            ]
+            }
+
+
 def test_import():
     """Test whether module to be tested was successfully imported"""
     assert "airspotbot.adsbget" in sys.modules
@@ -515,6 +551,15 @@ class TestADSBxCall:
         spots.check_spots()
         assert "API request appears successful" in caplog.text
         assert "No aircraft detected in spotting area" in caplog.text
+
+    def test_bad_keys(self, requests_mock, generate_spotter, caplog, unexpected_adsbx_json):
+        """Test that API response logic fails gracefully when keys are missing/malformed"""
+        spots = generate_spotter
+        requests_mock.get(spots.url, json=unexpected_adsbx_json, status_code=200)
+        caplog.set_level(logging.DEBUG)
+        spots.check_spots()
+        assert "Key error when parsing aircraft returned from API, skipping" in caplog.text
+        assert "1602439570493" in caplog.text
 
     def test_type_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
         """test whether aircraft of a certain type code in watchlist will be spotted"""
