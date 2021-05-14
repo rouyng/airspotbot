@@ -141,7 +141,10 @@ class Spotter:
         logging.info(f'Loading watchlist from {self.watchlist_path}')
         with open(self.watchlist_path) as watchlist_file:
             csv_reader = csv.reader(watchlist_file, delimiter=',')
+            row_count = 0
+            row_errors = 0
             for row in csv_reader:
+                row_count += 1
                 try:
                     if row[0] == 'Key':
                         # Cell A1 should be the the first cell of the title row
@@ -172,9 +175,12 @@ class Spotter:
                         # so raise an exception
                         raise IndexError
                 except IndexError as watchlist_error:
-                    raise IndexError(
-                        "Error reading watchlist.csv, please check the watchlist file.") \
-                        from watchlist_error
+                    row_errors += 1
+                    logging.warning(f"Error reading row {row_count} from {self.watchlist_path}, please check the "
+                                    f"watchlist file. This error is usually caused by missing columns in a row.")
+                    continue
+            if row_errors > 0:
+                logging.warning(f"Generated {row_errors} while reading watchlist file")
             logging.info(
                 f'Added {len(self.watchlist_rn) + len(self.watchlist_tc) + len(self.watchlist_ia)}'
                 f' entries to the watchlist')

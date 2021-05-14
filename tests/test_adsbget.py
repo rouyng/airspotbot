@@ -361,6 +361,7 @@ def sample_adsbx_json():
                  'to': 'CLT Charlotte Douglas United States', 'dst': '2.21'}], 'total': 46,
             'ctime': 1602439574290, 'ptime': 109}
 
+
 def test_import():
     """Test whether module to be tested was successfully imported"""
     assert "airspotbot.adsbget" in sys.modules
@@ -440,11 +441,14 @@ class TestADSBValidation:
 class TestWatchlistImport:
     """Tests import of watchlist.csv"""
 
-    def test_invalid_watchlist_file(self, generate_valid_adsb_config):
+    def test_invalid_watchlist_file(self, generate_valid_adsb_config, caplog):
         """Test exception thrown when bogus watchlist file is read"""
-        with pytest.raises(IndexError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_valid_adsb_config, invalid_watchlist)
-        assert "Error reading watchlist.csv, please check the watchlist file." in str(exc_info.value)
+        test_spotter = airspotbot.adsbget.Spotter(generate_valid_adsb_config, invalid_watchlist)
+        logging_output = caplog.text
+        assert "Error reading row 1 from ./tests/invalid_watchlist.csv, please check the watchlist file. " \
+               "This error is often caused by missing columns in a row." in logging_output
+        assert len(test_spotter.watchlist_ia) == 0
+        assert len(test_spotter.watchlist_rn) == 0
 
     def test_watchlist_length(self, generate_spotter):
         """Test whether the correct number of watchlist entries were imported"""
