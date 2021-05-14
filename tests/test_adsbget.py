@@ -445,8 +445,9 @@ class TestWatchlistImport:
         """Test exception thrown when bogus watchlist file is read"""
         test_spotter = airspotbot.adsbget.Spotter(generate_valid_adsb_config, invalid_watchlist)
         logging_output = caplog.text
-        assert "Error reading row 1 from ./tests/invalid_watchlist.csv, please check the watchlist file. " \
-               "This error is often caused by missing columns in a row." in logging_output
+        assert "Error reading row 1 from ./tests/invalid_watchlist.csv, please check the " \
+               "watchlist file. This error is usually caused by missing columns in a row." \
+               in logging_output
         assert len(test_spotter.watchlist_ia) == 0
         assert len(test_spotter.watchlist_rn) == 0
 
