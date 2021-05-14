@@ -176,8 +176,9 @@ class Spotter:
                         raise IndexError
                 except IndexError as watchlist_error:
                     row_errors += 1
-                    logging.warning(f"Error reading row {row_count} from {self.watchlist_path}, please check the "
-                                    f"watchlist file. This error is usually caused by missing columns in a row.")
+                    logging.warning(f"Error reading row {row_count} from {self.watchlist_path}, "
+                                    f"please check the watchlist file. This error is usually "
+                                    f"caused by missing columns in a row.")
                     continue
             if row_errors > 0:
                 logging.warning(f"Generated {row_errors} while reading watchlist file")
