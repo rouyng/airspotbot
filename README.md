@@ -21,11 +21,14 @@ airspotbot was developed and tested using Python 3.7. Ensure a compatible Python
 
 A basic `Dockerfile` is also included for deployment via Docker container. 
 
+### API requirements
+You must have valid keys for the [Twitter API](https://developer.twitter.com/en/docs/twitter-api) and [ADS-B Exchange API](https://www.adsbexchange.com/data/) in order to deploy airspotbot for your own use. Please note that as of 2021, ADS-B Exchange is no longer giving API keys to all feeders, so the API is now solely accessed through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1). The "adsbx" endpoint option in asb.config is provided for legacy support, or if you have some preexisting agreement with ADSBX to use their endpoint directly. Please operate your installation of airspotbot and associated APIs in accordance with all relevant terms of service.
+
 ## Configuring
 airspotbot has two files that must be configured before use: `config/asb.config` and `config/watchlist.csv`
 
 ### config/asb.config
-Used to set your API keys and other bot configuration, such as tweeting interval, interval to check ADS-B Exchange and some tweeting rules, such as whether to tweet all military activity or all aircraft with unknown registration numbers. You must have valid API keys for Twitter and ADS-B Exchange in order to deploy airspotbot for your own use. Please operate your installation of airspotbot in accordance with all relevant terms of service.
+Used to set your API keys and other bot configuration, such as tweeting interval, interval to check ADS-B Exchange and some tweeting rules, such as whether to tweet all military activity or all aircraft with unknown registration numbers. Additional documentation is provided as comments in the asb.config file included in this repository.
 
 `radius` parameter indicates the radius in nautical miles around the specified latitude/longitude that will be queried for aircraft activity. It must have a value of 1, 5, 10, 25, 100 or 250. Due to ADS-B Exchange API limitations, any values larger, smaller or in between these will cause an error and cannot be used.
  
@@ -47,7 +50,7 @@ airspotbot has several options for representing the geographical location of spo
 * `location_type`: enter one of the following options:
     * "manual": Use some string of text, like a place/region name. This is useful if your spotting coordinates and radius is close to a distinct landmark/area and you don't need any more granular location representation. For example, if airspotbot is set up to spot aircraft in a 1 nm radius of 51.4736, -0.4688, you might set this option to "manual" and "location_description" to "near Heathrow Airport" so the bot just reports "*aircraft* is near Heathrow Airport".
     * "coordinate": Tweets latitude/longitude coordinates, rounded to 4 decimal places.
-    * "pelias": Use pelias geocoder to reverse-lookup nearby landmarks based on the lat/long reported by ADSBx. Useful if you need airspotbot to cover a large area, such as a city with many neighborhoods and landmarks. The "pelias_host" option must also have a valid url to access a running instance of Pelias.
+    * "pelias": Use pelias geocoder to reverse-lookup nearby landmarks based on the lat/long reported by ADSBx. Useful if you need airspotbot to cover a large area, such as a city with many neighborhoods and landmarks. The "pelias_host" option must also have a valid url to access a running instance of Pelias. Please note that Pelias support is very experimental. If you encounter issues or can help test it, please let me know via Github Issues.
 * `location_description`: If "location_type" is set to "manual", enter the text string you want to be tweeted along with the spot to identify the location (such as "near Heathrow Airport", "over Downtown Los Angeles", etc).
 * `pelias_host`: Enter the url/port of an active Pelias instance running a reverse geocoding endpoint, such as "http://192.168.1.5:4000". Required if you are using "location_type = pelias". [Find more information about Pelias here](https://github.com/pelias/documentation).
 * `pelias_port`: Port for API endpoint at host
