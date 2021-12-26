@@ -49,7 +49,7 @@ class Locator:
             self.location_type = str(parsed_config.get('LOCATION', 'location_type')).upper()
             # check location_type is populated with a valid value
             assert self.location_type != ''
-            assert self.location_type in ('MANUAL', 'COORDINATE', 'PELIAS')
+            assert self.location_type in ('MANUAL', 'COORDINATE', 'PELIAS', '3GEONAMES')
         except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
             logging.warning("Location type is not set in config , defaulting to coordinate. Valid "
                             "options are 'manual', 'coordinate', or 'pelias'")
@@ -147,8 +147,8 @@ class Locator:
         coord_string = str(round(float(lat), 4)) + ', ' + str(round(float(long), 4))
         if self.location_type == 'MANUAL':
             return self.location_manual_description  # return string specified in config file
-        if self.location_type == 'PELIAS':
-            geocode = self._reverse_geocode(lat, long)
+        elif self.location_type == 'PELIAS':
+            geocode = self._reverse_geocode_pelias(lat, long)
             if geocode['area'] is None and geocode['point'] is None:
                 logging.warning("No reverse geocoding results returned, defaulting to coordinate"
                                 " location")
@@ -158,9 +158,15 @@ class Locator:
             if geocode['point'] is None:
                 return f"over {geocode['area']}"
             return f"over {geocode['area']}, near {geocode['point']}"
+        elif self.location_type == '3GEOCODES':
+            geocode = self._reverse_geocode_geonames(lat, long)
+            if geocode['nearest']['name'] is not None:
+                return f"near {geocode['name']}, {geocode['city']}"
+            else:
+                return f"near {geocode['city']}"
         return f"near {coord_string}"
 
-    def _reverse_geocode(self, lat, long):
+    def _reverse_geocode_pelias(self, lat, long):
         self.pelias_url = \
             f'{self.pelias_host}:{self.pelias_port}/v1/reverse?point.lat={lat}&point.lon={long}'
         geo_results = {}
@@ -194,3 +200,15 @@ class Locator:
             geo_results['point'] = None
             geo_results['area'] = None
         return geo_results
+
+    @staticmethod
+    def _reverse_geocode_geonames(lat, long):
+        """
+        Fetch geocoding from https://3geonames.org/api
+
+        :param lat:
+        :param long:
+        :return: json object containing geocoder response
+        """
+        response = requests.get(f"https://api.3geonames.org/{lat},{long}.json")
+        return response.json()
