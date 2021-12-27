@@ -160,10 +160,18 @@ class Locator:
             return f"over {geocode['area']}, near {geocode['point']}"
         elif self.location_type == '3GEOCODES':
             geocode = self._reverse_geocode_geonames(lat, long)
-            if geocode['nearest']['name'] is not None:
+            try:
                 return f"near {geocode['name']}, {geocode['city']}"
-            else:
-                return f"near {geocode['city']}"
+            except KeyError:
+                logging.info("3geonames reverse geocoder did not return place name, trying city")
+                try:
+                    return f"near {geocode['city']}"
+                except KeyError:
+                    logging.warning("3geonames reverse geocoder did not return name or city, "
+                                    "falling back to coordinate string")
+            except TypeError:
+                logging.warning("Did not receive result from 3geonames reverse geocoder, falling "
+                                "back to coordinate string")
         return f"near {coord_string}"
 
     def _reverse_geocode_pelias(self, lat, long):
@@ -206,9 +214,16 @@ class Locator:
         """
         Fetch geocoding from https://3geonames.org/api
 
-        :param lat:
-        :param long:
+        :param lat: Latitude to geocode, as a positive or negative float or string
+        :param long: Longitude to geocode, as a positive or negative float or string
         :return: json object containing geocoder response
         """
-        response = requests.get(f"https://api.3geonames.org/{lat},{long}.json")
-        return response.json()
+        try:
+            response = requests.get(f"https://api.3geonames.org/{lat},{long}.json")
+            return response.json()
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.HTTPError,
+                requests.exceptions.Timeout) as conn_err:
+            logging.error("Error connecting to https://api.3geonames.org/")
+            logging.error(conn_err)
+            return None
