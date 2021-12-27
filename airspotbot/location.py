@@ -13,6 +13,7 @@ Pelias endpoint, see https://github.com/pelias/documentation/blob/master/reverse
 import configparser
 import logging
 import requests
+from time import sleep
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s',
                     datefmt='%d-%b-%y %H:%M:%S')
@@ -49,12 +50,13 @@ class Locator:
             self.location_type = str(parsed_config.get('LOCATION', 'location_type')).upper()
             # check location_type is populated with a valid value
             assert self.location_type != ''
-            assert self.location_type in ('MANUAL', 'COORDINATE', 'PELIAS')
+            assert self.location_type in ('MANUAL', 'COORDINATE', 'PELIAS', '3GEONAMES')
         except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
             logging.warning("Location type is not set in config , defaulting to coordinate. Valid "
                             "options are 'manual', 'coordinate', or 'pelias'")
             self.location_type = 'COORDINATE'
         if self.location_type == 'MANUAL':
+            logging.info("Location type set to manual")
             try:
                 self.location_manual_description = str(parsed_config.get('LOCATION',
                                                                          'location_description'))
@@ -64,6 +66,7 @@ class Locator:
                                 " set in config file. Reverting location type to coordinates")
                 self.location_type = 'COORDINATE'
         elif self.location_type == 'PELIAS':
+            logging.info("Location type set to pelias")
             # if location type is PELIAS, configure and test pelias host
             # first, read host url/IP from config file
             try:
@@ -141,14 +144,18 @@ class Locator:
                                 f' https://github.com/pelias/documentation/blob/master/reverse.md'
                                 f' for supported layers.')
                 self.pelias_point_layer = None
+        elif self.location_type == '3GEONAMES':
+            logging.info("Location type set to 3geonames")
+        elif self.location_type == 'COORDINATE':
+            logging.info("Location type set to coordinate")
 
     def get_location_description(self, lat, long):
         """Return a human-readable location description, based on settings in config file"""
         coord_string = str(round(float(lat), 4)) + ', ' + str(round(float(long), 4))
         if self.location_type == 'MANUAL':
             return self.location_manual_description  # return string specified in config file
-        if self.location_type == 'PELIAS':
-            geocode = self._reverse_geocode(lat, long)
+        elif self.location_type == 'PELIAS':
+            geocode = self._reverse_geocode_pelias(lat, long)
             if geocode['area'] is None and geocode['point'] is None:
                 logging.warning("No reverse geocoding results returned, defaulting to coordinate"
                                 " location")
@@ -158,9 +165,26 @@ class Locator:
             if geocode['point'] is None:
                 return f"over {geocode['area']}"
             return f"over {geocode['area']}, near {geocode['point']}"
+        elif self.location_type == '3GEONAMES':
+            geocode = self._reverse_geocode_geonames(lat, long)
+            try:
+                if geocode['nearest']['name'] != geocode['nearest']['city']:
+                    return f"near {geocode['nearest']['name']}, {geocode['nearest']['city']}"
+                else:
+                    return f"near {geocode['nearest']['name']}"
+            except KeyError:
+                logging.info("3geonames reverse geocoder did not return place name, trying city")
+                try:
+                    return f"near {geocode['nearest']['city']}"
+                except KeyError:
+                    logging.warning("3geonames reverse geocoder did not return name or city, "
+                                    "falling back to coordinate string")
+            except TypeError:
+                logging.warning("Did not receive result from 3geonames reverse geocoder, falling "
+                                "back to coordinate string")
         return f"near {coord_string}"
 
-    def _reverse_geocode(self, lat, long):
+    def _reverse_geocode_pelias(self, lat, long):
         self.pelias_url = \
             f'{self.pelias_host}:{self.pelias_port}/v1/reverse?point.lat={lat}&point.lon={long}'
         geo_results = {}
@@ -194,3 +218,24 @@ class Locator:
             geo_results['point'] = None
             geo_results['area'] = None
         return geo_results
+
+    @staticmethod
+    def _reverse_geocode_geonames(lat, long):
+        """
+        Fetch geocoding from the free https://3geonames.org/api
+
+        :param lat: Latitude to geocode, as a positive or negative float or string
+        :param long: Longitude to geocode, as a positive or negative float or string
+        :return: json object containing geocoder response
+        """
+        logging.debug(f"Looking up {lat}, {long} using 3geonames api")
+        sleep(1)  # hardcoded delay to limit rate of requests to this free API
+        try:
+            response = requests.get(f"https://api.3geonames.org/{lat},{long}.json")
+            return response.json()
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.HTTPError,
+                requests.exceptions.Timeout) as conn_err:
+            logging.error("Error connecting to https://api.3geonames.org/")
+            logging.error(conn_err)
+            return None

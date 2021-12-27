@@ -38,7 +38,8 @@ class SpotBot:
         self._down_tweet = False
         self._read_logging_config(config_parsed)
         self._validate_twitter_config(config_parsed)
-        self._api = self._initialize_twitter_api()
+        if self.enable_tweets:
+            self._api = self._initialize_twitter_api()
         self._loc = location.Locator(config_parsed)
 
     def _read_logging_config(self, parsed_config):
@@ -75,6 +76,14 @@ class SpotBot:
     def _validate_twitter_config(self, parsed_config):
         """Checks values in ConfigParser object and make sure they are sane"""
         try:
+            if parsed_config.get('TWITTER', 'enable_tweets') == 'y':
+                self.enable_tweets = True
+            elif parsed_config.get('TWITTER', 'enable_tweets') == 'n':
+                logging.warning("Tweeting disabled in config file")
+                self.enable_tweets = False
+            else:
+                raise ValueError("Bad value in config file for TWITTER/enable_tweets. "
+                                 "Must be 'y' or 'n'.")
             self.interval = int(parsed_config.get('TWITTER', 'tweet_interval'))
             self._consumer_key = parsed_config.get('TWITTER', 'consumer_key')
             self._consumer_secret = parsed_config.get('TWITTER', 'consumer_secret')
@@ -85,13 +94,15 @@ class SpotBot:
             elif parsed_config.get('TWITTER', 'use_descriptions').lower() == 'n':
                 self._use_descriptions = False
             else:
-                raise ValueError()
+                raise ValueError("Bad value in config file for TWITTER/use_descriptions. "
+                                 "Must be 'y' or 'n'.")
             if parsed_config.get('TWITTER', 'down_tweet').lower() == 'y':
                 self._down_tweet = True
             elif parsed_config.get('TWITTER', 'down_tweet').lower() == 'n':
                 self._down_tweet = False
             else:
-                raise ValueError()
+                raise ValueError("Bad value in config file for TWITTER/down_tweet. "
+                                 "Must be 'y' or 'n'.")
         except (configparser.NoOptionError, configparser.NoSectionError) as config_error:
             logging.critical(f'Configuration file error: {config_error}')
 
@@ -122,31 +133,34 @@ class SpotBot:
                 f"{location_description}. Altitude {alt} ft, speed {speed} kt. {link}"
         if aircraft['img']:
             image_path = "images/" + aircraft['img']  # always look for images in images subfolder
-            try:
-                # if an image path is specified, upload it
-                logging.debug(f"Uploading image from {image_path}")
-                image = self._api.media_upload(image_path)
-            except tweepy.error.TweepError:
-                # if upload fails, handle exception and proceed gracefully without an image
-                logging.warning(f"Error uploading image from {image_path}, check if file exists")
-                image = False
+            if self.enable_tweets:
+                try:
+                    # if an image path is specified, upload it
+                    logging.debug(f"Uploading image from {image_path}")
+                    image = self._api.media_upload(image_path)
+                except tweepy.error.TweepError:
+                    # if upload fails, handle exception and proceed gracefully without an image
+                    logging.warning(f"Error uploading image from {image_path}, check if file exists")
+                    image = False
         else:
             image = False
-        logging.info(f'Tweeting: {tweet}')
-        try:
-            if image:
-                try:
-                    self._api.update_status(tweet, media_ids=[image.media_id])
-                except AttributeError as upload_error:
-                    # catch an attribute error, in case media upload fails in an unexpected way
-                    logging.warning("Attribute error when sending tweet")
-                    logging.warning(upload_error)
+        logging.info(f"Generated tweet: {tweet}")
+        if self.enable_tweets:
+            logging.info(f'Tweeting: {tweet}')
+            try:
+                if image:
+                    try:
+                        self._api.update_status(tweet, media_ids=[image.media_id])
+                    except AttributeError as upload_error:
+                        # catch an attribute error, in case media upload fails in an unexpected way
+                        logging.warning("Attribute error when sending tweet")
+                        logging.warning(upload_error)
+                        self._api.update_status(tweet)
+                else:
                     self._api.update_status(tweet)
-            else:
-                self._api.update_status(tweet)
-        except tweepy.error.TweepError as tp_error:
-            logging.critical('Error sending tweet')
-            raise tp_error
+            except tweepy.error.TweepError as tp_error:
+                logging.critical('Error sending tweet')
+                raise tp_error
 
     def _link_reply(self):
         # TODO: function to reply to to a tweet with a link defined in watchlist.csv
