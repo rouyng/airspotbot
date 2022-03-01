@@ -139,49 +139,54 @@ class Spotter:
     def _read_watchlist(self):
         """Load aircraft to watch from watchlist csv file"""
         logging.info(f'Loading watchlist from {self.watchlist_path}')
-        with open(self.watchlist_path) as watchlist_file:
-            csv_reader = csv.reader(watchlist_file, delimiter=',')
-            row_count = 0
-            row_errors = 0
-            for row in csv_reader:
-                row_count += 1
-                try:
-                    if row[0] == 'Key':
-                        # Cell A1 should be the the first cell of the title row
-                        # If the expected value of "Key" is present, move to the next row
+        try:
+            with open(self.watchlist_path) as watchlist_file:
+                csv_reader = csv.reader(watchlist_file, delimiter=',')
+                row_count = 0
+                row_errors = 0
+                for row in csv_reader:
+                    row_count += 1
+                    try:
+                        if row[0] == 'Key':
+                            # Cell A1 should be the the first cell of the title row
+                            # If the expected value of "Key" is present, move to the next row
+                            continue
+                        if row[1] == 'RN':
+                            self.watchlist_rn[row[0]] = {'desc': row[3].strip(),
+                                                         'img': row[4].strip()}
+                            logging.info(
+                                f'Added {row[0]} to reg num watchlist. Description: "{row[3]}",'
+                                f' image: {row[4]}')
+                        elif row[1] == 'TC':
+                            mil_only = bool(row[2].lower() == 'y')
+                            self.watchlist_tc[row[0]] = {'desc': row[3].strip(),
+                                                         'img': row[4].strip(),
+                                                         'mil_only': mil_only}
+                            logging.info(
+                                f'Added {row[0]} to type code watchlist. Military only: {mil_only} '
+                                f'Description: "{row[3]}", image: {row[4]}')
+                        elif row[1] == 'IA':
+                            self.watchlist_ia[row[0]] = {'desc': row[3].strip(),
+                                                         'img': row[4].strip()}
+                            logging.info(
+                                f'Added {row[0]} to ICAO address watchlist. Description: "{row[3]}", '
+                                f'image: {row[4]}')
+                        else:
+                            # if none of these are true, watchlist file is likely invalid
+                            # so raise an exception
+                            raise IndexError
+                    except IndexError as watchlist_error:
+                        row_errors += 1
+                        logging.warning(f"Error reading row {row_count} from {self.watchlist_path}, "
+                                        f"please check the watchlist file. This error is usually "
+                                        f"caused by missing columns in a row.")
                         continue
-                    if row[1] == 'RN':
-                        self.watchlist_rn[row[0]] = {'desc': row[3].strip(),
-                                                     'img': row[4].strip()}
-                        logging.info(
-                            f'Added {row[0]} to reg num watchlist. Description: "{row[3]}",'
-                            f' image: {row[4]}')
-                    elif row[1] == 'TC':
-                        mil_only = bool(row[2].lower() == 'y')
-                        self.watchlist_tc[row[0]] = {'desc': row[3].strip(),
-                                                     'img': row[4].strip(),
-                                                     'mil_only': mil_only}
-                        logging.info(
-                            f'Added {row[0]} to type code watchlist. Military only: {mil_only} '
-                            f'Description: "{row[3]}", image: {row[4]}')
-                    elif row[1] == 'IA':
-                        self.watchlist_ia[row[0]] = {'desc': row[3].strip(),
-                                                     'img': row[4].strip()}
-                        logging.info(
-                            f'Added {row[0]} to ICAO address watchlist. Description: "{row[3]}", '
-                            f'image: {row[4]}')
-                    else:
-                        # if none of these are true, watchlist file is likely invalid
-                        # so raise an exception
-                        raise IndexError
-                except IndexError as watchlist_error:
-                    row_errors += 1
-                    logging.warning(f"Error reading row {row_count} from {self.watchlist_path}, "
-                                    f"please check the watchlist file. This error is usually "
-                                    f"caused by missing columns in a row.")
-                    continue
-            if row_errors > 0:
-                logging.warning(f"Generated {row_errors} while reading watchlist file")
+                if row_errors > 0:
+                    logging.warning(f"Generated {row_errors} while reading watchlist file")
+        except FileNotFoundError:
+            logging.warning(f"Watchlist file not found at {self.watchlist_path}. Aircraft will "
+                            f"only be spotted based on rules in asb.config.")
+        finally:
             logging.info(
                 f'Added {len(self.watchlist_rn) + len(self.watchlist_tc) + len(self.watchlist_ia)}'
                 f' entries to the watchlist')

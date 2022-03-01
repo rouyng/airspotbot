@@ -486,6 +486,18 @@ class TestWatchlistImport:
                in logging_output
         assert len(test_spotter.watchlist_ia) == 0
         assert len(test_spotter.watchlist_rn) == 0
+        assert len(test_spotter.watchlist_tc) == 0
+
+    def test_missing_watchlist_file(self, generate_valid_adsb_config, caplog):
+        """Test that warning message is generated when watchlist file is missing"""
+        test_spotter = airspotbot.adsbget.Spotter(generate_valid_adsb_config, "foo.csv")
+        logging_output = caplog.text
+        assert "Watchlist file not found at foo.csv. Aircraft will only be spotted based on " \
+               "rules in asb.config." \
+               in logging_output
+        assert len(test_spotter.watchlist_ia) == 0
+        assert len(test_spotter.watchlist_rn) == 0
+        assert len(test_spotter.watchlist_tc) == 0
 
     def test_watchlist_length(self, generate_spotter):
         """Test whether the correct number of watchlist entries were imported"""
