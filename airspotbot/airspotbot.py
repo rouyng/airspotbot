@@ -176,6 +176,7 @@ def run_bot():
     """
 
     # hardcoded paths to configuration files
+    # TODO: optionally read paths from command-line arguments
     config_path = './config/asb.config'
     watchlist_file_path = './config/watchlist.csv'
 
