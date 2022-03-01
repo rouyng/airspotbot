@@ -38,8 +38,10 @@ Please operate your installation of airspotbot in accordance with all relevant A
 3. **Optional:** Set up a python [virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment), using Python 3.7 or greater. This is recommended because it prevents different installations of python packages from interfering with each other.
 4. Install package requirements using `pip3 install -r requirements.txt`
 5. Configure `config/asb.config` with your API keys and preferences. See details in "Configuring" section below.
-6. Configure `config/watchlist.csv` with your desired watchlist. See details in "Configuring" section below. 
-7. Run airspotbot with `python3 -m airspotbot`
+6. Configure `config/watchlist.csv` with your desired watchlist. See details in "Configuring" section below.
+
+### Running
+Run airspotbot with `python3 -m airspotbot`
 
 ## Configuration
 airspotbot has two files that must be configured before use: `asb.config` and `watchlist.csv`. Both are located in the `config/` subdirectory.  
@@ -103,6 +105,8 @@ Here are some planned features/fixes. You are welcome to work on these if you ar
 * Add new "reply" column to watchlist. This will automatically reply to the spot tweet with the content in the reply cell. Sometimes, you want to add additional context such as an explanation or link.
 * Add automatic tweeting to notify followers of ADS-B Exchange API outage/error. Bot followers should be informed if an error/outage is preventing spots from being tweeted. (`down_tweet` option in config file is a placeholder for this)
 * Allow setting of configuration file paths with command-line arguments, currently the paths are hardcoded.
+* Fetch aircraft photos using [Planespotters.net API](https://www.planespotters.net/photo/api)
+* Set custom user agent string for all API requests
 
  ## Contributing
  Contributions are welcome, including those from new/novice contributors. Source code contributions should be via pull requests. Bug reports and feature requests via opening issues. 
