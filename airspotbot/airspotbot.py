@@ -119,7 +119,7 @@ class SpotBot:
         alt = aircraft['alt']
         speed = aircraft['spd']
         callsign = aircraft['call']
-        link = f'https://tar1090.adsbexchange.com/?icao={icao}'
+        link = f'https://globe.adsbexchange.com/?icao={icao}'
         location_description = self._loc.get_location_description(lat, lon)
         if reg_num.strip() == '':
             reg_num = 'unknown'
