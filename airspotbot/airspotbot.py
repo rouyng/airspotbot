@@ -14,21 +14,22 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(m
 
 
 class SpotBot:
-    """Generates formatted tweet text and interfaces with the twitter API.
+    """
+    Generates formatted tweet text and interfaces with the twitter API.
 
-        simple usage example:
+    simple usage example:
 
-        some_configparser_object = read_config(r"./config/asb.config")
-        bot = SpotBot(some_configparser_object)
-        spots = adsbget.Spotter(some_configparser_object, 'watchlist.csv')
-        while True:
-            spots.check_spots()
-            spot = spots.spot_queue.pop(0)
-            bot.tweet_spot(spot)
-            sleep(30)
+    some_configparser_object = read_config(r"./config/asb.config")
+    bot = SpotBot(some_configparser_object)
+    spots = adsbget.Spotter(some_configparser_object, 'watchlist.csv')
+    while True:
+        spots.check_spots()
+        spot = spots.spot_queue.pop(0)
+        bot.tweet_spot(spot)
+        sleep(30)
     """
 
-    def __init__(self, config_parsed):
+    def __init__(self, config_parsed: configparser.ConfigParser):
         self.interval = 5
         self._consumer_key = None
         self._consumer_secret = None
@@ -107,7 +108,8 @@ class SpotBot:
             logging.critical(f'Configuration file error: {config_error}')
 
     def tweet_spot(self, aircraft: dict):
-        """Generate tweet based on aircraft data returned in dictionary format from the adsbget
+        """
+        Generate tweet based on aircraft data returned in dictionary format from the adsbget
         module's Spotter.spot_queue list of dictionaries.
         """
         icao = aircraft['icao']
@@ -167,22 +169,18 @@ class SpotBot:
         pass
 
 
-def run_bot():
-    """This function runs the main functionality of airspotbot.
-
-    Usage example:
-    import airspotbot
-    airspotbot.run_bot()
+def run_bot(config_path: str = None, watchlist_path: str = None):
     """
+    Main program loop of airspotbot. Invoked from __main__.py.
 
-    # hardcoded paths to configuration files
-    # TODO: optionally read paths from command-line arguments
-    config_path = './config/asb.config'
-    watchlist_file_path = './config/watchlist.csv'
+    :param config_path: String containing relative or absolute path to config INI file.
+    :param watchlist_path: String containing relative or absolute path to watchlist CSV file.
+    :return:
+    """
 
     config = read_config(config_path)
     bot = SpotBot(config)
-    spots = adsbget.Spotter(config, watchlist_file_path)
+    spots = adsbget.Spotter(config, watchlist_path)
     bot_time = time()
     spot_time = time()
     # check for aircraft and tweet any when bot first starts
@@ -204,8 +202,14 @@ def run_bot():
             sleep(1)
 
 
-def read_config(config_file_path):
-    """parse asb.config and return a ConfigParser object"""
+def read_config(config_file_path: str) -> configparser.ConfigParser:
+    """
+    Parse configuration INI file and return a ConfigParser object.
+
+    :param config_file_path: String containing relative or absolute path to config INI file.
+    :return: ConfigParser object
+    """
+
     logging.info(f'Loading configuration from {config_file_path}')
     parser = configparser.ConfigParser()
     parser.read(config_file_path)  # read config file at path
