@@ -6,7 +6,8 @@ DEFAULT_WATCHLIST_PATH = 'config/watchlist.csv'
 
 
 parser = argparse.ArgumentParser(description='A twitter bot for reporting aircraft activity in '
-                                             'an area, using the ADS-B Exchange API',
+                                             'an area, using the ADS-B Exchange API. For more '
+                                             'details, see README.md.',
                                  prog="airspotbot")
 parser.add_argument('config',
                     type=str,
