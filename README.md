@@ -43,8 +43,29 @@ Please operate your installation of airspotbot in accordance with all relevant A
 ### Running
 Run airspotbot with `python3 -m airspotbot`
 
+Command line arguments are as follows:
+```
+$ python -m airspotbot --help
+usage: airspotbot [-h] [-c [CONFIG]] [-w [WATCHLIST]]
+
+A twitter bot for reporting aircraft activity in an area, using the ADS-B
+Exchange API. For more details, see README.md.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c [CONFIG], --config [CONFIG]
+                        Optional path to config file. Defaults to
+                        ./config/asb.config
+  -w [WATCHLIST], --watchlist [WATCHLIST]
+                        Optional path to watchlist file. Defaults to
+                        ./config/watchlist.csv
+
+```
+
+
+
 ## Configuration
-airspotbot has two files that must be configured before use: `asb.config` and `watchlist.csv`. Both are located in the `config/` subdirectory.  
+airspotbot has two files that must be configured before use: `asb.config` and `watchlist.csv`. By default, airspotbot looks for both of these files in the `config/` subdirectory. The name and path of these files can be manually set using command line flags when invoking airspotbot. See "Running" section above for details.
 
 ### asb.config
 This file, structured in INI format, contains various configuration options organized into four sections:
@@ -54,7 +75,6 @@ This file, structured in INI format, contains various configuration options orga
 - `[MISC]`: Various debugging options for testing and logging purposes.
 
 Additional documentation on each individual option is provided as comments in the example `asb.config` file included in this repository.
-
 
 ### Location description
 airspotbot has several options for representing the geographical location of spotted aircraft. The location description can be entered manually or determined via reverse geocoding.  These options are configured in the `[LOCATION]` section of `asb.config`.
