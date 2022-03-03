@@ -8,27 +8,29 @@ import logging
 from time import sleep, time
 import tweepy
 from . import adsbget, location
+import os.path as path
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s',
                     datefmt='%d-%b-%y %H:%M:%S')
 
 
 class SpotBot:
-    """Generates formatted tweet text and interfaces with the twitter API.
+    """
+    Generates formatted tweet text and interfaces with the twitter API.
 
-        simple usage example:
+    simple usage example:
 
-        some_configparser_object = read_config(r"./config/asb.config")
-        bot = SpotBot(some_configparser_object)
-        spots = adsbget.Spotter(some_configparser_object, 'watchlist.csv')
-        while True:
-            spots.check_spots()
-            spot = spots.spot_queue.pop(0)
-            bot.tweet_spot(spot)
-            sleep(30)
+    some_configparser_object = read_config(r"./config/asb.config")
+    bot = SpotBot(some_configparser_object)
+    spots = adsbget.Spotter(some_configparser_object, 'watchlist.csv')
+    while True:
+        spots.check_spots()
+        spot = spots.spot_queue.pop(0)
+        bot.tweet_spot(spot)
+        sleep(30)
     """
 
-    def __init__(self, config_parsed):
+    def __init__(self, config_parsed: configparser.ConfigParser):
         self.interval = 5
         self._consumer_key = None
         self._consumer_secret = None
@@ -69,7 +71,8 @@ class SpotBot:
             logging.info("Authentication OK")
         except tweepy.error.TweepError as tp_error:
             logging.critical('Error during Twitter API authentication')
-            raise tp_error
+            logging.critical(f'Error message: {tp_error}')
+            raise KeyboardInterrupt
         logging.info('Twitter API created')
         return api
 
@@ -103,11 +106,13 @@ class SpotBot:
             else:
                 raise ValueError("Bad value in config file for TWITTER/down_tweet. "
                                  "Must be 'y' or 'n'.")
-        except (configparser.NoOptionError, configparser.NoSectionError) as config_error:
+        except configparser.Error as config_error:
             logging.critical(f'Configuration file error: {config_error}')
+            raise KeyboardInterrupt
 
     def tweet_spot(self, aircraft: dict):
-        """Generate tweet based on aircraft data returned in dictionary format from the adsbget
+        """
+        Generate tweet based on aircraft data returned in dictionary format from the adsbget
         module's Spotter.spot_queue list of dictionaries.
         """
         icao = aircraft['icao']
@@ -159,30 +164,26 @@ class SpotBot:
                 else:
                     self._api.update_status(tweet)
             except tweepy.error.TweepError as tp_error:
-                logging.critical('Error sending tweet')
-                raise tp_error
+                logging.critical(f'Error sending tweet: {tp_error}')
+                raise KeyboardInterrupt
 
     def _link_reply(self):
         # TODO: function to reply to to a tweet with a link defined in watchlist.csv
         pass
 
 
-def run_bot():
-    """This function runs the main functionality of airspotbot.
-
-    Usage example:
-    import airspotbot
-    airspotbot.run_bot()
+def run_bot(config_path: str = None, watchlist_path: str = None):
     """
+    Main program loop of airspotbot. Invoked from __main__.py.
 
-    # hardcoded paths to configuration files
-    # TODO: optionally read paths from command-line arguments
-    config_path = './config/asb.config'
-    watchlist_file_path = './config/watchlist.csv'
+    :param config_path: String containing relative or absolute path to config INI file.
+    :param watchlist_path: String containing relative or absolute path to watchlist CSV file.
+    :return:
+    """
 
     config = read_config(config_path)
     bot = SpotBot(config)
-    spots = adsbget.Spotter(config, watchlist_file_path)
+    spots = adsbget.Spotter(config, watchlist_path)
     bot_time = time()
     spot_time = time()
     # check for aircraft and tweet any when bot first starts
@@ -204,12 +205,26 @@ def run_bot():
             sleep(1)
 
 
-def read_config(config_file_path):
-    """parse asb.config and return a ConfigParser object"""
+def read_config(config_file_path: str) -> configparser.ConfigParser:
+    """
+    Parse configuration INI file and return a ConfigParser object.
+
+    :param config_file_path: String containing relative or absolute path to config INI file.
+    :return: ConfigParser object
+    """
+
     logging.info(f'Loading configuration from {config_file_path}')
-    parser = configparser.ConfigParser()
-    parser.read(config_file_path)  # read config file at path
-    return parser
+    if path.isfile(config_file_path):
+        parser = configparser.ConfigParser()
+        try:
+            parser.read(config_file_path)  # read config file at path
+            return parser
+        except configparser.Error as config_err:
+            logging.critical(f"Error when reading config file: {config_err}")
+            raise KeyboardInterrupt
+    else:
+        logging.critical(f"Configuration file not found at {config_file_path}")
+        raise KeyboardInterrupt
 
 
 if __name__ == "__main__":
