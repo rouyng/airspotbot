@@ -8,6 +8,7 @@ import logging
 from time import sleep, time
 import tweepy
 from . import adsbget, location
+import os.path as path
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s',
                     datefmt='%d-%b-%y %H:%M:%S')
@@ -70,7 +71,8 @@ class SpotBot:
             logging.info("Authentication OK")
         except tweepy.error.TweepError as tp_error:
             logging.critical('Error during Twitter API authentication')
-            raise tp_error
+            logging.critical(f'Error message: {tp_error}')
+            raise KeyboardInterrupt
         logging.info('Twitter API created')
         return api
 
@@ -104,8 +106,9 @@ class SpotBot:
             else:
                 raise ValueError("Bad value in config file for TWITTER/down_tweet. "
                                  "Must be 'y' or 'n'.")
-        except (configparser.NoOptionError, configparser.NoSectionError) as config_error:
+        except configparser.Error as config_error:
             logging.critical(f'Configuration file error: {config_error}')
+            raise KeyboardInterrupt
 
     def tweet_spot(self, aircraft: dict):
         """
@@ -161,8 +164,8 @@ class SpotBot:
                 else:
                     self._api.update_status(tweet)
             except tweepy.error.TweepError as tp_error:
-                logging.critical('Error sending tweet')
-                raise tp_error
+                logging.critical(f'Error sending tweet: {tp_error}')
+                raise KeyboardInterrupt
 
     def _link_reply(self):
         # TODO: function to reply to to a tweet with a link defined in watchlist.csv
@@ -211,9 +214,17 @@ def read_config(config_file_path: str) -> configparser.ConfigParser:
     """
 
     logging.info(f'Loading configuration from {config_file_path}')
-    parser = configparser.ConfigParser()
-    parser.read(config_file_path)  # read config file at path
-    return parser
+    if path.isfile(config_file_path):
+        parser = configparser.ConfigParser()
+        try:
+            parser.read(config_file_path)  # read config file at path
+            return parser
+        except configparser.Error as config_err:
+            logging.critical(f"Error when reading config file: {config_err}")
+            raise KeyboardInterrupt
+    else:
+        logging.critical(f"Configuration file not found at {config_file_path}")
+        raise KeyboardInterrupt
 
 
 if __name__ == "__main__":

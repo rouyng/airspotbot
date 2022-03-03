@@ -1,3 +1,4 @@
+import logging
 from . import airspotbot
 import argparse
 
@@ -26,4 +27,7 @@ parser.add_argument('-w', '--watchlist',
 # TODO: argument to set logging level/verbosity
 
 args = parser.parse_args()
-airspotbot.run_bot(config_path=args.config, watchlist_path=args.watchlist)
+try:
+    airspotbot.run_bot(config_path=args.config, watchlist_path=args.watchlist)
+except KeyboardInterrupt:
+    logging.critical("Exiting!")
