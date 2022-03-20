@@ -553,7 +553,7 @@ class TestADSBxCall:
         requests_mock.get(spots.url, exc=requests.exceptions.ConnectTimeout)
         spots.check_spots()
         # test that the expected message appears in the log
-        assert "Error with API request:" in caplog.text
+        assert "Error with ADSB Exchange API request" in caplog.text
 
     def test_no_aircraft(self, requests_mock, generate_spotter, caplog):
         spots = generate_spotter
