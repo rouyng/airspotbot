@@ -8,9 +8,7 @@ import configparser
 import csv
 import requests
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s: %(message)s',
-                    datefmt='%d-%b-%y %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 
 class Spotter:
@@ -36,7 +34,6 @@ class Spotter:
         self.spot_mil = True  # always spot mil-format serial numbers
         self.spot_interesting = True  # always spot aircraft designated "interesting"
         self.url = ""
-        self.logging_level = "INFO"  # verbosity level of log messages
         self.headers = {}
         self._validate_adsb_config(config_parsed)
         self._read_watchlist()
@@ -46,13 +43,13 @@ class Spotter:
         try:
             try:
                 self.interval = int(parsed_config.get('ADSB', 'adsb_interval'))
-                logging.debug(f"Setting interval to {self.interval}")
+                logger.debug(f"Setting interval to {self.interval}")
             except ValueError as interval_error:
                 raise ValueError(
                     "adsb_interval must be an integer value") from interval_error
             try:
                 self.cooldown = int(parsed_config.get('ADSB', 'cooldown'))
-                logging.debug(f"Setting interval to {self.cooldown}")
+                logger.debug(f"Setting interval to {self.cooldown}")
             except ValueError as cooldown_error:
                 raise ValueError(
                     "cooldown must be an integer value") from cooldown_error
@@ -60,7 +57,7 @@ class Spotter:
                 self.latitude = float(parsed_config.get('ADSB', 'lat'))
                 if not -90 <= self.latitude <= 90:
                     raise ValueError
-                logging.debug(f"Setting latitude to {self.latitude}")
+                logger.debug(f"Setting latitude to {self.latitude}")
             except ValueError as latitude_error:
                 raise ValueError(
                     "latitude must be a float value >= -90 and <= 90") from latitude_error
@@ -68,7 +65,7 @@ class Spotter:
                 self.longitude = float(parsed_config.get('ADSB', 'long'))
                 if not -180 <= self.longitude <= 180:
                     raise ValueError
-                logging.debug(f"Setting longitude to {self.longitude}")
+                logger.debug(f"Setting longitude to {self.longitude}")
             except ValueError as longitude_error:
                 raise ValueError("longitude must be a float value >= -180 and"
                                  " <= 180") from longitude_error
@@ -76,69 +73,69 @@ class Spotter:
                 self.radius = int(parsed_config.get('ADSB', 'radius'))
                 if self.radius not in (1, 5, 10, 25, 100, 250):
                     raise ValueError
-                logging.debug(f"Setting radius to {self.radius}")
+                logger.debug(f"Setting radius to {self.radius}")
             except ValueError as radius_error:
                 raise ValueError('Error in configuration file: radius value is'
                                  ' not 1, 5, 10, 25, 100, or 250') from radius_error
             self.adsb_api_endpoint = parsed_config.get('ADSB', 'adsb_api').strip()
             self.adsb_api_key = parsed_config.get('ADSB', 'adsb_api_key').strip()
-            logging.debug(f'Setting API key value to {self.adsb_api_key}')
+            logger.debug(f'Setting API key value to {self.adsb_api_key}')
             if self.adsb_api_endpoint == 'rapidapi':
                 # create url and headers for RapidAPI request
-                logging.debug("Setting api endpoint to rapidapi")
+                logger.debug("Setting api endpoint to rapidapi")
                 self.url = f"https://adsbexchange-com1.p.rapidapi.com/json/" \
                            f"lat/{self.latitude}/lon/{self.longitude}/dist/" \
                            f"{self.radius}/"
-                logging.debug(f"API request url: {self.url}")
+                logger.debug(f"API request url: {self.url}")
                 self.headers = {
                     'x-rapidapi-host': "adsbexchange-com1.p.rapidapi.com",
                     'x-rapidapi-key': self.adsb_api_key
                 }
             elif self.adsb_api_endpoint == 'adsbx':
                 # create url and headers for ADSBx API request
-                logging.debug("Setting api endpoint to adsbx")
+                logger.debug("Setting api endpoint to adsbx")
                 self.url = f"https://adsbexchange.com/api/aircraft/json/lat/" \
                            f"{self.latitude}/lon/{self.longitude}/dist/{self.radius}/"
-                logging.debug(f"API request url: {self.url}")
+                logger.debug(f"API request url: {self.url}")
                 self.headers = {
                     'api-auth': self.adsb_api_key
                 }
             else:
-                logging.critical(
+                logger.critical(
                     f"{self.adsb_api_endpoint} is not a valid API endpoint")
                 raise Exception('Invalid API endpoint')
             if parsed_config.get('ADSB', 'spot_unknown').lower() == 'y':
-                logging.debug('Set spot_unknown to True')
+                logger.debug('Set spot_unknown to True')
                 self.spot_unknown = True
             elif parsed_config.get('ADSB', 'spot_unknown').lower() == 'n':
-                logging.debug('Set spot_unknown to False')
+                logger.debug('Set spot_unknown to False')
                 self.spot_unknown = False
             else:
                 raise ValueError()
             if parsed_config.get('ADSB', 'spot_mil').lower() == 'y':
-                logging.debug('Set spot_mil to True')
+                logger.debug('Set spot_mil to True')
                 self.spot_mil = True
             elif parsed_config.get('ADSB', 'spot_mil').lower() == 'n':
-                logging.debug('Set spot_mil to False')
+                logger.debug('Set spot_mil to False')
                 self.spot_mil = False
             else:
                 raise ValueError()
             if parsed_config.get('ADSB', 'spot_interesting').lower() == 'y':
-                logging.debug('Set spot_interesting to True')
+                logger.debug('Set spot_interesting to True')
                 self.spot_interesting = True
             elif parsed_config.get('ADSB', 'spot_interesting').lower() == 'n':
-                logging.debug('Set spot_interesting to False')
+                logger.debug('Set spot_interesting to False')
                 self.spot_interesting = False
             else:
                 raise ValueError()
         except (configparser.NoOptionError, configparser.NoSectionError) as config_error:
-            logging.critical(
+            logger.critical(
                 f'Configuration file error, missing section and/or option: {config_error}')
             raise config_error
 
     def _read_watchlist(self):
         """Load aircraft to watch from watchlist csv file"""
-        logging.info(f'Loading watchlist from {self.watchlist_path}')
+        logger.info(f'Loading watchlist from {self.watchlist_path}')
         try:
             with open(self.watchlist_path) as watchlist_file:
                 csv_reader = csv.reader(watchlist_file, delimiter=',')
@@ -154,7 +151,7 @@ class Spotter:
                         if row[1] == 'RN':
                             self.watchlist_rn[row[0]] = {'desc': row[3].strip(),
                                                          'img': row[4].strip()}
-                            logging.info(
+                            logger.info(
                                 f'Added {row[0]} to reg num watchlist. Description: "{row[3]}",'
                                 f' image: {row[4]}')
                         elif row[1] == 'TC':
@@ -162,13 +159,13 @@ class Spotter:
                             self.watchlist_tc[row[0]] = {'desc': row[3].strip(),
                                                          'img': row[4].strip(),
                                                          'mil_only': mil_only}
-                            logging.info(
+                            logger.info(
                                 f'Added {row[0]} to type code watchlist. Military only: {mil_only} '
                                 f'Description: "{row[3]}", image: {row[4]}')
                         elif row[1] == 'IA':
                             self.watchlist_ia[row[0]] = {'desc': row[3].strip(),
                                                          'img': row[4].strip()}
-                            logging.info(
+                            logger.info(
                                 f'Added {row[0]} to ICAO address watchlist. Description: "{row[3]}", '
                                 f'image: {row[4]}')
                         else:
@@ -177,24 +174,24 @@ class Spotter:
                             raise IndexError
                     except IndexError as watchlist_error:
                         row_errors += 1
-                        logging.warning(f"Error reading row {row_count} from {self.watchlist_path}, "
-                                        f"please check the watchlist file. This error is usually "
-                                        f"caused by missing columns in a row.")
+                        logger.warning(f"Error reading row {row_count} from {self.watchlist_path}, "
+                                       f"please check the watchlist file. This error is usually "
+                                       f"caused by missing columns in a row.")
                         continue
                 if row_errors > 0:
-                    logging.warning(f"Generated {row_errors} while reading watchlist file")
+                    logger.warning(f"Generated {row_errors} while reading watchlist file")
         except FileNotFoundError:
-            logging.warning(f"Watchlist file not found at {self.watchlist_path}. Aircraft will "
-                            f"only be spotted based on rules in asb.config.")
+            logger.warning(f"Watchlist file not found at {self.watchlist_path}. Aircraft will "
+                           f"only be spotted based on rules in asb.config.")
         finally:
-            logging.info(
+            logger.info(
                 f'Added {len(self.watchlist_rn) + len(self.watchlist_tc) + len(self.watchlist_ia)}'
                 f' entries to the watchlist')
 
     def _append_craft(self, aircraft):
         """Add aircraft to spot queue and seen list"""
         icao = aircraft['icao']
-        logging.info(f'Aircraft added to queue. ICAO #: {icao}')
+        logger.info(f'Aircraft added to queue. ICAO #: {icao}')
         self.spot_queue.append(aircraft)
         self.seen[icao] = time()
 
@@ -205,28 +202,28 @@ class Spotter:
         del_list = []
         for seen_id, seen_time in self.seen.items():
             if seen_time < time() - self.cooldown:
-                logging.debug(f'Removing {seen_id} from seen list, cooldown time exceeded')
+                logger.debug(f'Removing {seen_id} from seen list, cooldown time exceeded')
                 del_list.append(seen_id)
         for item_to_delete in del_list:
             del self.seen[item_to_delete]
 
     def check_spots(self):
         """Check for new spotted aircraft that meet watchlist criteria"""
-        logging.info(
+        logger.info(
             f'Checking for aircraft via ADSBx API (endpoint: {self.adsb_api_endpoint})')
         try:
             response = requests.request("GET", self.url, headers=self.headers,
                                         timeout=4)
             response.raise_for_status()
-            logging.debug('API request appears successful')
+            logger.debug('API request appears successful')
             spotted_aircraft = response.json()['ac']
             if spotted_aircraft is None:
                 # prevent an empty list of spots from creating a TypeError in the next for loop
-                logging.info('No aircraft detected in spotting area')
+                logger.info('No aircraft detected in spotting area')
                 spotted_aircraft = []
         except (requests.exceptions.HTTPError, requests.exceptions.Timeout,
                 AttributeError) as err:
-            logging.error(f'Error with API request: {err}')
+            logger.error(f'Error with API request: {err}')
             spotted_aircraft = []
         self._check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
         for aircraft in spotted_aircraft:
@@ -234,19 +231,19 @@ class Spotter:
                 # This loop checks all spotted aircraft against watchlist and preferences to
                 # determine if it should be added to the tweet queue
                 craft = dict(aircraft)  # convert json object provided by API to dictionary
-                logging.debug(
+                logger.debug(
                     f'Spotted aircraft {craft["icao"]}. Full data: {craft}')
                 if craft['icao'] in self.seen.keys():
                     # if craft icao number is in seen list, do not queue
-                    logging.debug(f"{craft['icao']} is already spotted, not added to queue")
+                    logger.debug(f"{craft['icao']} is already spotted, not added to queue")
                     continue
                 if craft['gnd'] == '1':
                     # if craft is on ground, do not queue
-                    logging.debug(f"{craft['icao']} is on the ground, not added to queue")
+                    logger.debug(f"{craft['icao']} is on the ground, not added to queue")
                     continue
                 if craft['icao'] in self.watchlist_ia.keys():
                     # if the aircraft's ICAO address is on the watchlist, add it to the queue
-                    logging.debug(f'{craft["icao"]} in watchlist, adding to spot queue')
+                    logger.debug(f'{craft["icao"]} in watchlist, adding to spot queue')
                     if self.watchlist_ia[craft['icao']]['desc'] != '':
                         # if there is a description in the watchlist entry for this ICAO address,
                         # add it to the dict
@@ -259,7 +256,7 @@ class Spotter:
                         craft['img'] = False
                     self._append_craft(craft)
                 elif craft['reg'] in self.watchlist_rn.keys():
-                    logging.debug(f'{craft["reg"]} in watchlist, adding to spot queue')
+                    logger.debug(f'{craft["reg"]} in watchlist, adding to spot queue')
                     # if the aircraft's registration number is on the watchlist, add it to the queue
                     if self.watchlist_rn[craft['reg']]['desc'] != '':
                         # if there is a description in the watchlist entry for this reg number,
@@ -283,15 +280,15 @@ class Spotter:
                             craft['img'] = self.watchlist_tc[craft['type']]['img']
                         else:
                             craft['img'] = False
-                        logging.debug(
+                        logger.debug(
                             f'{craft["type"]} in watchlist as military-only and mil=1, adding to '
                             f'spot queue')
                         self._append_craft(craft)
                     elif self.watchlist_tc[craft['type']]['mil_only'] is True and \
                             craft['mil'] == '0':
-                        logging.debug(
-                            f'{craft["type"]} in watchlist as military-only and mil=0, not adding to '
-                            f'spot queue')
+                        logger.debug(
+                            f'{craft["type"]} in watchlist as military-only and mil=0, not adding '
+                            f'to spot queue')
                         continue
                     else:
                         if self.watchlist_tc[craft['type']]['desc'] != '':
@@ -302,21 +299,21 @@ class Spotter:
                             craft['img'] = self.watchlist_tc[craft['type']]['img']
                         else:
                             craft['img'] = False
-                        logging.debug(
+                        logger.debug(
                             f'{craft["type"]} in watchlist, adding to spot queue')
                         self._append_craft(craft)
                 elif craft['reg'] == '' and self.spot_unknown is True:
                     # if there's no registration number and spot_unknown is set, add to tweet queue
                     craft['desc'] = False
                     craft['img'] = False
-                    logging.info('Unknown registration number, adding to spot queue')
+                    logger.info('Unknown registration number, adding to spot queue')
                     self._append_craft(craft)
                 elif craft['mil'] == '1' and self.spot_mil is True:
                     # if craft is designated military by ADS-B exchange and spot_mil is set,
                     # add to tweet queue
                     craft['desc'] = False
                     craft['img'] = False
-                    logging.debug(
+                    logger.debug(
                         "Aircraft is designated as military, adding to spot queue")
                     self._append_craft(craft)
                 elif craft['interested'] == '1' and self.spot_interesting is True:
@@ -324,15 +321,15 @@ class Spotter:
                     # add to tweet queue
                     craft['desc'] = False
                     craft['img'] = False
-                    logging.debug(
+                    logger.debug(
                         "Aircraft is designated as interesting, adding to spot queue")
                     self._append_craft(craft)
                 else:
                     # if none of these criteria are met, iterate to next aircraft in the list
-                    logging.debug(
+                    logger.debug(
                         f"{craft['icao']} did not meet any spotting criteria, not added to queue")
                     continue
             except KeyError:
-                logging.warning("Key error when parsing aircraft returned from API, skipping")
-                logging.debug(f"Raw json object: {aircraft}")
+                logger.warning("Key error when parsing aircraft returned from API, skipping")
+                logger.debug(f"Raw json object: {aircraft}")
                 continue

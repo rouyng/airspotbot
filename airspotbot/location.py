@@ -15,12 +15,12 @@ import logging
 import requests
 from time import sleep
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s',
-                    datefmt='%d-%b-%y %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 
 class Locator:
     """Class for generating location descriptions. Requires a ConfigParser object as an argument"""
+
     def __init__(self, config_parsed):
         self.location_type = 'MANUAL'
         self.location_manual_description = ''
@@ -52,21 +52,21 @@ class Locator:
             assert self.location_type != ''
             assert self.location_type in ('MANUAL', 'COORDINATE', 'PELIAS', '3GEONAMES')
         except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-            logging.warning("Location type is not set in config , defaulting to coordinate. Valid "
-                            "options are 'manual', 'coordinate', or 'pelias'")
+            logger.warning("Location type is not set in config , defaulting to coordinate. Valid "
+                           "options are 'manual', 'coordinate', or 'pelias'")
             self.location_type = 'COORDINATE'
         if self.location_type == 'MANUAL':
-            logging.info("Location type set to manual")
+            logger.info("Location type set to manual")
             try:
                 self.location_manual_description = str(parsed_config.get('LOCATION',
                                                                          'location_description'))
                 assert self.location_manual_description != ''  # check location type is not blank
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-                logging.warning("Location type is set to manual, but location_description is not"
-                                " set in config file. Reverting location type to coordinates")
+                logger.warning("Location type is set to manual, but location_description is not"
+                               " set in config file. Reverting location type to coordinates")
                 self.location_type = 'COORDINATE'
         elif self.location_type == 'PELIAS':
-            logging.info("Location type set to pelias")
+            logger.info("Location type set to pelias")
             # if location type is PELIAS, configure and test pelias host
             # first, read host url/IP from config file
             try:
@@ -74,9 +74,9 @@ class Locator:
                 assert self.pelias_host != ''
             except (configparser.NoOptionError, configparser.NoSectionError,
                     AssertionError) as config_error:
-                logging.error('pelias is selected as the location type, but pelias_host is not set'
-                              ' in config file. Please enter a url/IP address of a valid pelias'
-                              ' instance')
+                logger.error('pelias is selected as the location type, but pelias_host is not set'
+                             ' in config file. Please enter a url/IP address of a valid pelias'
+                             ' instance')
                 raise configparser.NoOptionError("pelias_host", "LOCATION") from config_error
             # read pelias API port from config file
             try:
@@ -84,7 +84,7 @@ class Locator:
                 assert self.pelias_port != 0
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError,
                     ValueError) as config_error:
-                logging.error('Pelias port is not set in config file')
+                logger.error('Pelias port is not set in config file')
                 raise configparser.NoOptionError("pelias_port", "LOCATION") from config_error
             # construct a url to test the API uses an arbitrary location and just checks that the
             # API response looks like it is in the correct format there is NO check to see
@@ -94,7 +94,7 @@ class Locator:
                 f'point.lon=-0.0759493'
             # make sure we can connect to the pelias host over http
             try:
-                logging.info(f"Testing Pelias API at {pelias_test_url}")
+                logger.info(f"Testing Pelias API at {pelias_test_url}")
                 test_result = requests.get(pelias_test_url)
                 test_result.raise_for_status()
                 # once we know we can connect to the host, make sure the response looks right
@@ -103,16 +103,16 @@ class Locator:
                     assert 'geocoding' in result_keys
                     assert 'type' in result_keys
                     assert 'features' in result_keys
-                    logging.info(f'Pelias API at {self.pelias_host}:{self.pelias_port} appears'
-                                 f' to be functional')
+                    logger.info(f'Pelias API at {self.pelias_host}:{self.pelias_port} appears'
+                                f' to be functional')
                 except AssertionError:
-                    logging.error('Pelias API response was not as expected, reverting location'
-                                  ' type to coordinates')
+                    logger.error('Pelias API response was not as expected, reverting location'
+                                 ' type to coordinates')
                     self.location_type = 'COORDINATES'
             except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as conn_err:
-                logging.error('Error connecting to Pelias API, reverting location type to'
-                              ' coordinates')
-                logging.error(conn_err)
+                logger.error('Error connecting to Pelias API, reverting location type to'
+                             ' coordinates')
+                logger.error(conn_err)
                 self.location_type = 'COORDINATES'
             # read pelias layers to use from file- see README.md and
             # https://github.com/pelias/documentation/blob/master/reverse.md
@@ -121,33 +121,33 @@ class Locator:
                 self.pelias_area_layer = str(parsed_config.get('LOCATION', 'pelias_area_layer'))
                 assert self.pelias_area_layer != ''
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-                logging.warning('Pelias area layer is not set in config file.')
+                logger.warning('Pelias area layer is not set in config file.')
                 self.pelias_area_layer = None
             try:
                 assert self.pelias_area_layer in self.pelias_valid_layers
             except AssertionError:
-                logging.warning(f'"{self.pelias_area_layer}" is not a valid pelias layer type. See'
-                                f' https://github.com/pelias/documentation/blob/master/reverse.md'
-                                f' for supported layers.')
+                logger.warning(f'"{self.pelias_area_layer}" is not a valid pelias layer type. See'
+                               f' https://github.com/pelias/documentation/blob/master/reverse.md'
+                               f' for supported layers.')
                 self.pelias_area_layer = None
             # second, the point layer
             try:
                 self.pelias_point_layer = str(parsed_config.get('LOCATION', 'pelias_point_layer'))
                 assert self.pelias_point_layer != ''
             except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-                logging.warning('Pelias point layer is not set in config file.')
+                logger.warning('Pelias point layer is not set in config file.')
                 self.pelias_point_layer = None
             try:
                 assert self.pelias_point_layer in self.pelias_valid_layers
             except AssertionError:
-                logging.warning(f'"{self.pelias_point_layer}" is not a valid pelias layer type. See'
-                                f' https://github.com/pelias/documentation/blob/master/reverse.md'
-                                f' for supported layers.')
+                logger.warning(f'"{self.pelias_point_layer}" is not a valid pelias layer type. See'
+                               f' https://github.com/pelias/documentation/blob/master/reverse.md'
+                               f' for supported layers.')
                 self.pelias_point_layer = None
         elif self.location_type == '3GEONAMES':
-            logging.info("Location type set to 3geonames")
+            logger.info("Location type set to 3geonames")
         elif self.location_type == 'COORDINATE':
-            logging.info("Location type set to coordinate")
+            logger.info("Location type set to coordinate")
 
     def get_location_description(self, lat, long):
         """Return a human-readable location description, based on settings in config file"""
@@ -157,8 +157,8 @@ class Locator:
         elif self.location_type == 'PELIAS':
             geocode = self._reverse_geocode_pelias(lat, long)
             if geocode['area'] is None and geocode['point'] is None:
-                logging.warning("No reverse geocoding results returned, defaulting to coordinate"
-                                " location")
+                logger.warning("No reverse geocoding results returned, defaulting to coordinate"
+                               " location")
                 return f"near {coord_string}"
             if geocode['area'] is None:
                 return f"near {geocode['point']}"
@@ -173,15 +173,15 @@ class Locator:
                 else:
                     return f"near {geocode['nearest']['name']}"
             except KeyError:
-                logging.info("3geonames reverse geocoder did not return place name, trying city")
+                logger.info("3geonames reverse geocoder did not return place name, trying city")
                 try:
                     return f"near {geocode['nearest']['city']}"
                 except KeyError:
-                    logging.warning("3geonames reverse geocoder did not return name or city, "
-                                    "falling back to coordinate string")
+                    logger.warning("3geonames reverse geocoder did not return name or city, "
+                                   "falling back to coordinate string")
             except TypeError:
-                logging.warning("Did not receive result from 3geonames reverse geocoder, falling "
-                                "back to coordinate string")
+                logger.warning("Did not receive result from 3geonames reverse geocoder, falling "
+                               "back to coordinate string")
         return f"near {coord_string}"
 
     def _reverse_geocode_pelias(self, lat, long):
@@ -190,12 +190,12 @@ class Locator:
         geo_results = {}
         try:
             if self.pelias_point_layer is not None:
-                pelias_result = requests.get(self.pelias_url+f"&layers={self.pelias_point_layer}")
+                pelias_result = requests.get(self.pelias_url + f"&layers={self.pelias_point_layer}")
                 pelias_result.raise_for_status()
                 try:
                     point_name = pelias_result.json()["features"][0]["properties"]["name"]
                 except (AttributeError, KeyError, IndexError):
-                    logging.warning("No point feature found")
+                    logger.warning("No point feature found")
                     point_name = None
             else:
                 point_name = None
@@ -205,7 +205,7 @@ class Locator:
                 try:
                     area_name = pelias_result.json()["features"][0]["properties"]["name"]
                 except (AttributeError, KeyError, IndexError):
-                    logging.warning("No area feature found")
+                    logger.warning("No area feature found")
                     area_name = None
             else:
                 area_name = None
@@ -213,8 +213,8 @@ class Locator:
             geo_results['area'] = area_name
             return geo_results
         except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as conn_err:
-            logging.error('Error connecting to Pelias API')
-            logging.error(conn_err)
+            logger.error('Error connecting to Pelias API')
+            logger.error(conn_err)
             geo_results['point'] = None
             geo_results['area'] = None
         return geo_results
@@ -228,7 +228,7 @@ class Locator:
         :param long: Longitude to geocode, as a positive or negative float or string
         :return: json object containing geocoder response
         """
-        logging.debug(f"Looking up {lat}, {long} using 3geonames api")
+        logger.debug(f"Looking up {lat}, {long} using 3geonames api")
         sleep(1)  # hardcoded delay to limit rate of requests to this free API
         try:
             response = requests.get(f"https://api.3geonames.org/{lat},{long}.json")
@@ -236,6 +236,6 @@ class Locator:
         except (requests.exceptions.ConnectionError,
                 requests.exceptions.HTTPError,
                 requests.exceptions.Timeout) as conn_err:
-            logging.error("Error connecting to https://api.3geonames.org/")
-            logging.error(conn_err)
+            logger.error("Error connecting to https://api.3geonames.org/")
+            logger.error(conn_err)
             return None
