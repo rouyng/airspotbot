@@ -52,7 +52,7 @@ class Locator:
             assert self.location_type != ''
             assert self.location_type in ('MANUAL', 'COORDINATE', 'PELIAS', '3GEONAMES')
         except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-            logger.warning("Location type is not set in config , defaulting to coordinate. Valid "
+            logger.warning("Location type is not set in config, defaulting to coordinate. Valid "
                            "options are 'manual', 'coordinate', or 'pelias'")
             self.location_type = 'COORDINATE'
         if self.location_type == 'MANUAL':
@@ -111,8 +111,7 @@ class Locator:
                     self.location_type = 'COORDINATES'
             except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as conn_err:
                 logger.error('Error connecting to Pelias API, reverting location type to'
-                             ' coordinates')
-                logger.error(conn_err)
+                             ' coordinates', exc_info=True)
                 self.location_type = 'COORDINATES'
             # read pelias layers to use from file- see README.md and
             # https://github.com/pelias/documentation/blob/master/reverse.md
@@ -213,8 +212,7 @@ class Locator:
             geo_results['area'] = area_name
             return geo_results
         except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as conn_err:
-            logger.error('Error connecting to Pelias API')
-            logger.error(conn_err)
+            logger.error('Error connecting to Pelias API', exc_info=True)
             geo_results['point'] = None
             geo_results['area'] = None
         return geo_results
@@ -236,6 +234,5 @@ class Locator:
         except (requests.exceptions.ConnectionError,
                 requests.exceptions.HTTPError,
                 requests.exceptions.Timeout) as conn_err:
-            logger.error("Error connecting to https://api.3geonames.org/")
-            logger.error(conn_err)
+            logger.error("Error connecting to https://api.3geonames.org/", exc_info=True)
             return None

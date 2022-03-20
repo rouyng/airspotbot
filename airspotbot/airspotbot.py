@@ -74,8 +74,7 @@ class SpotBot:
             api.verify_credentials()
             logger.info("Authentication OK")
         except tweepy.error.TweepError as tp_error:
-            logger.critical('Error during Twitter API authentication')
-            logger.critical(f'Error message: {tp_error}')
+            logger.critical('Error during Twitter API authentication', exc_info=True)
             raise KeyboardInterrupt
         logger.info('Twitter API created')
         return api
@@ -111,7 +110,7 @@ class SpotBot:
                 raise ValueError("Bad value in config file for TWITTER/down_tweet. "
                                  "Must be 'y' or 'n'.")
         except configparser.Error as config_error:
-            logger.critical(f'Configuration file error: {config_error}')
+            logger.critical('Configuration file error', exc_info=True)
             raise KeyboardInterrupt
 
     def tweet_spot(self, aircraft: dict):
@@ -162,13 +161,12 @@ class SpotBot:
                         self._api.update_status(tweet, media_ids=[image.media_id])
                     except AttributeError as upload_error:
                         # catch an attribute error, in case media upload fails in an unexpected way
-                        logger.warning("Attribute error when sending tweet")
-                        logger.warning(upload_error)
+                        logger.warning("Attribute error when sending tweet", exc_info=True)
                         self._api.update_status(tweet)
                 else:
                     self._api.update_status(tweet)
             except tweepy.error.TweepError as tp_error:
-                logger.critical(f'Error sending tweet: {tp_error}')
+                logger.critical('Error sending tweet', exc_info=True)
                 raise KeyboardInterrupt
 
     def _link_reply(self):
@@ -224,7 +222,7 @@ def read_config(config_file_path: str) -> configparser.ConfigParser:
             parser.read(config_file_path)  # read config file at path
             return parser
         except configparser.Error as config_err:
-            logger.critical(f"Error when reading config file: {config_err}")
+            logger.critical("Error when reading config file", exc_info=True)
             raise KeyboardInterrupt
     else:
         logger.critical(f"Configuration file not found at {config_file_path}")

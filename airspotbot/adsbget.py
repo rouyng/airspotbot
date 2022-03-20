@@ -129,9 +129,9 @@ class Spotter:
             else:
                 raise ValueError()
         except (configparser.NoOptionError, configparser.NoSectionError) as config_error:
-            logger.critical(
-                f'Configuration file error, missing section and/or option: {config_error}')
-            raise config_error
+            logger.critical('Configuration file error, missing section and/or option',
+                            exc_info=True)
+            raise KeyboardInterrupt
 
     def _read_watchlist(self):
         """Load aircraft to watch from watchlist csv file"""
@@ -223,7 +223,7 @@ class Spotter:
                 spotted_aircraft = []
         except (requests.exceptions.HTTPError, requests.exceptions.Timeout,
                 AttributeError) as err:
-            logger.error(f'Error with API request: {err}')
+            logger.error('Error with ADSB Exchange API request', exc_info=True)
             spotted_aircraft = []
         self._check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
         for aircraft in spotted_aircraft:
