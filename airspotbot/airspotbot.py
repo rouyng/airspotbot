@@ -2,7 +2,6 @@
 airspotbot's tweets. It also has the main program loop of airspotbot, so executing this module
 starts airspotbot. """
 
-
 import configparser
 import logging
 from time import sleep, time
@@ -35,7 +34,7 @@ class SpotBot:
     """
 
     def __init__(self, config_parsed: configparser.ConfigParser):
-        self.interval = 5
+        self.tweet_interval_seconds = 5
         self._consumer_key = None
         self._consumer_secret = None
         self._access_token = None
@@ -90,7 +89,7 @@ class SpotBot:
             else:
                 raise ValueError("Bad value in config file for TWITTER/enable_tweets. "
                                  "Must be 'y' or 'n'.")
-            self.interval = int(parsed_config.get('TWITTER', 'tweet_interval'))
+            self.tweet_interval_seconds = int(parsed_config.get('TWITTER', 'tweet_interval'))
             self._consumer_key = parsed_config.get('TWITTER', 'consumer_key')
             self._consumer_secret = parsed_config.get('TWITTER', 'consumer_secret')
             self._access_token = parsed_config.get('TWITTER', 'access_token')
@@ -121,14 +120,15 @@ class SpotBot:
         icao = aircraft['icao']
         type_code = aircraft['type']
         reg_num = aircraft['reg']
-        lat = aircraft['lat']
-        lon = aircraft['lon']
+        latitude_degrees = aircraft['lat']
+        longitude_degrees = aircraft['lon']
         description = aircraft['desc']
-        alt = aircraft['alt']
-        speed = aircraft['spd']
+        altitude_feet = aircraft['alt']
+        speed_knots = aircraft['spd']
         callsign = aircraft['call']
         link = f'https://globe.adsbexchange.com/?icao={icao}'
-        location_description = self._loc.get_location_description(lat, lon)
+        location_description = self._loc.get_location_description(latitude_degrees,
+                                                                  longitude_degrees)
         if reg_num.strip() == '':
             reg_num = 'unknown'
         if type_code.strip() == '':
@@ -137,8 +137,8 @@ class SpotBot:
             # if callsign is same as the registration number, ADSBx is not reporting a callsign
             callsign = False
         tweet = f"{description if description else type_code}" \
-                f"{', callsign '+ callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is " \
-                f"{location_description}. Altitude {alt} ft, speed {speed} kt. {link}"
+                f"{', callsign ' + callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is " \
+                f"{location_description}. Altitude {altitude_feet} ft, speed {speed_knots} kt. {link}"
         if aircraft['img']:
             image_path = "images/" + aircraft['img']  # always look for images in images subfolder
             if self.enable_tweets:
@@ -186,8 +186,8 @@ def run_bot(config_path: str = None, watchlist_path: str = None):
     config = read_config(config_path)
     bot = SpotBot(config)
     spots = adsbget.Spotter(config, watchlist_path)
-    bot_time = time()
-    spot_time = time()
+    bot_time_seconds = time()
+    spot_time_seconds = time()
     # check for aircraft and tweet any when bot first starts
     spots.check_spots()
     for _ in range(0, len(spots.spot_queue)):
@@ -195,14 +195,14 @@ def run_bot(config_path: str = None, watchlist_path: str = None):
         bot.tweet_spot(spot)
     # perpetually loop through checking aircraft spots and tweeting according to interval in config
     while True:
-        if time() > spot_time + spots.interval:
+        if time() > spot_time_seconds + spots.adsb_interval_seconds:
             spots.check_spots()
-            spot_time = time()
-        elif time() > bot_time + bot.interval:
+            spot_time_seconds = time()
+        elif time() > bot_time_seconds + bot.tweet_interval_seconds:
             for _ in range(0, len(spots.spot_queue)):
                 spot = spots.spot_queue.pop(0)
                 bot.tweet_spot(spot)
-            bot_time = time()
+            bot_time_seconds = time()
         else:
             sleep(1)
 

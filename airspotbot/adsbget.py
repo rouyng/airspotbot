@@ -22,11 +22,11 @@ class Spotter:
         self.watchlist_tc = {}
         self.watchlist_ia = {}
         self.seen = {}
-        self.interval = 60  # interval to check adsb_exchange
-        self.cooldown = 3600  # cooldown interval (seconds)
-        self.latitude = 0  # latitude of center of spot radius
-        self.longitude = 0  # longitude of center of spot radius
-        self.radius = 1  # radius of circle to check for spots (nautical miles)
+        self.adsb_interval_seconds = 60  # interval to check adsb_exchange
+        self.cooldown_seconds = 3600  # cooldown interval (seconds)
+        self.latitude_degrees = 0  # latitude of center of spot radius
+        self.longitude_degrees = 0  # longitude of center of spot radius
+        self.radius_nautical_miles = 1  # radius of circle to check for spots (nautical miles)
         self.adsb_api_key = None
         self.adsb_api_endpoint = None
         self.spot_queue = []
@@ -42,38 +42,38 @@ class Spotter:
         """Checks values in ConfigParser object and make sure they are sane"""
         try:
             try:
-                self.interval = int(parsed_config.get('ADSB', 'adsb_interval'))
-                logger.debug(f"Setting interval to {self.interval}")
+                self.adsb_interval_seconds = int(parsed_config.get('ADSB', 'adsb_interval'))
+                logger.debug(f"Setting interval to {self.adsb_interval_seconds}")
             except ValueError as interval_error:
                 raise ValueError(
                     "adsb_interval must be an integer value") from interval_error
             try:
-                self.cooldown = int(parsed_config.get('ADSB', 'cooldown'))
-                logger.debug(f"Setting interval to {self.cooldown}")
+                self.cooldown_seconds = int(parsed_config.get('ADSB', 'cooldown'))
+                logger.debug(f"Setting interval to {self.cooldown_seconds}")
             except ValueError as cooldown_error:
                 raise ValueError(
                     "cooldown must be an integer value") from cooldown_error
             try:
-                self.latitude = float(parsed_config.get('ADSB', 'lat'))
-                if not -90 <= self.latitude <= 90:
+                self.latitude_degrees = float(parsed_config.get('ADSB', 'lat'))
+                if not -90 <= self.latitude_degrees <= 90:
                     raise ValueError
-                logger.debug(f"Setting latitude to {self.latitude}")
+                logger.debug(f"Setting latitude to {self.latitude_degrees}")
             except ValueError as latitude_error:
                 raise ValueError(
                     "latitude must be a float value >= -90 and <= 90") from latitude_error
             try:
-                self.longitude = float(parsed_config.get('ADSB', 'long'))
-                if not -180 <= self.longitude <= 180:
+                self.longitude_degrees = float(parsed_config.get('ADSB', 'long'))
+                if not -180 <= self.longitude_degrees <= 180:
                     raise ValueError
-                logger.debug(f"Setting longitude to {self.longitude}")
+                logger.debug(f"Setting longitude to {self.longitude_degrees}")
             except ValueError as longitude_error:
                 raise ValueError("longitude must be a float value >= -180 and"
                                  " <= 180") from longitude_error
             try:
-                self.radius = int(parsed_config.get('ADSB', 'radius'))
-                if self.radius not in (1, 5, 10, 25, 100, 250):
+                self.radius_nautical_miles = int(parsed_config.get('ADSB', 'radius'))
+                if self.radius_nautical_miles not in (1, 5, 10, 25, 100, 250):
                     raise ValueError
-                logger.debug(f"Setting radius to {self.radius}")
+                logger.debug(f"Setting radius to {self.radius_nautical_miles}")
             except ValueError as radius_error:
                 raise ValueError('Error in configuration file: radius value is'
                                  ' not 1, 5, 10, 25, 100, or 250') from radius_error
@@ -84,8 +84,8 @@ class Spotter:
                 # create url and headers for RapidAPI request
                 logger.debug("Setting api endpoint to rapidapi")
                 self.url = f"https://adsbexchange-com1.p.rapidapi.com/json/" \
-                           f"lat/{self.latitude}/lon/{self.longitude}/dist/" \
-                           f"{self.radius}/"
+                           f"lat/{self.latitude_degrees}/lon/{self.longitude_degrees}/dist/" \
+                           f"{self.radius_nautical_miles}/"
                 logger.debug(f"API request url: {self.url}")
                 self.headers = {
                     'x-rapidapi-host': "adsbexchange-com1.p.rapidapi.com",
@@ -95,7 +95,7 @@ class Spotter:
                 # create url and headers for ADSBx API request
                 logger.debug("Setting api endpoint to adsbx")
                 self.url = f"https://adsbexchange.com/api/aircraft/json/lat/" \
-                           f"{self.latitude}/lon/{self.longitude}/dist/{self.radius}/"
+                           f"{self.latitude_degrees}/lon/{self.longitude_degrees}/dist/{self.radius_nautical_miles}/"
                 logger.debug(f"API request url: {self.url}")
                 self.headers = {
                     'api-auth': self.adsb_api_key
@@ -140,7 +140,7 @@ class Spotter:
             with open(self.watchlist_path) as watchlist_file:
                 csv_reader = csv.reader(watchlist_file, delimiter=',')
                 row_count = 0
-                row_errors = 0
+                row_error_count = 0
                 for row in csv_reader:
                     row_count += 1
                     try:
@@ -173,13 +173,13 @@ class Spotter:
                             # so raise an exception
                             raise IndexError
                     except IndexError as watchlist_error:
-                        row_errors += 1
+                        row_error_count += 1
                         logger.warning(f"Error reading row {row_count} from {self.watchlist_path}, "
                                        f"please check the watchlist file. This error is usually "
                                        f"caused by missing columns in a row.")
                         continue
-                if row_errors > 0:
-                    logger.warning(f"Generated {row_errors} while reading watchlist file")
+                if row_error_count > 0:
+                    logger.warning(f"Generated {row_error_count} while reading watchlist file")
         except FileNotFoundError:
             logger.warning(f"Watchlist file not found at {self.watchlist_path}. Aircraft will "
                            f"only be spotted based on rules in asb.config.")
@@ -200,8 +200,8 @@ class Spotter:
         so aircraft that loiter longer than the cooldown time will generate new tweets
         """
         del_list = []
-        for seen_id, seen_time in self.seen.items():
-            if seen_time < time() - self.cooldown:
+        for seen_id, seen_time_seconds in self.seen.items():
+            if seen_time_seconds < time() - self.cooldown_seconds:
                 logger.debug(f'Removing {seen_id} from seen list, cooldown time exceeded')
                 del_list.append(seen_id)
         for item_to_delete in del_list:
