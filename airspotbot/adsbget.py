@@ -16,7 +16,7 @@ class Spotter:
     criteria. Requires a ConfigParser object and path to watchlist.csv as arguments.
     """
 
-    def __init__(self, config_parsed, watchlist_path):
+    def __init__(self, config_parsed: configparser.ConfigParser, watchlist_path: str):
         self.watchlist_path = watchlist_path
         self.watchlist_rn = {}
         self.watchlist_tc = {}
@@ -38,23 +38,23 @@ class Spotter:
         self._validate_adsb_config(config_parsed)
         self._read_watchlist()
 
-    def _validate_adsb_config(self, parsed_config):
+    def _validate_adsb_config(self, config_parsed: configparser.ConfigParser):
         """Checks values in ConfigParser object and make sure they are sane"""
         try:
             try:
-                self.adsb_interval_seconds = int(parsed_config.get('ADSB', 'adsb_interval'))
+                self.adsb_interval_seconds = int(config_parsed.get('ADSB', 'adsb_interval'))
                 logger.debug(f"Setting interval to {self.adsb_interval_seconds}")
             except ValueError as interval_error:
                 raise ValueError(
                     "adsb_interval must be an integer value") from interval_error
             try:
-                self.cooldown_seconds = int(parsed_config.get('ADSB', 'cooldown'))
+                self.cooldown_seconds = int(config_parsed.get('ADSB', 'cooldown'))
                 logger.debug(f"Setting interval to {self.cooldown_seconds}")
             except ValueError as cooldown_error:
                 raise ValueError(
                     "cooldown must be an integer value") from cooldown_error
             try:
-                self.latitude_degrees = float(parsed_config.get('ADSB', 'lat'))
+                self.latitude_degrees = float(config_parsed.get('ADSB', 'lat'))
                 if not -90 <= self.latitude_degrees <= 90:
                     raise ValueError
                 logger.debug(f"Setting latitude to {self.latitude_degrees}")
@@ -62,7 +62,7 @@ class Spotter:
                 raise ValueError(
                     "latitude must be a float value >= -90 and <= 90") from latitude_error
             try:
-                self.longitude_degrees = float(parsed_config.get('ADSB', 'long'))
+                self.longitude_degrees = float(config_parsed.get('ADSB', 'long'))
                 if not -180 <= self.longitude_degrees <= 180:
                     raise ValueError
                 logger.debug(f"Setting longitude to {self.longitude_degrees}")
@@ -70,15 +70,15 @@ class Spotter:
                 raise ValueError("longitude must be a float value >= -180 and"
                                  " <= 180") from longitude_error
             try:
-                self.radius_nautical_miles = int(parsed_config.get('ADSB', 'radius'))
+                self.radius_nautical_miles = int(config_parsed.get('ADSB', 'radius'))
                 if self.radius_nautical_miles not in (1, 5, 10, 25, 100, 250):
                     raise ValueError
                 logger.debug(f"Setting radius to {self.radius_nautical_miles}")
             except ValueError as radius_error:
                 raise ValueError('Error in configuration file: radius value is'
                                  ' not 1, 5, 10, 25, 100, or 250') from radius_error
-            self.adsb_api_endpoint = parsed_config.get('ADSB', 'adsb_api').strip()
-            self.adsb_api_key = parsed_config.get('ADSB', 'adsb_api_key').strip()
+            self.adsb_api_endpoint = config_parsed.get('ADSB', 'adsb_api').strip()
+            self.adsb_api_key = config_parsed.get('ADSB', 'adsb_api_key').strip()
             logger.debug(f'Setting API key value to {self.adsb_api_key}')
             if self.adsb_api_endpoint == 'rapidapi':
                 # create url and headers for RapidAPI request
@@ -104,26 +104,26 @@ class Spotter:
                 logger.critical(
                     f"{self.adsb_api_endpoint} is not a valid API endpoint")
                 raise Exception('Invalid API endpoint')
-            if parsed_config.get('ADSB', 'spot_unknown').lower() == 'y':
+            if config_parsed.get('ADSB', 'spot_unknown').lower() == 'y':
                 logger.debug('Set spot_unknown to True')
                 self.spot_unknown = True
-            elif parsed_config.get('ADSB', 'spot_unknown').lower() == 'n':
+            elif config_parsed.get('ADSB', 'spot_unknown').lower() == 'n':
                 logger.debug('Set spot_unknown to False')
                 self.spot_unknown = False
             else:
                 raise ValueError()
-            if parsed_config.get('ADSB', 'spot_mil').lower() == 'y':
+            if config_parsed.get('ADSB', 'spot_mil').lower() == 'y':
                 logger.debug('Set spot_mil to True')
                 self.spot_mil = True
-            elif parsed_config.get('ADSB', 'spot_mil').lower() == 'n':
+            elif config_parsed.get('ADSB', 'spot_mil').lower() == 'n':
                 logger.debug('Set spot_mil to False')
                 self.spot_mil = False
             else:
                 raise ValueError()
-            if parsed_config.get('ADSB', 'spot_interesting').lower() == 'y':
+            if config_parsed.get('ADSB', 'spot_interesting').lower() == 'y':
                 logger.debug('Set spot_interesting to True')
                 self.spot_interesting = True
-            elif parsed_config.get('ADSB', 'spot_interesting').lower() == 'n':
+            elif config_parsed.get('ADSB', 'spot_interesting').lower() == 'n':
                 logger.debug('Set spot_interesting to False')
                 self.spot_interesting = False
             else:
@@ -188,7 +188,7 @@ class Spotter:
                 f'Added {len(self.watchlist_rn) + len(self.watchlist_tc) + len(self.watchlist_ia)}'
                 f' entries to the watchlist')
 
-    def _append_craft(self, aircraft):
+    def _append_craft(self, aircraft: dict):
         """Add aircraft to spot queue and seen list"""
         icao = aircraft['icao']
         logger.info(f'Aircraft added to queue. ICAO #: {icao}')

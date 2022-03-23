@@ -47,10 +47,10 @@ class SpotBot:
             self._api = self._initialize_twitter_api()
         self._loc = location.Locator(config_parsed)
 
-    def _read_logging_config(self, parsed_config):
+    def _read_logging_config(self, config_parsed: configparser.ConfigParser):
         """set logging verbosity from parsed config file"""
         try:
-            self.logging_level = str(parsed_config.get('MISC', 'logging_level')).upper()
+            self.logging_level = str(config_parsed.get('MISC', 'logging_level')).upper()
             assert self.logging_level != ''
             assert self.logging_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
             logger.setLevel(self.logging_level)
@@ -78,32 +78,32 @@ class SpotBot:
         logger.info('Twitter API created')
         return api
 
-    def _validate_twitter_config(self, parsed_config):
+    def _validate_twitter_config(self, config_parsed: configparser.ConfigParser):
         """Checks values in ConfigParser object and make sure they are sane"""
         try:
-            if parsed_config.get('TWITTER', 'enable_tweets') == 'y':
+            if config_parsed.get('TWITTER', 'enable_tweets') == 'y':
                 self.enable_tweets = True
-            elif parsed_config.get('TWITTER', 'enable_tweets') == 'n':
+            elif config_parsed.get('TWITTER', 'enable_tweets') == 'n':
                 logger.warning("Tweeting disabled in config file")
                 self.enable_tweets = False
             else:
                 raise ValueError("Bad value in config file for TWITTER/enable_tweets. "
                                  "Must be 'y' or 'n'.")
-            self.tweet_interval_seconds = int(parsed_config.get('TWITTER', 'tweet_interval'))
-            self._consumer_key = parsed_config.get('TWITTER', 'consumer_key')
-            self._consumer_secret = parsed_config.get('TWITTER', 'consumer_secret')
-            self._access_token = parsed_config.get('TWITTER', 'access_token')
-            self._access_token_secret = parsed_config.get('TWITTER', 'access_token_secret')
-            if parsed_config.get('TWITTER', 'use_descriptions').lower() == 'y':
+            self.tweet_interval_seconds = int(config_parsed.get('TWITTER', 'tweet_interval'))
+            self._consumer_key = config_parsed.get('TWITTER', 'consumer_key')
+            self._consumer_secret = config_parsed.get('TWITTER', 'consumer_secret')
+            self._access_token = config_parsed.get('TWITTER', 'access_token')
+            self._access_token_secret = config_parsed.get('TWITTER', 'access_token_secret')
+            if config_parsed.get('TWITTER', 'use_descriptions').lower() == 'y':
                 self._use_descriptions = True
-            elif parsed_config.get('TWITTER', 'use_descriptions').lower() == 'n':
+            elif config_parsed.get('TWITTER', 'use_descriptions').lower() == 'n':
                 self._use_descriptions = False
             else:
                 raise ValueError("Bad value in config file for TWITTER/use_descriptions. "
                                  "Must be 'y' or 'n'.")
-            if parsed_config.get('TWITTER', 'down_tweet').lower() == 'y':
+            if config_parsed.get('TWITTER', 'down_tweet').lower() == 'y':
                 self._down_tweet = True
-            elif parsed_config.get('TWITTER', 'down_tweet').lower() == 'n':
+            elif config_parsed.get('TWITTER', 'down_tweet').lower() == 'n':
                 self._down_tweet = False
             else:
                 raise ValueError("Bad value in config file for TWITTER/down_tweet. "
@@ -174,7 +174,7 @@ class SpotBot:
         pass
 
 
-def run_bot(config_path: str = None, watchlist_path: str = None):
+def run_bot(config_path: str, watchlist_path: str):
     """
     Main program loop of airspotbot. Invoked from __main__.py.
 
@@ -207,27 +207,23 @@ def run_bot(config_path: str = None, watchlist_path: str = None):
             sleep(1)
 
 
-def read_config(config_file_path: str) -> configparser.ConfigParser:
+def read_config(config_path: str) -> configparser.ConfigParser:
     """
     Parse configuration INI file and return a ConfigParser object.
 
-    :param config_file_path: String containing relative or absolute path to config INI file.
+    :param config_path: String containing relative or absolute path to config INI file.
     :return: ConfigParser object
     """
 
-    logger.info(f'Loading configuration from {config_file_path}')
-    if path.isfile(config_file_path):
+    logger.info(f'Loading configuration from {config_path}')
+    if path.isfile(config_path):
         parser = configparser.ConfigParser()
         try:
-            parser.read(config_file_path)  # read config file at path
+            parser.read(config_path)  # read config file at path
             return parser
         except configparser.Error as config_err:
             logger.critical("Error when reading config file", exc_info=True)
             raise KeyboardInterrupt
     else:
-        logger.critical(f"Configuration file not found at {config_file_path}")
+        logger.critical(f"Configuration file not found at {config_path}")
         raise KeyboardInterrupt
-
-
-if __name__ == "__main__":
-    run_bot()
