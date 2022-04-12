@@ -17,6 +17,13 @@ class Spotter:
     """
 
     def __init__(self, config_parsed: configparser.ConfigParser, watchlist_path: str):
+        """
+        Args:
+            config_parsed: ConfigParser object, generated from the config/ini file whose path is
+             specified as a command line argument when airspotbot is started.
+            watchlist_path: String containing path to watchlist csv file, specified as a command
+             line argument when airspotbot is started.
+        """
         self.watchlist_path = watchlist_path
         self.watchlist_rn = {}
         self.watchlist_tc = {}
@@ -39,7 +46,14 @@ class Spotter:
         self._read_watchlist()
 
     def _validate_adsb_config(self, config_parsed: configparser.ConfigParser):
-        """Checks values in ConfigParser object and make sure they are sane"""
+        """
+        Checks values in ConfigParser object and make sure they are sane
+
+        Args:
+            config_parsed: ConfigParser object, generated from the config/ini file whose path is
+            specified when airspotbot is started.
+        """
+        # TODO: refactor this giant conditional tree to something more maintainable
         try:
             try:
                 self.adsb_interval_seconds = int(config_parsed.get('ADSB', 'adsb_interval'))
@@ -134,7 +148,10 @@ class Spotter:
             raise KeyboardInterrupt
 
     def _read_watchlist(self):
-        """Load aircraft to watch from watchlist csv file"""
+        """
+        Load aircraft to watch from watchlist csv file at self.watchlist_path, populating
+        self.watchlist_rn, self.watchlist_tc and self.watchlist_ia dictionaries
+        """
         logger.info(f'Loading watchlist from {self.watchlist_path}')
         try:
             with open(self.watchlist_path) as watchlist_file:
@@ -145,7 +162,7 @@ class Spotter:
                     row_count += 1
                     try:
                         if row[0] == 'Key':
-                            # Cell A1 should be the the first cell of the title row
+                            # Cell A1 should contain the first cell of the title row
                             # If the expected value of "Key" is present, move to the next row
                             continue
                         if row[1] == 'RN':
@@ -189,15 +206,21 @@ class Spotter:
                 f' entries to the watchlist')
 
     def _append_craft(self, aircraft: dict):
-        """Add aircraft to spot queue and seen list"""
+        """
+        Add aircraft to self.spot_queue list and self.seen dictionary
+
+        Args:
+            aircraft: Dictionary generated from ADSBX API JSON reply, representing one aircraft
+        """
         icao = aircraft['icao']
         logger.info(f'Aircraft added to queue. ICAO #: {icao}')
         self.spot_queue.append(aircraft)
         self.seen[icao] = time()
 
     def _check_seen(self):
-        """Before checking for new spots, this function is run to clear aircraft off the "seen" list
-        so aircraft that loiter longer than the cooldown time will generate new tweets
+        """
+        Before checking for new spots, this function is run to remove aircraft from the self.seen
+        dictionary, so aircraft that loiter longer than the cooldown time will generate new tweets
         """
         del_list = []
         for seen_id, seen_time_seconds in self.seen.items():
@@ -208,7 +231,11 @@ class Spotter:
             del self.seen[item_to_delete]
 
     def check_spots(self):
-        """Check for new spotted aircraft that meet watchlist criteria"""
+        """
+        Check for new spotted aircraft that meet spotting criteria, including both watchlist
+        and configurable global spotting rules (such as military or unknown reg. no.).
+        Aircraft that meet spotting criteria are passed to self._append_craft function.
+        """
         logger.info(
             f'Checking for aircraft via ADSBx API (endpoint: {self.adsb_api_endpoint})')
         try:
@@ -230,6 +257,7 @@ class Spotter:
             try:
                 # This loop checks all spotted aircraft against watchlist and preferences to
                 # determine if it should be added to the tweet queue
+                # TODO: refactor this giant tree of conditionals to something more maintainable
                 craft = dict(aircraft)  # convert json object provided by API to dictionary
                 logger.debug(
                     f'Spotted aircraft {craft["icao"]}. Full data: {craft}')
