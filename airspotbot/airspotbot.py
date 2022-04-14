@@ -1,6 +1,8 @@
-"""This module contains the class SpotBot, which interfaces with the twitter API to generate
+"""
+This module contains the class SpotBot, which interfaces with the Twitter API to generate
 airspotbot's tweets. It also has the main program loop of airspotbot, so executing this module
-starts airspotbot. """
+starts airspotbot.
+"""
 
 import configparser
 import logging
@@ -15,6 +17,8 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message
                               datefmt='%d-%b-%y %H:%M:%S')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
+# TODO: TypedDict class to replace dict of aircraft information (requires python 3.8 or later)
 
 
 class SpotBot:
@@ -34,6 +38,11 @@ class SpotBot:
     """
 
     def __init__(self, config_parsed: configparser.ConfigParser):
+        """
+        Args:
+            config_parsed: ConfigParser object, generated from the config/ini file whose path is
+             specified as a command line argument when airspotbot is started.
+        """
         self.tweet_interval_seconds = 5
         self._consumer_key = None
         self._consumer_secret = None
@@ -48,7 +57,13 @@ class SpotBot:
         self._loc = location.Locator(config_parsed)
 
     def _read_logging_config(self, config_parsed: configparser.ConfigParser):
-        """set logging verbosity from parsed config file"""
+        """
+        Set root logger verbosity from parsed config file
+
+        Args:
+            config_parsed: ConfigParser object, generated from the config/ini file whose path is
+             specified as a command line argument when airspotbot is started.
+        """
         try:
             self.logging_level = str(config_parsed.get('MISC', 'logging_level')).upper()
             assert self.logging_level != ''
@@ -60,7 +75,12 @@ class SpotBot:
             logger.setLevel('DEBUG')
 
     def _initialize_twitter_api(self):
-        """Authenticate to Twitter API, check credentials and connection"""
+        """
+        Authenticate to Twitter API, check credentials and connection
+
+        Raises:
+            KeyboardInterrupt: Exits the main application loop if Twitter API authentication fails
+        """
         logger.info(f'Twitter consumer key: {self._consumer_key}')
         logger.info(f'Twitter consumer secret: {self._consumer_secret}')
         logger.info(f'Twitter access token: {self._access_token}')
@@ -79,7 +99,19 @@ class SpotBot:
         return api
 
     def _validate_twitter_config(self, config_parsed: configparser.ConfigParser):
-        """Checks values in ConfigParser object and make sure they are sane"""
+        """
+        Checks values in ConfigParser object and make sure they are sane
+
+        Args:
+            config_parsed: ConfigParser object, generated from the config/ini file whose path is
+             specified as a command line argument when airspotbot is started.
+
+        Raises:
+            ValueError: If the config file is parsed but an invalid option/value is present, exit
+            the main application loop with a descriptive error message.
+            KeyboardInterrupt: Exits the main application loop if an error occurs when getting
+            options from the file with the ConfigParser.get() method (for example, a missing option)
+        """
         try:
             if config_parsed.get('TWITTER', 'enable_tweets') == 'y':
                 self.enable_tweets = True
@@ -116,6 +148,13 @@ class SpotBot:
         """
         Generate tweet based on aircraft data returned in dictionary format from the adsbget
         module's Spotter.spot_queue list of dictionaries.
+
+        Args:
+            aircraft: Dictionary generated from ADSBX API JSON reply, representing one aircraft
+
+        Raises:
+            KeyboardInterrupt: Exits the main application loop if there is an error when sending
+            a tweet or interacting with the Twitter API
         """
         icao = aircraft['icao']
         type_code = aircraft['type']
@@ -176,11 +215,13 @@ class SpotBot:
 
 def run_bot(config_path: str, watchlist_path: str):
     """
-    Main program loop of airspotbot. Invoked from __main__.py.
+    Main program loop of airspotbot. Handles initial configuration and instantiation of
+     config, SpotBot and Spotter objects. After this, runs an infinite loop for checking ADSBX API
+     and tweeting spots, based on time intervals specified in config file. Invoked from __main__.py.
 
-    :param config_path: String containing relative or absolute path to config INI file.
-    :param watchlist_path: String containing relative or absolute path to watchlist CSV file.
-    :return:
+    Args:
+        config_path: String containing relative or absolute path to config INI file.
+        watchlist_path: String containing relative or absolute path to watchlist CSV file.
     """
 
     config = read_config(config_path)
@@ -211,8 +252,15 @@ def read_config(config_path: str) -> configparser.ConfigParser:
     """
     Parse configuration INI file and return a ConfigParser object.
 
-    :param config_path: String containing relative or absolute path to config INI file.
-    :return: ConfigParser object
+    Args:
+        config_path: String containing relative or absolute path to config INI file.
+
+    Returns:
+        ConfigParser object
+
+    Raises:
+        KeyboardInterrupt: Exits the main application loop if the configuration file is malformed
+        or cannot be found
     """
 
     logger.info(f'Loading configuration from {config_path}')
