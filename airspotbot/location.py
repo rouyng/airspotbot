@@ -6,8 +6,9 @@ descriptions in tweets of spotted aircraft.
 Based on settings read from the airspotbot config file, the Locator.get_location_description()
 method will return a manually-specified string, a nicely formatted string of latitude/longitude
 coordinates, or a description of the nearby area and/or points of interest. This last option is
-provided by a requests to the Pelias reverse geocoding API endpoint. For more information on this
-Pelias endpoint, see https://github.com/pelias/documentation/blob/master/reverse.md
+provided by either Pelias or 3geonames reverse geocoding API endpoints. For more information on this
+Pelias endpoint, see https://github.com/pelias/documentation/blob/master/reverse.md. For more info
+on the 3geonames API, see https://3geonames.org/api.
 """
 
 import configparser
@@ -19,9 +20,15 @@ logger = logging.getLogger(__name__)
 
 
 class Locator:
-    """Class for generating location descriptions. Requires a ConfigParser object as an argument"""
+    """Class for generating location descriptions, using either manual description, coordinates,
+    pelias reverse geocoder or 3geonames reverse geocoder"""
 
     def __init__(self, config_parsed):
+        """
+        Args:
+            config_parsed: ConfigParser object, generated from the config/ini file whose path is
+             specified as a command line argument when airspotbot is started.
+         """
         self.location_type = 'MANUAL'
         self.location_manual_description = ''
         self.pelias_host = ''
@@ -45,7 +52,16 @@ class Locator:
         self._validate_location_config(config_parsed)
 
     def _validate_location_config(self, config_parsed: configparser.ConfigParser):
-        """Checks location-related values in ConfigParser object and make sure they are sane"""
+        """Checks location-related values in ConfigParser object and make sure they are sane
+
+        Args:
+            config_parsed: ConfigParser object, generated from the config/ini file whose path is
+             specified as a command line argument when airspotbot is started.
+
+        Raises:
+            configparser.NoOptionError: This exception is raised if pelias location type is set but
+             other necessary options are not.
+         """
         try:
             self.location_type = str(config_parsed.get('LOCATION', 'location_type')).upper()
             # check location_type is populated with a valid value
@@ -86,9 +102,9 @@ class Locator:
                     ValueError) as config_error:
                 logger.error('Pelias port is not set in config file')
                 raise configparser.NoOptionError("pelias_port", "LOCATION") from config_error
-            # construct a url to test the API uses an arbitrary location and just checks that the
-            # API response looks like it is in the correct format. there is NO check to see
-            # whether the pelias host has geolocation data for the lat/longitude used by ASB
+            # construct URL to test the API. Uses an arbitrary location and only checks that the
+            # API response is in the correct format. There is NO check to see
+            # whether the pelias host has geolocation data for the lat/longitude used by ASB.
             pelias_test_url = \
                 f'{self.pelias_host}:{self.pelias_port}/v1/reverse?point.lat=51.5081124&' \
                 f'point.lon=-0.0759493'
@@ -149,7 +165,18 @@ class Locator:
             logger.info("Location type set to coordinate")
 
     def get_location_description(self, latitude_degrees: str, longitude_degrees: str):
-        """Return a human-readable location description, based on settings in config file"""
+        """
+        Return a human-readable location description, based on settings in config file. This is
+        the public interface for the Locator object after it is instantiated.
+
+        Args:
+            latitude_degrees: String representing latitude value in decimal degrees (-90 to 90)
+            longitude_degrees: String representing longitude value in decimal degrees (-180 to 180)
+
+        Returns:
+            String containing location description of the type set when the Locator object is
+             instantiated.
+        """
         # TODO: check that latitude_degrees and longitude_degrees are valid, pass to
         #  geocode functions as floats
         coord_string = str(round(float(latitude_degrees), 4)) + ', ' + str(
@@ -187,6 +214,16 @@ class Locator:
         return f"near {coord_string}"
 
     def _reverse_geocode_pelias(self, latitude_degrees: str, longitude_degrees: str):
+        """
+        Args:
+            latitude_degrees: String representing latitude value in decimal degrees (-90 to 90)
+            longitude_degrees: String representing longitude value in decimal degrees (-180 to 180)
+
+        Returns:
+            Dictionary with "point" and "area" keys, with values containing either strings of
+            human-readable names of the nearest point and area to the specified coordinates, or None
+            if the geocoder returns no result.
+        """
         self.pelias_url = \
             f'{self.pelias_host}:{self.pelias_port}/v1/reverse?point.lat={latitude_degrees}&point.lon={longitude_degrees}'
         geo_results = {}
@@ -225,9 +262,12 @@ class Locator:
         """
         Fetch geocoding from the free https://3geonames.org/api
 
-        :param latitude_degrees: Latitude to geocode, as a positive or negative float or string
-        :param longitude_degrees: Longitude to geocode, as a positive or negative float or string
-        :return: json object containing geocoder response
+        Args:
+            latitude_degrees: String representing latitude value in decimal degrees (-90 to 90)
+            longitude_degrees: String representing longitude value in decimal degrees (-180 to 180)
+
+        Returns:
+            JSON object containing geocoder API response, or None if we cannot connect to the API
         """
         logger.debug(f"Looking up {latitude_degrees}, {longitude_degrees} using 3geonames api")
         sleep(1)  # hardcoded delay to limit rate of requests to this free API
