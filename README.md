@@ -122,6 +122,7 @@ N174SY,RN,,,
 
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
+* Fetch screenshot from https://globe.adsbexchange.com using Selenium WebDriver
 * Add new "reply" column to watchlist. This will automatically reply to the spot tweet with the content in the reply cell. Sometimes, you want to add additional context such as an explanation or link.
 * Add automatic tweeting to notify followers of ADS-B Exchange API outage/error. Bot followers should be informed if an error/outage is preventing spots from being tweeted. (`down_tweet` option in config file is a placeholder for this)
 * Allow setting of configuration file paths with command-line arguments, currently the paths are hardcoded.
