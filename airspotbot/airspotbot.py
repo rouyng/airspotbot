@@ -8,7 +8,7 @@ import configparser
 import logging
 from time import sleep, time
 import tweepy
-from . import adsbget, location
+from . import adsbget, location, screenshot
 import os.path as path
 
 logger = logging.getLogger("airspotbot")
@@ -23,7 +23,7 @@ logger.addHandler(handler)
 
 class SpotBot:
     """
-    Generates formatted tweet text and interfaces with the twitter API.
+    Generates formatted tweet text and interfaces with the Twitter API using tweepy.
 
     simple usage example:
 
@@ -54,6 +54,8 @@ class SpotBot:
         self._validate_twitter_config(config_parsed)
         if self.enable_tweets:
             self._api = self._initialize_twitter_api()
+        if self.enable_screenshot:
+            self.screenshotter = screenshot.Screenshotter()
         self._loc = location.Locator(config_parsed)
 
     def _read_logging_config(self, config_parsed: configparser.ConfigParser):
@@ -140,6 +142,13 @@ class SpotBot:
             else:
                 raise ValueError("Bad value in config file for TWITTER/down_tweet. "
                                  "Must be 'y' or 'n'.")
+            if config_parsed.get('TWITTER', 'enable_screenshot').lower() == 'y':
+                self.enable_screenshot = True
+            elif config_parsed.get('TWITTER', 'enable_screenshot').lower() == 'n':
+                self.enable_screenshot = False
+            else:
+                raise ValueError("Bad value in config file for TWITTER/enable_screenshot. "
+                                 "Must be 'y' or 'n'.")
         except configparser.Error as config_error:
             logger.critical('Configuration file error', exc_info=True)
             raise KeyboardInterrupt
@@ -178,6 +187,7 @@ class SpotBot:
         tweet = f"{description if description else type_code}" \
                 f"{', callsign ' + callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is " \
                 f"{location_description}. Altitude {altitude_feet} ft, speed {speed_knots} kt. {link}"
+        # TODO: call screenshot.Screenshotter.get_globe_screenshot() and add to tweet
         if aircraft['img']:
             image_path = "images/" + aircraft['img']  # always look for images in images subfolder
             if self.enable_tweets:
