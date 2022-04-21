@@ -19,7 +19,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # TODO: TypedDict class to replace dict of aircraft information (requires python 3.8 or later)
-
+# TODO: check for tweepy usage broken by upgrade from 3.8.0 => 4.8.0.
 
 class SpotBot:
     """
@@ -94,7 +94,7 @@ class SpotBot:
             # test that authentication worked
             api.verify_credentials()
             logger.info("Authentication OK")
-        except tweepy.error.TweepError as tp_error:
+        except (tweepy.errors.TweepyException, tweepy.errors.HTTPException) as tp_error:
             logger.critical('Error during Twitter API authentication', exc_info=True)
             raise KeyboardInterrupt
         logger.info('Twitter API created')
@@ -187,34 +187,36 @@ class SpotBot:
         tweet = f"{description if description else type_code}" \
                 f"{', callsign ' + callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is " \
                 f"{location_description}. Altitude {altitude_feet} ft, speed {speed_knots} kt. {link}"
-        # TODO: call screenshot.Screenshotter.get_globe_screenshot() and add to tweet
+        uploaded_media_ids = []
+        # generate and upload screenshot image
+        if self.enable_screenshot and self.enable_tweets:
+            screenshot_base64 = self.screenshotter.get_globe_screenshot(icao)
+            try:
+                screenshot_media = self._api.media_upload(filename="screenshot.png",
+                                                       file=screenshot_base64)
+                uploaded_media_ids.append(screenshot_media.media_id)
+            except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
+                # if upload fails, handle exception and proceed gracefully without an image
+                logger.warning(f"Error uploading screenshot", exc_info=True)
+        # find and upload aircraft image from file specified in watchlist
         if aircraft['img']:
-            image_path = "images/" + aircraft['img']  # always look for images in images subfolder
+            image_path = "images/" + aircraft['img']  # hardcoded to look in images/ subfolder
             if self.enable_tweets:
                 try:
                     # if an image path is specified, upload it
                     logger.debug(f"Uploading image from {image_path}")
-                    image = self._api.media_upload(image_path)
-                except tweepy.error.TweepError:
+                    image_media = self._api.media_upload(image_path)
+                    uploaded_media_ids.append(image_media.media_id)
+                except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
                     # if upload fails, handle exception and proceed gracefully without an image
-                    logger.warning(f"Error uploading image from {image_path}, check if file exists")
-                    image = False
-        else:
-            image = False
+                    logger.warning(f"Error uploading image from {image_path}, check if file exists",
+                                   exc_info=True)
         logger.info(f"Generated tweet: {tweet}")
         if self.enable_tweets:
             logger.info(f'Tweeting: {tweet}')
             try:
-                if image:
-                    try:
-                        self._api.update_status(tweet, media_ids=[image.media_id])
-                    except AttributeError as upload_error:
-                        # catch an attribute error, in case media upload fails in an unexpected way
-                        logger.warning("Attribute error when sending tweet", exc_info=True)
-                        self._api.update_status(tweet)
-                else:
-                    self._api.update_status(tweet)
-            except tweepy.error.TweepError as tp_error:
+                self._api.update_status(tweet, media_ids=uploaded_media_ids)
+            except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
                 logger.critical('Error sending tweet', exc_info=True)
                 raise KeyboardInterrupt
 
