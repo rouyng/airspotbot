@@ -18,6 +18,7 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+
 # TODO: TypedDict class to replace dict of aircraft information (requires python 3.8 or later)
 # TODO: check for tweepy usage broken by upgrade from 3.8.0 => 4.8.0.
 
@@ -193,7 +194,7 @@ class SpotBot:
             screenshot_base64 = self.screenshotter.get_globe_screenshot(icao)
             try:
                 screenshot_media = self._api.media_upload(filename="screenshot.png",
-                                                       file=screenshot_base64)
+                                                          file=screenshot_base64)
                 uploaded_media_ids.append(screenshot_media.media_id)
             except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
                 # if upload fails, handle exception and proceed gracefully without an image

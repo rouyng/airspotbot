@@ -26,9 +26,10 @@ airspotbot currently runs [@phxairspots on twitter](https://www.twitter.com/phxa
 
 ### Requirements
 
- - airspotbot requires Python 3.7 or later.
- - You must have a valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key
- - You must also have a valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key. Please note that as of 2021, ADS-B Exchange is no longer giving API keys to all feeders, so their API is now solely accessed through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1). The "adsbx" endpoint option in asb.config is provided for legacy support, or if you have some preexisting agreement with ADSBX to use their endpoint directly. 
+ - Python 3.7 or later.
+ - Valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key
+ - Valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key. Please note that as of 2021, ADS-B Exchange is no longer giving API keys to all feeders, so their API is now solely accessed through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1). The "adsbx" endpoint option in asb.config is provided for legacy support, or if you have some preexisting agreement with ADSBX to use their endpoint directly.
+ - (Optional) Chrome/Chromium web browser and a compatible version of [ChromeDriver](https://chromedriver.chromium.org/home). Used to capture screenshots of globe.adsbexchange.com for inclusion in tweets.
  
 Please operate your installation of airspotbot in accordance with all relevant API terms of service. 
 
@@ -39,6 +40,7 @@ Please operate your installation of airspotbot in accordance with all relevant A
 4. Install package requirements using `pip3 install -r requirements.txt`
 5. Configure `config/asb.config` with your API keys and preferences. See details in "Configuring" section below.
 6. Configure `config/watchlist.csv` with your desired watchlist. See details in "Configuring" section below.
+7. **Optional:** Download and install Chrome (or Chromium) browser and the [ChromeDriver](https://chromedriver.chromium.org/home) executable. Please note that the ChromeDriver major version must match the browser's major version. If you are using Windows, place the ChromeDriver executable in a "webdrivers/" subdirectory within the top level airspotbot directory. For other platforms, airspotbot will look for the executable in the system path. This is all automatically configured if using the included Dockerfile.
 
 ### Running
 Run airspotbot with `python3 -m airspotbot`
@@ -122,7 +124,6 @@ N174SY,RN,,,
 
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
-* Fetch screenshot from https://globe.adsbexchange.com using Selenium WebDriver
 * Add new "reply" column to watchlist. This will automatically reply to the spot tweet with the content in the reply cell. Sometimes, you want to add additional context such as an explanation or link.
 * Add automatic tweeting to notify followers of ADS-B Exchange API outage/error. Bot followers should be informed if an error/outage is preventing spots from being tweeted. (`down_tweet` option in config file is a placeholder for this)
 * Allow setting of configuration file paths with command-line arguments, currently the paths are hardcoded.
