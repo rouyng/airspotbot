@@ -90,7 +90,7 @@ class SpotBot:
         logger.info(f'Twitter access token secret: {self._access_token_secret}')
         auth = tweepy.OAuthHandler(self._consumer_key, self._consumer_secret)
         auth.set_access_token(self._access_token, self._access_token_secret)
-        api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+        api = tweepy.API(auth, wait_on_rate_limit=True)
         try:
             # test that authentication worked
             api.verify_credentials()
