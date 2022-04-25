@@ -19,7 +19,13 @@ WINDOWS_CHROMEDRIVER_PATH = "./webdrivers/chromedriver.exe"
 
 class Screenshotter:
 
-    def __init__(self):
+    def __init__(self, zoom_level: int):
+        if 1 <= zoom_level <= 20:
+            self.zoom = int(zoom_level)
+        else:
+            logger.warning(f"Screenshot zoom level is set to {zoom_level}, it should be an integer "
+                           f"from 1-20. Defaulting to 12.")
+            self.zoom = 12
         self.driver = self._start_webdriver()
 
     def _start_webdriver(self) -> webdriver.Chrome:
@@ -62,7 +68,7 @@ class Screenshotter:
              PNG screenshot as binary data
         """
         logger.debug(f"Getting browser screenshot for ICAO {icao}")
-        self.driver.get(f"https://globe.adsbexchange.com/?icao={icao}&zoom=12&hideButtons")
+        self.driver.get(f"https://globe.adsbexchange.com/?icao={icao}&zoom={self.zoom}&kiosk")
         map_element = self.driver.find_element(by=By.CSS_SELECTOR, value="canvas.ol-layer")
         sleep(1)  # sleep to let the page finish loading, otherwise a shaded grid overlay appears
         # TODO: use a webdriver wait instead of sleep

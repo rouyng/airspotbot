@@ -216,10 +216,12 @@ class SpotBot:
                     logger.warning(f"Error uploading image from {image_path}, check if file exists",
                                    exc_info=True)
         logger.info(f"Generated tweet: {tweet}")
+        logger.info(f"Attached Media IDs: {uploaded_media_ids}")
         if self.enable_tweets:
-            logger.info(f'Tweeting: {tweet}')
+            logger.info(f'Sending tweet...')
             try:
                 self._api.update_status(tweet, media_ids=uploaded_media_ids)
+                logger.info("Tweet successful!")
             except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
                 logger.critical('Error sending tweet', exc_info=True)
                 raise KeyboardInterrupt
