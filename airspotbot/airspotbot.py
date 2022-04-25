@@ -10,6 +10,7 @@ from time import sleep, time
 import tweepy
 from . import adsbget, location, screenshot
 import os.path as path
+from io import BytesIO
 
 logger = logging.getLogger("airspotbot")
 handler = logging.StreamHandler()
@@ -191,14 +192,16 @@ class SpotBot:
         uploaded_media_ids = []
         # generate and upload screenshot image
         if self.enable_screenshot and self.enable_tweets:
-            screenshot_base64 = self.screenshotter.get_globe_screenshot(icao)
-            try:
-                screenshot_media = self._api.media_upload(filename="screenshot.png",
-                                                          file=screenshot_base64)
-                uploaded_media_ids.append(screenshot_media.media_id)
-            except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
-                # if upload fails, handle exception and proceed gracefully without an image
-                logger.warning(f"Error uploading screenshot", exc_info=True)
+            # initialize a binary stream to write then read the png screenshot, all in memory
+            with BytesIO() as b:
+                b.write(self.screenshotter.get_globe_screenshot(icao))
+                b.seek(0)  # set byte stream position to the start
+                try:
+                    screenshot_media = self._api.media_upload(filename="screenshot.png", file=b)
+                    uploaded_media_ids.append(screenshot_media.media_id)
+                except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
+                    # if upload fails, handle exception and proceed gracefully without an image
+                    logger.warning(f"Error uploading screenshot", exc_info=True)
         # find and upload aircraft image from file specified in watchlist
         if aircraft['img']:
             image_path = "images/" + aircraft['img']  # hardcoded to look in images/ subfolder

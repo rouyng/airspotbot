@@ -58,10 +58,11 @@ class Screenshotter:
         Args:
             icao: ICAO address of plane to screenshot
         Returns:
-             Screenshot as base64 encoded string
+             PNG screenshot as binary data
         """
+        logger.debug(f"Getting browser screenshot for ICAO {icao}")
         self.driver.get(f"https://globe.adsbexchange.com/?icao={icao}&zoom=12&hideButtons")
         map_element = self.driver.find_element(by=By.CSS_SELECTOR, value="canvas.ol-layer")
         sleep(1)  # sleep to let the page finish loading, otherwise a shaded grid overlay appears
         # TODO: use a webdriver wait instead of sleep
-        return map_element.screenshot_as_base64
+        return map_element.screenshot_as_png
