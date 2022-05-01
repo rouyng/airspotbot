@@ -57,7 +57,7 @@ class SpotBot:
         if self.enable_tweets:
             self._api = self._initialize_twitter_api()
         if self.enable_screenshot:
-            self.screenshotter = screenshot.Screenshotter()
+            self.screenshotter = screenshot.Screenshotter(self.zoom_level)
         self._loc = location.Locator(config_parsed)
 
     def _read_logging_config(self, config_parsed: configparser.ConfigParser):
@@ -146,6 +146,14 @@ class SpotBot:
                                  "Must be 'y' or 'n'.")
             if config_parsed.get('TWITTER', 'enable_screenshot').lower() == 'y':
                 self.enable_screenshot = True
+                try:
+                    zoom_value = config_parsed.get('TWITTER', 'screenshot_zoom')
+                    self.zoom_level = int(zoom_value)
+                    if self.zoom_level > 20 or self.zoom_level < 1:
+                        raise ValueError
+                except ValueError:
+                    raise ValueError(f"Bad value in config file for TWITTER/screenshot_zoom: "
+                                     f"'{zoom_value}'. Must be an integer from 1 to 20.")
             elif config_parsed.get('TWITTER', 'enable_screenshot').lower() == 'n':
                 self.enable_screenshot = False
             else:
