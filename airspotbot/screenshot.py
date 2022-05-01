@@ -70,11 +70,11 @@ class Screenshotter:
         logger.debug(f"Getting browser screenshot for ICAO {icao}")
         self.driver.get(f"https://globe.adsbexchange.com/?icao={icao}&zoom={self.zoom}")
         # TODO: use a webdriver wait instead of sleep
-        sleep(1)  # sleep to let the page finish loading, otherwise a shaded grid overlay appears
+        sleep(2)  # sleep to let the page finish loading, otherwise a shaded grid overlay appears
         # execute javascript to hide ad banners
         self.driver.execute_script("""
-            // this array contains selectors for ad banner nodes that should be hidden 
-            var ad_selectors = [".FIOnDemandWrapper"];
+            // javascript snippet to hide ad banner elements
+            var ad_selectors = [".FIOnDemandWrapper"]; // banner selectors
             for (var i=0;i<ad_selectors.length;i++) {
                 let ad_element = document.querySelector(ad_selectors[i])
                 if ( ad_element )
