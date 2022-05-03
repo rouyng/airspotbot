@@ -73,7 +73,7 @@ airspotbot has two files that must be configured before use: `asb.config` and `w
 
 ### asb.config
 This file, structured in INI format, contains various configuration options organized into four sections:
-- `[TWITTER]`: Twitter API credentials and options related to tweet interval and format.
+- `[TWITTER]`: Twitter API credentials and options related to tweet interval and format. Also includes options related to screenshots.
 - `[ADSB]`: ADS-B Exchange API credentials, spotting location information and filters to determine which aircraft are spotted/tweeted.
 - `[LOCATION]`: Options for configuring location descriptions and reverse geocoding of aircraft locations. Has options for manually specifying a location description or connecting to Pelias and 3geonames APIs. See "Location description" section below for more details
 - `[MISC]`: Various debugging options for testing and logging purposes.
