@@ -29,8 +29,8 @@ airspotbot currently runs [@phxairspots on twitter](https://www.twitter.com/phxa
 ### Requirements
 
  - Python 3.7 or later.
- - Valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key
- - Valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key. Please note that as of 2021, ADS-B Exchange is no longer giving API keys to all feeders, so their API is now solely accessed through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1). The "adsbx" endpoint option in asb.config is provided for legacy support, or if you have some preexisting agreement with ADSBX to use their endpoint directly.
+ - Valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key (v1 only)
+ - Valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key (v1 only). Please note that as of 2021, ADS-B Exchange is no longer giving API keys to all feeders, so their API is now solely accessed through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1). The "adsbx" endpoint option in asb.config is provided for legacy support, or if you have some preexisting agreement with ADSBX to use their endpoint directly.
  - (Optional) Chrome/Chromium web browser and a compatible version of [ChromeDriver](https://chromedriver.chromium.org/home). Used to capture screenshots of globe.adsbexchange.com for inclusion in tweets.
  
 Please operate your installation of airspotbot in accordance with all relevant API terms of service. 
