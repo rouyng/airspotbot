@@ -13,6 +13,8 @@ You can configure airspotbot to tweet multiple kinds of aircraft activity within
 * I want to tweet when any aircraft with a certain [type code](https://en.wikipedia.org/wiki/List_of_aircraft_type_designators) (i.e. make and model of aircraft) is active in my area
 * I want to tweet when any aircraft with a certain type code is active in my area, but only if they are military
 
+Tweets generated for any of these use cases can be enhanced with additional information, including custom descriptions, images, reverse geocoding, and embedded screenshots of the map view from https://globe.adsbexchange.com.
+
 
 ### Limitations
 Please note that due to limitations of the ADS-B Exchange API, airspotbot is designed to only track spots within a 1, 5, 10, 25, 100 or 250 nautical mile radius of the latitude and longitude specified in the configuration file. In other words, you can't use one instance of airspotbot to track aircraft across the world. airspotbot is intended to monitor a specific area, such as an airport or city.
@@ -124,9 +126,9 @@ N174SY,RN,,,
 
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
-* Add new "reply" column to watchlist. This will automatically reply to the spot tweet with the content in the reply cell. Sometimes, you want to add additional context such as an explanation or link.
+* [Support ADSB Exchange API version 2](https://www.adsbexchange.com/version-2-api-wip/)
+* Support Twitter API v2
 * Add automatic tweeting to notify followers of ADS-B Exchange API outage/error. Bot followers should be informed if an error/outage is preventing spots from being tweeted. (`down_tweet` option in config file is a placeholder for this)
-* Allow setting of configuration file paths with command-line arguments, currently the paths are hardcoded.
 * Fetch aircraft photos using [Planespotters.net API](https://www.planespotters.net/photo/api)
 * Set custom user agent string for all API requests
 

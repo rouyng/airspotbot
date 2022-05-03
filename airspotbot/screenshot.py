@@ -38,7 +38,6 @@ class Screenshotter:
         """
         options = webdriver.ChromeOptions()  # create ChromeOptions object to set webdriver options
         options.add_argument('headless')  # set chrome webdriver to run in headless mode
-        # TODO: modify window size to get all spatial information in the screenshot
         options.add_argument('window-size=1200x800')
         # The following two options help the webdriver play nice in Docker environment
         options.add_argument('disable-dev-shm-usage')
