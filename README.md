@@ -13,6 +13,8 @@ You can configure airspotbot to tweet multiple kinds of aircraft activity within
 * I want to tweet when any aircraft with a certain [type code](https://en.wikipedia.org/wiki/List_of_aircraft_type_designators) (i.e. make and model of aircraft) is active in my area
 * I want to tweet when any aircraft with a certain type code is active in my area, but only if they are military
 
+Tweets generated for any of these use cases can be enhanced with additional information, including custom descriptions, images, reverse geocoding, and embedded screenshots of the map view from https://globe.adsbexchange.com.
+
 
 ### Limitations
 Please note that due to limitations of the ADS-B Exchange API, airspotbot is designed to only track spots within a 1, 5, 10, 25, 100 or 250 nautical mile radius of the latitude and longitude specified in the configuration file. In other words, you can't use one instance of airspotbot to track aircraft across the world. airspotbot is intended to monitor a specific area, such as an airport or city.
@@ -26,9 +28,10 @@ airspotbot currently runs [@phxairspots on twitter](https://www.twitter.com/phxa
 
 ### Requirements
 
- - airspotbot requires Python 3.7 or later.
- - You must have a valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key
- - You must also have a valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key. Please note that as of 2021, ADS-B Exchange is no longer giving API keys to all feeders, so their API is now solely accessed through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1). The "adsbx" endpoint option in asb.config is provided for legacy support, or if you have some preexisting agreement with ADSBX to use their endpoint directly. 
+ - Python 3.7 or later.
+ - Valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key
+ - Valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key. Please note that as of 2021, ADS-B Exchange is no longer giving API keys to all feeders, so their API is now solely accessed through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1). The "adsbx" endpoint option in asb.config is provided for legacy support, or if you have some preexisting agreement with ADSBX to use their endpoint directly.
+ - (Optional) Chrome/Chromium web browser and a compatible version of [ChromeDriver](https://chromedriver.chromium.org/home). Used to capture screenshots of globe.adsbexchange.com for inclusion in tweets.
  
 Please operate your installation of airspotbot in accordance with all relevant API terms of service. 
 
@@ -39,6 +42,7 @@ Please operate your installation of airspotbot in accordance with all relevant A
 4. Install package requirements using `pip3 install -r requirements.txt`
 5. Configure `config/asb.config` with your API keys and preferences. See details in "Configuring" section below.
 6. Configure `config/watchlist.csv` with your desired watchlist. See details in "Configuring" section below.
+7. **Optional:** Download and install Chrome (or Chromium) browser and the [ChromeDriver](https://chromedriver.chromium.org/home) executable. Please note that the ChromeDriver major version must match the browser's major version. If you are using Windows, place the ChromeDriver executable in a "webdrivers/" subdirectory within the top level airspotbot directory. For other platforms, airspotbot will look for the executable in the system path. This is all automatically configured if using the included Dockerfile.
 
 ### Running
 Run airspotbot with `python3 -m airspotbot`
@@ -69,7 +73,7 @@ airspotbot has two files that must be configured before use: `asb.config` and `w
 
 ### asb.config
 This file, structured in INI format, contains various configuration options organized into four sections:
-- `[TWITTER]`: Twitter API credentials and options related to tweet interval and format.
+- `[TWITTER]`: Twitter API credentials and options related to tweet interval and format. Also includes options related to screenshots.
 - `[ADSB]`: ADS-B Exchange API credentials, spotting location information and filters to determine which aircraft are spotted/tweeted.
 - `[LOCATION]`: Options for configuring location descriptions and reverse geocoding of aircraft locations. Has options for manually specifying a location description or connecting to Pelias and 3geonames APIs. See "Location description" section below for more details
 - `[MISC]`: Various debugging options for testing and logging purposes.
@@ -122,10 +126,9 @@ N174SY,RN,,,
 
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
-* Fetch screenshot from https://globe.adsbexchange.com using Selenium WebDriver
-* Add new "reply" column to watchlist. This will automatically reply to the spot tweet with the content in the reply cell. Sometimes, you want to add additional context such as an explanation or link.
+* [Support ADSB Exchange API version 2](https://www.adsbexchange.com/version-2-api-wip/)
+* Support Twitter API v2
 * Add automatic tweeting to notify followers of ADS-B Exchange API outage/error. Bot followers should be informed if an error/outage is preventing spots from being tweeted. (`down_tweet` option in config file is a placeholder for this)
-* Allow setting of configuration file paths with command-line arguments, currently the paths are hardcoded.
 * Fetch aircraft photos using [Planespotters.net API](https://www.planespotters.net/photo/api)
 * Set custom user agent string for all API requests
 

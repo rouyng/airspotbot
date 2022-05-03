@@ -8,8 +8,9 @@ import configparser
 import logging
 from time import sleep, time
 import tweepy
-from . import adsbget, location
+from . import adsbget, location, screenshot
 import os.path as path
+from io import BytesIO
 
 logger = logging.getLogger("airspotbot")
 handler = logging.StreamHandler()
@@ -18,12 +19,13 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-# TODO: TypedDict class to replace dict of aircraft information (requires python 3.8 or later)
 
+# TODO: TypedDict class to replace dict of aircraft information (requires python 3.8 or later)
+# TODO: check for tweepy usage broken by upgrade from 3.8.0 => 4.8.0.
 
 class SpotBot:
     """
-    Generates formatted tweet text and interfaces with the twitter API.
+    Generates formatted tweet text and interfaces with the Twitter API using tweepy.
 
     simple usage example:
 
@@ -54,6 +56,8 @@ class SpotBot:
         self._validate_twitter_config(config_parsed)
         if self.enable_tweets:
             self._api = self._initialize_twitter_api()
+        if self.enable_screenshot:
+            self.screenshotter = screenshot.Screenshotter(self.zoom_level)
         self._loc = location.Locator(config_parsed)
 
     def _read_logging_config(self, config_parsed: configparser.ConfigParser):
@@ -87,12 +91,12 @@ class SpotBot:
         logger.info(f'Twitter access token secret: {self._access_token_secret}')
         auth = tweepy.OAuthHandler(self._consumer_key, self._consumer_secret)
         auth.set_access_token(self._access_token, self._access_token_secret)
-        api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+        api = tweepy.API(auth, wait_on_rate_limit=True)
         try:
             # test that authentication worked
             api.verify_credentials()
             logger.info("Authentication OK")
-        except tweepy.error.TweepError as tp_error:
+        except (tweepy.errors.TweepyException, tweepy.errors.HTTPException) as tp_error:
             logger.critical('Error during Twitter API authentication', exc_info=True)
             raise KeyboardInterrupt
         logger.info('Twitter API created')
@@ -140,6 +144,21 @@ class SpotBot:
             else:
                 raise ValueError("Bad value in config file for TWITTER/down_tweet. "
                                  "Must be 'y' or 'n'.")
+            if config_parsed.get('TWITTER', 'enable_screenshot').lower() == 'y':
+                self.enable_screenshot = True
+                try:
+                    zoom_value = config_parsed.get('TWITTER', 'screenshot_zoom')
+                    self.zoom_level = int(zoom_value)
+                    if self.zoom_level > 20 or self.zoom_level < 1:
+                        raise ValueError
+                except ValueError:
+                    raise ValueError(f"Bad value in config file for TWITTER/screenshot_zoom: "
+                                     f"'{zoom_value}'. Must be an integer from 1 to 20.")
+            elif config_parsed.get('TWITTER', 'enable_screenshot').lower() == 'n':
+                self.enable_screenshot = False
+            else:
+                raise ValueError("Bad value in config file for TWITTER/enable_screenshot. "
+                                 "Must be 'y' or 'n'.")
         except configparser.Error as config_error:
             logger.critical('Configuration file error', exc_info=True)
             raise KeyboardInterrupt
@@ -178,33 +197,40 @@ class SpotBot:
         tweet = f"{description if description else type_code}" \
                 f"{', callsign ' + callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is " \
                 f"{location_description}. Altitude {altitude_feet} ft, speed {speed_knots} kt. {link}"
+        uploaded_media_ids = []
+        # generate and upload screenshot image
+        if self.enable_screenshot and self.enable_tweets:
+            # initialize a binary stream to write then read the png screenshot, all in memory
+            with BytesIO() as b:
+                b.write(self.screenshotter.get_globe_screenshot(icao))
+                b.seek(0)  # set byte stream position to the start
+                try:
+                    screenshot_media = self._api.media_upload(filename="screenshot.png", file=b)
+                    uploaded_media_ids.append(screenshot_media.media_id)
+                except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
+                    # if upload fails, handle exception and proceed gracefully without an image
+                    logger.warning(f"Error uploading screenshot", exc_info=True)
+        # find and upload aircraft image from file specified in watchlist
         if aircraft['img']:
-            image_path = "images/" + aircraft['img']  # always look for images in images subfolder
+            image_path = "images/" + aircraft['img']  # hardcoded to look in images/ subfolder
             if self.enable_tweets:
                 try:
                     # if an image path is specified, upload it
                     logger.debug(f"Uploading image from {image_path}")
-                    image = self._api.media_upload(image_path)
-                except tweepy.error.TweepError:
+                    image_media = self._api.media_upload(image_path)
+                    uploaded_media_ids.append(image_media.media_id)
+                except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
                     # if upload fails, handle exception and proceed gracefully without an image
-                    logger.warning(f"Error uploading image from {image_path}, check if file exists")
-                    image = False
-        else:
-            image = False
+                    logger.warning(f"Error uploading image from {image_path}, check if file exists",
+                                   exc_info=True)
         logger.info(f"Generated tweet: {tweet}")
+        logger.info(f"Attached Media IDs: {uploaded_media_ids}")
         if self.enable_tweets:
-            logger.info(f'Tweeting: {tweet}')
+            logger.info(f'Sending tweet...')
             try:
-                if image:
-                    try:
-                        self._api.update_status(tweet, media_ids=[image.media_id])
-                    except AttributeError as upload_error:
-                        # catch an attribute error, in case media upload fails in an unexpected way
-                        logger.warning("Attribute error when sending tweet", exc_info=True)
-                        self._api.update_status(tweet)
-                else:
-                    self._api.update_status(tweet)
-            except tweepy.error.TweepError as tp_error:
+                self._api.update_status(tweet, media_ids=uploaded_media_ids)
+                logger.info("Tweet successful!")
+            except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
                 logger.critical('Error sending tweet', exc_info=True)
                 raise KeyboardInterrupt
 
