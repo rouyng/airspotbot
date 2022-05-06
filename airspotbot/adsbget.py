@@ -35,7 +35,6 @@ class Spotter:
         self.longitude_degrees = 0  # longitude of center of spot radius
         self.radius_nautical_miles = 1  # radius of circle to check for spots (nautical miles)
         self.adsb_api_key = None
-        self.adsb_api_endpoint = None
         self.spot_queue = []
         self.spot_unknown = True  # always spot unknown reg #s
         self.spot_mil = True  # always spot mil-format serial numbers
@@ -91,7 +90,6 @@ class Spotter:
             except ValueError as radius_error:
                 raise ValueError('Error in configuration file: radius value is'
                                  ' not 1, 5, 10, 25, 100, or 250') from radius_error
-            self.adsb_api_endpoint = config_parsed.get('ADSB', 'adsb_api').strip()
             self.adsb_api_key = config_parsed.get('ADSB', 'adsb_api_key').strip()
             logger.debug(f'Setting API key value to {self.adsb_api_key}')
             # create url and headers for RapidAPI request
@@ -223,7 +221,7 @@ class Spotter:
         Aircraft that meet spotting criteria are passed to self._append_craft function.
         """
         logger.info(
-            f'Checking for aircraft via ADSBx API (endpoint: {self.adsb_api_endpoint})')
+            f'Checking for aircraft via ADSBx API (endpoint: RapidAPI)')
         try:
             response = requests.request("GET", self.url, headers=self.headers,
                                         timeout=4)

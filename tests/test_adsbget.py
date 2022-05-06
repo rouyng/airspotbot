@@ -26,7 +26,6 @@ def generate_empty_adsb_config(scope="module"):
                                 "cooldown": "",
                                 "spot_unknown": "",
                                 "spot_mil": "",
-                                "adsb_api": "",
                                 "adsb_api_key": ""}
     return dummy_config
 
@@ -42,7 +41,6 @@ def generate_valid_adsb_config(scope="module"):
                                 "spot_unknown": "y",
                                 "spot_mil": "y",
                                 "spot_interesting": "y",
-                                "adsb_api": "adsbx",
                                 "adsb_api_key": ''.join(random.choices(string.ascii_letters + string.digits, k=16))}
     return dummy_config
 
