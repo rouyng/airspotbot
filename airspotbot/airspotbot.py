@@ -51,7 +51,6 @@ class SpotBot:
         self._access_token = None
         self._access_token_secret = None
         self._use_descriptions = False
-        self._down_tweet = False
         self._read_logging_config(config_parsed)
         self._validate_twitter_config(config_parsed)
         if self.enable_tweets:
@@ -136,13 +135,6 @@ class SpotBot:
                 self._use_descriptions = False
             else:
                 raise ValueError("Bad value in config file for TWITTER/use_descriptions. "
-                                 "Must be 'y' or 'n'.")
-            if config_parsed.get('TWITTER', 'down_tweet').lower() == 'y':
-                self._down_tweet = True
-            elif config_parsed.get('TWITTER', 'down_tweet').lower() == 'n':
-                self._down_tweet = False
-            else:
-                raise ValueError("Bad value in config file for TWITTER/down_tweet. "
                                  "Must be 'y' or 'n'.")
             if config_parsed.get('TWITTER', 'enable_screenshot').lower() == 'y':
                 self.enable_screenshot = True
