@@ -94,30 +94,16 @@ class Spotter:
             self.adsb_api_endpoint = config_parsed.get('ADSB', 'adsb_api').strip()
             self.adsb_api_key = config_parsed.get('ADSB', 'adsb_api_key').strip()
             logger.debug(f'Setting API key value to {self.adsb_api_key}')
-            if self.adsb_api_endpoint == 'rapidapi':
-                # create url and headers for RapidAPI request
-                logger.debug("Setting api endpoint to rapidapi")
-                self.url = f"https://adsbexchange-com1.p.rapidapi.com/json/" \
-                           f"lat/{self.latitude_degrees}/lon/{self.longitude_degrees}/dist/" \
-                           f"{self.radius_nautical_miles}/"
-                logger.debug(f"API request url: {self.url}")
-                self.headers = {
-                    'x-rapidapi-host': "adsbexchange-com1.p.rapidapi.com",
-                    'x-rapidapi-key': self.adsb_api_key
-                }
-            elif self.adsb_api_endpoint == 'adsbx':
-                # create url and headers for ADSBx API request
-                logger.debug("Setting api endpoint to adsbx")
-                self.url = f"https://adsbexchange.com/api/aircraft/json/lat/" \
-                           f"{self.latitude_degrees}/lon/{self.longitude_degrees}/dist/{self.radius_nautical_miles}/"
-                logger.debug(f"API request url: {self.url}")
-                self.headers = {
-                    'api-auth': self.adsb_api_key
-                }
-            else:
-                logger.critical(
-                    f"{self.adsb_api_endpoint} is not a valid API endpoint")
-                raise Exception('Invalid API endpoint')
+            # create url and headers for RapidAPI request
+            logger.debug("Setting api endpoint to rapidapi")
+            self.url = f"https://adsbexchange-com1.p.rapidapi.com/json/" \
+                       f"lat/{self.latitude_degrees}/lon/{self.longitude_degrees}/dist/" \
+                       f"{self.radius_nautical_miles}/"
+            logger.debug(f"API request url: {self.url}")
+            self.headers = {
+                'x-rapidapi-host': "adsbexchange-com1.p.rapidapi.com",
+                'x-rapidapi-key': self.adsb_api_key
+            }
             if config_parsed.get('ADSB', 'spot_unknown').lower() == 'y':
                 logger.debug('Set spot_unknown to True')
                 self.spot_unknown = True
