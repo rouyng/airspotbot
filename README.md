@@ -128,7 +128,6 @@ N174SY,RN,,,
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
 * [Support ADSB Exchange API version 2](https://www.adsbexchange.com/version-2-api-wip/)
 * Support Twitter API v2
-* Add automatic tweeting to notify followers of ADS-B Exchange API outage/error. Bot followers should be informed if an error/outage is preventing spots from being tweeted. (`down_tweet` option in config file is a placeholder for this)
 * Fetch aircraft photos using [Planespotters.net API](https://www.planespotters.net/photo/api)
 * Set custom user agent string for all API requests
 
