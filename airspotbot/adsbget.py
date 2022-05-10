@@ -7,8 +7,22 @@ from time import time
 import configparser
 import csv
 import requests
+from typing import TypedDict
 
 logger = logging.getLogger(__name__)
+
+
+class Aircraft(TypedDict):
+    icao: str  # ICAO hex address
+    type: str  # type code
+    reg: str  # registration number (or military serial number)
+    lat: float  # latitude in decimal degrees
+    lon: float  # longitude in decimal degrees
+    desc: str  # description from watchlist
+    alt: int  # altitude in feet
+    spd: int  # speed in knots
+    call: str  # callsign or commercial flight number
+    img: str  # path to
 
 
 class Spotter:
@@ -196,10 +210,27 @@ class Spotter:
         Args:
             aircraft: Dictionary generated from ADSBX API JSON reply, representing one aircraft
         """
-        icao = aircraft['icao']
-        logger.info(f'Aircraft added to queue. ICAO #: {icao}')
-        self.spot_queue.append(aircraft)
-        self.seen[icao] = time()
+        try:
+            spotted_aircraft = Aircraft(
+                icao=str(aircraft['hex']),
+                type=str(aircraft['t']),
+                reg=str(aircraft['r']),
+                lat=float(aircraft['lat']),
+                lon=float(aircraft['lat']),
+                desc=str(aircraft['desc']),
+                alt=int(aircraft['alt']),
+                spd=int(aircraft['spd']),
+                call=str(aircraft['call']),
+                img=str(aircraft['img']),
+
+            )
+            icao = spotted_aircraft['hex']
+            logger.info(f'Aircraft added to queue. ICAO #: {icao}')
+            self.spot_queue.append(aircraft)
+            self.seen[icao] = time()
+        except ValueError:
+            logger.warning("Error adding aircraft to queue. Value could not be coerced to expected"
+                           "type.", exc_info=True)
 
     def _check_seen(self):
         """
@@ -245,76 +276,76 @@ class Spotter:
                 craft = dict(aircraft)  # convert json object provided by API to dictionary
                 logger.debug(
                     f'Spotted aircraft {craft["icao"]}. Full data: {craft}')
-                if craft['icao'] in self.seen.keys():
+                if craft['hex'] in self.seen.keys():
                     # if craft icao number is in seen list, do not queue
-                    logger.debug(f"{craft['icao']} is already spotted, not added to queue")
+                    logger.debug(f"{craft['hex']} is already spotted, not added to queue")
                     continue
                 if craft['gnd'] == '1':
                     # if craft is on ground, do not queue
-                    logger.debug(f"{craft['icao']} is on the ground, not added to queue")
+                    logger.debug(f"{craft['hex']} is on the ground, not added to queue")
                     continue
-                if craft['icao'] in self.watchlist_ia.keys():
+                if craft['hex'] in self.watchlist_ia.keys():
                     # if the aircraft's ICAO address is on the watchlist, add it to the queue
                     logger.debug(f'{craft["icao"]} in watchlist, adding to spot queue')
-                    if self.watchlist_ia[craft['icao']]['desc'] != '':
+                    if self.watchlist_ia[craft['hex']]['desc'] != '':
                         # if there is a description in the watchlist entry for this ICAO address,
                         # add it to the dict
-                        craft['desc'] = self.watchlist_ia[craft['icao']]['desc']
+                        craft['desc'] = self.watchlist_ia[craft['hex']]['desc']
                     else:
                         craft['desc'] = False
-                    if self.watchlist_ia[craft['icao']]['img'] != '':
-                        craft['img'] = self.watchlist_ia[craft['icao']]['img']
+                    if self.watchlist_ia[craft['hex']]['img'] != '':
+                        craft['img'] = self.watchlist_ia[craft['hex']]['img']
                     else:
                         craft['img'] = False
                     self._append_craft(craft)
-                elif craft['reg'] in self.watchlist_rn.keys():
+                elif craft['r'] in self.watchlist_rn.keys():
                     logger.debug(f'{craft["reg"]} in watchlist, adding to spot queue')
                     # if the aircraft's registration number is on the watchlist, add it to the queue
-                    if self.watchlist_rn[craft['reg']]['desc'] != '':
+                    if self.watchlist_rn[craft['r']]['desc'] != '':
                         # if there is a description in the watchlist entry for this reg number,
                         # add it to the dict
-                        craft['desc'] = self.watchlist_rn[craft['reg']]['desc']
+                        craft['desc'] = self.watchlist_rn[craft['r']]['desc']
                     else:
                         craft['desc'] = False
-                    if self.watchlist_rn[craft['reg']]['img'] != '':
-                        craft['img'] = self.watchlist_rn[craft['reg']]['img']
+                    if self.watchlist_rn[craft['r']]['img'] != '':
+                        craft['img'] = self.watchlist_rn[craft['r']]['img']
                     else:
                         craft['img'] = False
                     self._append_craft(craft)
-                elif craft['type'] in self.watchlist_tc.keys():
-                    if self.watchlist_tc[craft['type']]['mil_only'] is True and \
+                elif craft['t'] in self.watchlist_tc.keys():
+                    if self.watchlist_tc[craft['t']]['mil_only'] is True and \
                             craft['mil'] == '1':
-                        if self.watchlist_tc[craft['type']]['desc'] != '':
-                            craft['desc'] = self.watchlist_tc[craft['type']]['desc']
+                        if self.watchlist_tc[craft['t']]['desc'] != '':
+                            craft['desc'] = self.watchlist_tc[craft['t']]['desc']
                         else:
                             craft['desc'] = False
-                        if self.watchlist_tc[craft['type']]['img'] != '':
-                            craft['img'] = self.watchlist_tc[craft['type']]['img']
+                        if self.watchlist_tc[craft['t']]['img'] != '':
+                            craft['img'] = self.watchlist_tc[craft['t']]['img']
                         else:
                             craft['img'] = False
                         logger.debug(
                             f'{craft["type"]} in watchlist as military-only and mil=1, adding to '
                             f'spot queue')
                         self._append_craft(craft)
-                    elif self.watchlist_tc[craft['type']]['mil_only'] is True and \
+                    elif self.watchlist_tc[craft['t']]['mil_only'] is True and \
                             craft['mil'] == '0':
                         logger.debug(
                             f'{craft["type"]} in watchlist as military-only and mil=0, not adding '
                             f'to spot queue')
                         continue
                     else:
-                        if self.watchlist_tc[craft['type']]['desc'] != '':
-                            craft['desc'] = self.watchlist_tc[craft['type']]['desc']
+                        if self.watchlist_tc[craft['t']]['desc'] != '':
+                            craft['desc'] = self.watchlist_tc[craft['t']]['desc']
                         else:
                             craft['desc'] = False
-                        if self.watchlist_tc[craft['type']]['img'] != '':
-                            craft['img'] = self.watchlist_tc[craft['type']]['img']
+                        if self.watchlist_tc[craft['t']]['img'] != '':
+                            craft['img'] = self.watchlist_tc[craft['t']]['img']
                         else:
                             craft['img'] = False
                         logger.debug(
                             f'{craft["type"]} in watchlist, adding to spot queue')
                         self._append_craft(craft)
-                elif craft['reg'] == '' and self.spot_unknown is True:
+                elif craft['r'] == '' and self.spot_unknown is True:
                     # if there's no registration number and spot_unknown is set, add to tweet queue
                     craft['desc'] = False
                     craft['img'] = False
@@ -339,7 +370,7 @@ class Spotter:
                 else:
                     # if none of these criteria are met, iterate to next aircraft in the list
                     logger.debug(
-                        f"{craft['icao']} did not meet any spotting criteria, not added to queue")
+                        f"{craft['hex']} did not meet any spotting criteria, not added to queue")
                     continue
             except KeyError:
                 logger.warning("Key error when parsing aircraft returned from API, skipping")
