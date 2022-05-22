@@ -108,13 +108,13 @@ class Spotter:
             logger.debug(f'Setting API key value to {self.adsb_api_key}')
             # create url and headers for RapidAPI request
             logger.debug("Setting api endpoint to rapidapi")
-            self.url = f"https://adsbexchange-com1.p.rapidapi.com/json/" \
+            self.url = f"https://adsbexchange-com1.p.rapidapi.com/v2/" \
                        f"lat/{self.latitude_degrees}/lon/{self.longitude_degrees}/dist/" \
                        f"{self.radius_nautical_miles}/"
             logger.debug(f"API request url: {self.url}")
             self.headers = {
-                'x-rapidapi-host': "adsbexchange-com1.p.rapidapi.com",
-                'x-rapidapi-key': self.adsb_api_key
+                'X-RapidAPI-Host': "adsbexchange-com1.p.rapidapi.com",
+                'X-RapidAPI-Key': self.adsb_api_key
             }
             if config_parsed.get('ADSB', 'spot_unknown').lower() == 'y':
                 logger.debug('Set spot_unknown to True')
@@ -224,7 +224,7 @@ class Spotter:
                 img=str(aircraft['img']),
 
             )
-            icao = spotted_aircraft['hex']
+            icao = spotted_aircraft['icao']
             logger.info(f'Aircraft added to queue. ICAO #: {icao}')
             self.spot_queue.append(aircraft)
             self.seen[icao] = time()
