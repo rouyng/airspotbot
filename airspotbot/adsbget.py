@@ -263,27 +263,26 @@ class Spotter:
                 # prevent an empty list of spots from creating a TypeError in the next for loop
                 logger.info('No aircraft detected in spotting area')
                 spotted_aircraft = []
+            else:
+                logger.info(f'API returned {len(spotted_aircraft)} aircraft in spotting area')
         except (requests.exceptions.HTTPError, requests.exceptions.Timeout,
                 AttributeError) as err:
             logger.error('Error with ADSB Exchange API request', exc_info=True)
             spotted_aircraft = []
         self._check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
-        for aircraft in spotted_aircraft:
+        # remove seen and grounded aircraft from the spotted list
+        filtered_aircraft = [a for a in spotted_aircraft
+                             if a['hex'] not in self.seen.keys()
+                             and a['alt_baro'] != 'ground']
+        logger.debug(f"Removed {len(spotted_aircraft) - len(filtered_aircraft)} previously spotted "
+                     f"or grounded aircraft from the list")
+        for craft in filtered_aircraft:
             try:
                 # This loop checks all spotted aircraft against watchlist and preferences to
                 # determine if it should be added to the tweet queue
                 # TODO: refactor this giant tree of conditionals to something more maintainable
-                craft = dict(aircraft)  # convert json object provided by API to dictionary
                 logger.debug(
                     f'Spotted aircraft {craft["icao"]}. Full data: {craft}')
-                if craft['hex'] in self.seen.keys():
-                    # if craft icao number is in seen list, do not queue
-                    logger.debug(f"{craft['hex']} is already spotted, not added to queue")
-                    continue
-                if craft['gnd'] == '1':
-                    # if craft is on ground, do not queue
-                    logger.debug(f"{craft['hex']} is on the ground, not added to queue")
-                    continue
                 if craft['hex'] in self.watchlist_ia.keys():
                     # if the aircraft's ICAO address is on the watchlist, add it to the queue
                     logger.debug(f'{craft["icao"]} in watchlist, adding to spot queue')
@@ -351,22 +350,28 @@ class Spotter:
                     craft['img'] = False
                     logger.info('Unknown registration number, adding to spot queue')
                     self._append_craft(craft)
-                elif craft['mil'] == '1' and self.spot_mil is True:
-                    # if craft is designated military by ADS-B exchange and spot_mil is set,
-                    # add to tweet queue
-                    craft['desc'] = False
-                    craft['img'] = False
-                    logger.debug(
-                        "Aircraft is designated as military, adding to spot queue")
-                    self._append_craft(craft)
-                elif craft['interested'] == '1' and self.spot_interesting is True:
-                    # if craft is designated military by ADS-B exchange and spot_mil is set,
-                    # add to tweet queue
-                    craft['desc'] = False
-                    craft['img'] = False
-                    logger.debug(
-                        "Aircraft is designated as interesting, adding to spot queue")
-                    self._append_craft(craft)
+                elif 'dbFlags' in craft.keys():
+                    if craft['dbFlags'] & 1 and self.spot_mil is True:
+                        # if craft is designated military by ADS-B exchange and spot_mil is set,
+                        # add to tweet queue
+                        craft['desc'] = False
+                        craft['img'] = False
+                        logger.debug(
+                            "Aircraft is designated as military, adding to spot queue")
+                        self._append_craft(craft)
+                    elif craft['dbFlags'] & 2 and self.spot_interesting is True:
+                        # if craft is designated military by ADS-B exchange and spot_mil is set,
+                        # add to tweet queue
+                        craft['desc'] = False
+                        craft['img'] = False
+                        logger.debug(
+                            "Aircraft is designated as interesting, adding to spot queue")
+                        self._append_craft(craft)
+                    else:
+                        logger.debug(
+                            f"{craft['hex']} did not meet any spotting criteria, "
+                            f"not added to queue")
+                        continue
                 else:
                     # if none of these criteria are met, iterate to next aircraft in the list
                     logger.debug(
@@ -374,5 +379,5 @@ class Spotter:
                     continue
             except KeyError:
                 logger.warning("Key error when parsing aircraft returned from API, skipping")
-                logger.debug(f"Raw json object: {aircraft}")
+                logger.debug(f"Raw json object: {craft}")
                 continue
