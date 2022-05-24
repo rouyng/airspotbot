@@ -46,10 +46,8 @@ class SpotBot:
              specified as a command line argument when airspotbot is started.
         """
         self.tweet_interval_seconds = 5
-        self._consumer_key = None
-        self._consumer_secret = None
-        self._access_token = None
-        self._access_token_secret = None
+        # TODO: read _bearer_token from env variable
+        self._bearer_token = None  # Twitter API OAuth 2.0 bearer token
         self._use_descriptions = False
         self._read_logging_config(config_parsed)
         self._validate_twitter_config(config_parsed)
@@ -77,32 +75,29 @@ class SpotBot:
             logger.warning("Logging verbosity level is not set in config, defaulting to DEBUG")
             logger.setLevel('DEBUG')
 
-    def _initialize_twitter_api(self) -> tweepy.API:
+    def _initialize_twitter_api(self) -> tweepy.client:
         """
-        Authenticate to Twitter API, check credentials and connection
+        Authenticate to Twitter API v2 via OAuth 2.0 bearer token, check credentials and connection
 
         Returns:
-            tweepy.API object
+            tweepy.client object
 
         Raises:
             KeyboardInterrupt: Exits the main application loop if Twitter API authentication fails
         """
-        logger.info(f'Twitter consumer key: {self._consumer_key}')
-        logger.info(f'Twitter consumer secret: {self._consumer_secret}')
-        logger.info(f'Twitter access token: {self._access_token}')
-        logger.info(f'Twitter access token secret: {self._access_token_secret}')
-        auth = tweepy.OAuthHandler(self._consumer_key, self._consumer_secret)
-        auth.set_access_token(self._access_token, self._access_token_secret)
-        api = tweepy.API(auth, wait_on_rate_limit=True)
+        logger.info(f'Twitter bearer token: {self._bearer_token}')
+        # TODO: OAuth 2.0 bearer token authentication flow
         try:
-            # test that authentication worked
-            api.verify_credentials()
+            client = tweepy.Client(self._bearer_token)
             logger.info("Authentication OK")
-        except (tweepy.errors.TweepyException, tweepy.errors.HTTPException) as tp_error:
+        except tweepy.errors.TweepyException as tp_error:
             logger.critical('Error during Twitter API authentication', exc_info=True)
+            logger.critical('For more information on accessing Twitter API v2 via an OAuth 2.0 '
+                            'bearer token, see '
+                            'https://developer.twitter.com/en/docs/authentication/oauth-2-0/bearer-tokens')
             raise KeyboardInterrupt
-        logger.info('Twitter API created')
-        return api
+        logger.info('Twitter API v2 client created')
+        return client
 
     def _validate_twitter_config(self, config_parsed: configparser.ConfigParser):
         """
@@ -127,6 +122,7 @@ class SpotBot:
             else:
                 raise ValueError("Bad value in config file for TWITTER/enable_tweets. "
                                  "Must be 'y' or 'n'.")
+            # TODO: remove old API v1 authentication stuff from config file and parser
             self.tweet_interval_seconds = int(config_parsed.get('TWITTER', 'tweet_interval'))
             self._consumer_key = config_parsed.get('TWITTER', 'consumer_key')
             self._consumer_secret = config_parsed.get('TWITTER', 'consumer_secret')
