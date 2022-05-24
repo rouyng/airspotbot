@@ -77,9 +77,12 @@ class SpotBot:
             logger.warning("Logging verbosity level is not set in config, defaulting to DEBUG")
             logger.setLevel('DEBUG')
 
-    def _initialize_twitter_api(self):
+    def _initialize_twitter_api(self) -> tweepy.API:
         """
         Authenticate to Twitter API, check credentials and connection
+
+        Returns:
+            tweepy.API object
 
         Raises:
             KeyboardInterrupt: Exits the main application loop if Twitter API authentication fails
