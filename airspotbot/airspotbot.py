@@ -235,10 +235,6 @@ class SpotBot:
                 logger.critical('Error sending tweet', exc_info=True)
                 raise KeyboardInterrupt
 
-    def _link_reply(self):
-        # TODO: function to reply to to a tweet with a link defined in watchlist.csv
-        pass
-
 
 def run_bot(config_path: str, watchlist_path: str):
     """
