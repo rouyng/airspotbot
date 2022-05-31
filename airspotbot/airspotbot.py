@@ -20,9 +20,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-# TODO: TypedDict class to replace dict of aircraft information (requires python 3.8 or later)
-# TODO: check for tweepy usage broken by upgrade from 3.8.0 => 4.8.0.
-
 class SpotBot:
     """
     Generates formatted tweet text and interfaces with the Twitter API using tweepy.
@@ -55,8 +52,8 @@ class SpotBot:
         self._validate_twitter_config(config_parsed)
         if self.enable_tweets:
             self._client = self._initialize_twitter_api()
-            # TODO: instantiate v1.1 api instance only for uploading media.
-            #  this should work with essentials level api access
+            # instantiate v1.1 api instance only for uploading media
+            self._v1_api = self._initialize_twitter_api_v1()
         if self.enable_screenshot:
             self.screenshotter = screenshot.Screenshotter(self.zoom_level)
         self._loc = location.Locator(config_parsed)
@@ -89,6 +86,7 @@ class SpotBot:
         Raises:
             KeyboardInterrupt: Exits the main application loop if Twitter API authentication fails
         """
+        logger.info('Connecting to Twitter API v2')
         logger.info(f'Twitter consumer key: {self._consumer_key}')
         logger.info(f'Twitter consumer secret: {self._consumer_secret}')
         logger.info(f'Twitter access token: {self._access_token}')
@@ -105,6 +103,36 @@ class SpotBot:
             raise KeyboardInterrupt
         logger.info('Twitter API v2 client created')
         return client
+
+    def _initialize_twitter_api_v1(self) -> tweepy.API:
+        """
+        Authenticate to Twitter API v1.1 via OAuth 1.0a, check credentials and connection.
+        This API connection is only used for media uploads, as twitter API v2 does not support
+        them yet. Once v2 and tweepy support uploads, this will be removed
+
+        Returns:
+            tweepy.API object
+
+        Raises:
+            KeyboardInterrupt: Exits the main application loop if Twitter API authentication fails
+        """
+        logger.info('Connecting to Twitter API v1.1')
+        logger.info(f'Twitter consumer key: {self._consumer_key}')
+        logger.info(f'Twitter consumer secret: {self._consumer_secret}')
+        logger.info(f'Twitter access token: {self._access_token}')
+        logger.info(f'Twitter access token secret: {self._access_token_secret}')
+        auth = tweepy.OAuthHandler(self._consumer_key, self._consumer_secret)
+        auth.set_access_token(self._access_token, self._access_token_secret)
+        api = tweepy.API(auth, wait_on_rate_limit=True)
+        try:
+            # test that authentication worked
+            api.verify_credentials()
+            logger.info("Authentication OK")
+        except (tweepy.errors.TweepyException, tweepy.errors.HTTPException) as tp_error:
+            logger.critical('Error during Twitter API authentication', exc_info=True)
+            raise KeyboardInterrupt
+        logger.info('Twitter API v1.1 client created')
+        return api
 
     def _validate_twitter_config(self, config_parsed: configparser.ConfigParser):
         """
@@ -202,9 +230,9 @@ class SpotBot:
                 b.write(self.screenshotter.get_globe_screenshot(icao))
                 b.seek(0)  # set byte stream position to the start
                 try:
-                    # TODO: twitter api v2 does not support media upload, so we need a
+                    # twitter api v2 does not support media upload, so we need a
                     #  v1.1 tweepy.api instance for media upload
-                    screenshot_media = self.client.media_upload(filename="screenshot.png", file=b)
+                    screenshot_media = self._v1_api.media_upload(filename="screenshot.png", file=b)
                     uploaded_media_ids.append(screenshot_media.media_id)
                 except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
                     # if upload fails, handle exception and proceed gracefully without an image
@@ -214,11 +242,11 @@ class SpotBot:
             image_path = "images/" + aircraft['img']  # hardcoded to look in images/ subfolder
             if self.enable_tweets:
                 try:
-                    # if an image path is specified, upload it
-                    logger.debug(f"Uploading image from {image_path}")
-                    # TODO: twitter api v2 does not support media upload, so we need a
+                    # if an image path is specified, upload it.
+                    # Twitter api v2 does not support media upload, so we need a
                     #  v1.1 tweepy.api instance for media upload
-                    image_media = self._client.media_upload(image_path)
+                    logger.debug(f"Uploading image from {image_path}")
+                    image_media = self._v1_api.media_upload(image_path)
                     uploaded_media_ids.append(image_media.media_id)
                 except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
                     # if upload fails, handle exception and proceed gracefully without an image
