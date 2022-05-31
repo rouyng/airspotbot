@@ -29,7 +29,7 @@ airspotbot currently runs [@phxairspots on twitter](https://www.twitter.com/phxa
 ### Requirements
 
  - Python 3.10 or later.
- - Valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key (v2 only)
+ - Valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key. airspotbot requires both v1.1 and v2 access. v1.1 access is only required because v2 does not currently support image upload. Once v2 has this feature, v1.1 access will no longer be required. All required API functionality is available with an "Essential" level developer account.
  - Valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key (v2 only). An API key can be obtained through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1)
  - (Optional) Chrome/Chromium web browser and a compatible version of [ChromeDriver](https://chromedriver.chromium.org/home). Used to capture screenshots of globe.adsbexchange.com for inclusion in tweets.
  
@@ -65,7 +65,6 @@ optional arguments:
                         ./config/watchlist.csv
 
 ```
-
 
 
 ## Configuration
@@ -126,8 +125,7 @@ N174SY,RN,,,
 
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
-* [Support ADSB Exchange API version 2](https://www.adsbexchange.com/version-2-api-wip/)
-* Support Twitter API v2
+
 * Fetch aircraft photos using [Planespotters.net API](https://www.planespotters.net/photo/api)
 * Set custom user agent string for all API requests
 
