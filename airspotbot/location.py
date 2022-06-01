@@ -273,12 +273,20 @@ class Locator:
         sleep(1)  # hardcoded delay to limit rate of requests to this free API
         try:
             response = requests.get(
-                f"https://api.3geonames.org/{latitude_degrees},{longitude_degrees}.json")
+                f"https://api.3geonames.org/{latitude_degrees},{longitude_degrees}.json", timeout=4)
             return response.json()
         except (requests.exceptions.ConnectionError,
-                requests.exceptions.HTTPError,
-                requests.exceptions.Timeout) as conn_err:
+                requests.exceptions.HTTPError) as conn_err:
             logger.error("Error connecting to https://api.3geonames.org/", exc_info=True)
+            return None
+        except requests.exceptions.Timeout as timeout_exc:
+            logger.error("Connection to https://api.3geonames.org/ timed out", exc_info=True)
+            return None
+        except requests.exceptions.JSONDecodeError as json_err:
+            # when the API provider limits requests, they return an HTML document rather than
+            # the expected JSON response
+            logger.error("https://api.3geonames.org/ did not return JSON, "
+                         "likely due to rate limiting", exc_info=True)
             return None
 
     @staticmethod
