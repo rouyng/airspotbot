@@ -280,3 +280,18 @@ class Locator:
                 requests.exceptions.Timeout) as conn_err:
             logger.error("Error connecting to https://api.3geonames.org/", exc_info=True)
             return None
+
+    @staticmethod
+    def _reverse_geocode_geoapify(latitude_degrees: str, longitude_degrees: str):
+        """
+        Fetch geocoding from https://www.geoapify.com/reverse-geocoding-api
+
+        Args:
+            latitude_degrees: String representing latitude value in decimal degrees (-90 to 90)
+            longitude_degrees: String representing longitude value in decimal degrees (-180 to 180)
+
+        Returns:
+
+        """
+        # TODO: implement request to geoapify
+        pass
