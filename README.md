@@ -1,6 +1,6 @@
 [![build status shield](https://img.shields.io/github/workflow/status/rouyng/airspotbot/test%20and%20lint%20airspotbot)](https://github.com/rouyng/airspotbot/actions?query=workflow%3A%22test+and+lint+airspotbot%22) [![license shield](https://img.shields.io/github/license/rouyng/airspotbot)](https://github.com/rouyng/airspotbot/blob/master/LICENSE.md)
 # airspotbot 1.0.0
-airspotbot is a Twitter bot designed to provide simple, flexible way to report interesting aircraft activity in a designated area via twitter posts. It uses [Tweepy](https://www.tweepy.org/) and the [ADS-B exchange API](https://www.adsbexchange.com/data/). airspotbot is designed to be extremely configurable, so it can be used to monitor diverse kinds of activity.
+airspotbot is a Twitter bot designed to provide simple, flexible way to report interesting aircraft activity in a designated area via Twitter posts. It uses [Tweepy](https://www.tweepy.org/) and the [ADS-B exchange API](https://www.adsbexchange.com/data/). airspotbot is designed to be extremely configurable, so it can be used to monitor diverse kinds of activity.
 
 
 ## What can it do?
@@ -29,7 +29,7 @@ airspotbot currently runs [@phxairspots on twitter](https://www.twitter.com/phxa
 ### Requirements
 
  - Python 3.7 or later.
- - Valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key (v1 only)
+ - Valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key (v1.1 only). Your Twitter developer account must have "Elevated" access.
  - Valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key (v1 only). Please note that as of 2021, ADS-B Exchange is no longer giving API keys to all feeders, so their API is now solely accessed through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1). The "adsbx" endpoint option in asb.config is provided for legacy support, or if you have some preexisting agreement with ADSBX to use their endpoint directly.
  - (Optional) Chrome/Chromium web browser and a compatible version of [ChromeDriver](https://chromedriver.chromium.org/home). Used to capture screenshots of globe.adsbexchange.com for inclusion in tweets.
  
