@@ -17,7 +17,7 @@ Tweets generated for any of these use cases can be enhanced with additional info
 
 
 ### Limitations
-Please note that due to limitations of the ADS-B Exchange API, airspotbot is designed to only track spots within a 1, 5, 10, 25, 100 or 250 nautical mile radius of the latitude and longitude specified in the configuration file. In other words, you can't use one instance of airspotbot to track aircraft across the world. airspotbot is intended to monitor a specific area, such as an airport or city.
+airspotbot is intended to monitor a specific area, such as an airport or city. Due to limitations of the ADS-B Exchange API, airspotbot is can only track aircraft within a circle centered on the latitude and longitude specified in the configuration file. The radius of this circle must be between 1 and 250 nautical miles. 
  
 airspotbot is only as good as the data it receives. While ADS-B Exchange is a great resource that provides a huge amount of unfiltered data, there are still gaps in coverage. There are also many military aircraft that cannot be tracked or identified using their transponders. See [the ADS-B Exchange FAQ](https://www.adsbexchange.com/faq/) for more details.
 

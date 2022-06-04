@@ -98,12 +98,12 @@ class Spotter:
                                  " <= 180") from longitude_error
             try:
                 self.radius_nautical_miles = int(config_parsed.get('ADSB', 'radius'))
-                if self.radius_nautical_miles not in (1, 5, 10, 25, 100, 250):
+                if 250 < self.radius_nautical_miles or self.radius_nautical_miles < 1:
                     raise ValueError
                 logger.debug(f"Setting radius to {self.radius_nautical_miles}")
             except ValueError as radius_error:
-                raise ValueError('Error in configuration file: radius value is'
-                                 ' not 1, 5, 10, 25, 100, or 250') from radius_error
+                raise ValueError('Error in configuration file: radius value must be an integer '
+                                 'between 1 and 250') from radius_error
             self.adsb_api_key = config_parsed.get('ADSB', 'adsb_api_key').strip()
             logger.debug(f'Setting API key value to {self.adsb_api_key}')
             # create url and headers for RapidAPI request
