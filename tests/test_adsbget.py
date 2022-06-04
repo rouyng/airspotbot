@@ -465,11 +465,12 @@ class TestADSBValidation:
         # try 5 different invalid radii and make sure they raise the correct exception
         for _ in range(0, 5):
             invalid_radius = 1
-            while invalid_radius in (1, 5, 10, 25, 100, 250):
+            while invalid_radius in range(1, 251):
                 invalid_radius = random.randint(0, 9999)
             with pytest.raises(ValueError) as exc_info:
                 airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-            assert "Error in configuration file: radius value is not 1, 5, 10, 25, 100, or 250" in str(exc_info.value)
+            assert "Error in configuration file: radius value must be an integer between 1 and 250"\
+                   in str(exc_info.value)
 
 
 class TestWatchlistImport:
