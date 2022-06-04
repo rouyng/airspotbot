@@ -218,15 +218,15 @@ class Spotter:
                 lat=float(aircraft['lat']),
                 lon=float(aircraft['lat']),
                 desc=str(aircraft['desc']),
-                alt=int(aircraft['alt']),
-                spd=int(aircraft['spd']),
-                call=str(aircraft['call']),
+                alt=int(aircraft['alt_baro']),
+                spd=int(aircraft['gs']),
+                call=str(aircraft['flight']),
                 img=str(aircraft['img']),
 
             )
             icao = spotted_aircraft['icao']
             logger.info(f'Aircraft added to queue. ICAO #: {icao}')
-            self.spot_queue.append(aircraft)
+            self.spot_queue.append(spotted_aircraft)
             self.seen[icao] = time()
         except ValueError:
             logger.warning("Error adding aircraft to queue. Value could not be coerced to expected"
@@ -270,22 +270,28 @@ class Spotter:
             logger.error('Error with ADSB Exchange API request', exc_info=True)
             spotted_aircraft = []
         self._check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
-        # remove seen and grounded aircraft from the spotted list
-        filtered_aircraft = [a for a in spotted_aircraft
-                             if a['hex'] not in self.seen.keys()
-                             and a['alt_baro'] != 'ground']
-        logger.debug(f"Removed {len(spotted_aircraft) - len(filtered_aircraft)} previously spotted "
-                     f"or grounded aircraft from the list")
-        for craft in filtered_aircraft:
+        for craft in spotted_aircraft:
             try:
                 # This loop checks all spotted aircraft against watchlist and preferences to
                 # determine if it should be added to the tweet queue
                 # TODO: refactor this giant tree of conditionals to something more maintainable
                 logger.debug(
-                    f'Spotted aircraft {craft["icao"]}. Full data: {craft}')
+                    f'Spotted aircraft {craft["hex"]}. Full data: {craft}')
+                if craft['hex'] in self.seen.keys():
+                    # if craft icao number is in seen list, do not queue
+                    logger.debug(f"{craft['hex']} is already spotted, not added to queue")
+                    continue
+                try:
+                    # check if aircraft is on the ground
+                    if craft['alt_baro'] == 'ground':
+                        logger.debug(f'{craft["hex"]} is grounded, skipping')
+                        continue
+                except KeyError:
+                    # sometimes alt_baro is not reported
+                    pass
                 if craft['hex'] in self.watchlist_ia.keys():
                     # if the aircraft's ICAO address is on the watchlist, add it to the queue
-                    logger.debug(f'{craft["icao"]} in watchlist, adding to spot queue')
+                    logger.debug(f'{craft["hex"]} in watchlist, adding to spot queue')
                     if self.watchlist_ia[craft['hex']]['desc'] != '':
                         # if there is a description in the watchlist entry for this ICAO address,
                         # add it to the dict
@@ -298,7 +304,7 @@ class Spotter:
                         craft['img'] = False
                     self._append_craft(craft)
                 elif craft['r'] in self.watchlist_rn.keys():
-                    logger.debug(f'{craft["reg"]} in watchlist, adding to spot queue')
+                    logger.debug(f'{craft["r"]} in watchlist, adding to spot queue')
                     # if the aircraft's registration number is on the watchlist, add it to the queue
                     if self.watchlist_rn[craft['r']]['desc'] != '':
                         # if there is a description in the watchlist entry for this reg number,
@@ -378,6 +384,7 @@ class Spotter:
                         f"{craft['hex']} did not meet any spotting criteria, not added to queue")
                     continue
             except KeyError:
-                logger.warning("Key error when parsing aircraft returned from API, skipping")
+                logger.warning("Key error when parsing aircraft returned from API, skipping",
+                               exc_info=True)
                 logger.debug(f"Raw json object: {craft}")
                 continue
