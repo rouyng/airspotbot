@@ -67,7 +67,8 @@ def sample_adsbx_json():
          "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [], "messages": 7566034, "seen": 0,
          "rssi": -2.8, "dst": 16.71},
         {"hex": "407941", "type": "mlat", "flight": "GAWGB   ", "r": "G-AWGB", "t": "SPIT",
-         "gs": 250, "track": 229, "squawk": "7047", "emergency": "none", "category": "A1",
+         "dbFlags": 1, "gs": 250, "track": 229, "squawk": "7047", "emergency": "none",
+         "category": "A1",
          "lat": 51.310141, "lon": 0.128013, "nic": 0, "rc": 0, "seen_pos": 3.919, "version": 0,
          "alert": 0, "spi": 0, "mlat": ["gs", "track", "lat", "lon", "nic", "rc"], "tisb": [],
          "messages": 3194830, "seen": 0.5, "rssi": -8.6, "dst": 15.52},
@@ -79,7 +80,8 @@ def sample_adsbx_json():
          "mlat": ["gs", "track", "baro_rate", "lat", "lon", "nic", "rc"], "tisb": [],
          "messages": 365967, "seen": 0.1, "rssi": -7.5, "dst": 14.36},
         {"hex": "407536", "type": "adsb_icao", "flight": "BAW622  ", "r": "G-TTNF", "t": "A20N",
-         "alt_baro": 14525, "alt_geom": 15075, "gs": 383.4, "ias": 306, "tas": 378, "mach": 0.6,
+         "dbFlags": 2, "alt_baro": 14525, "alt_geom": 15075, "gs": 383.4, "ias": 306, "tas": 378,
+         "mach": 0.6,
          "wd": 218, "ws": 12, "oat": -12, "tat": 7, "track": 101.28, "track_rate": 0, "roll": -0.35,
          "mag_heading": 102.3, "true_heading": 102.95, "baro_rate": 2624, "geom_rate": 2592,
          "squawk": "3473", "emergency": "none", "category": "A3", "nav_qnh": 1012.8,
@@ -117,7 +119,8 @@ def sample_adsbx_json():
          "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [], "messages": 19732262, "seen": 0,
          "rssi": -18.8, "dst": 18.88},
         {"hex": "4058c7", "type": "mlat", "flight": "GZAAP   ", "r": "G-ZAAP", "t": "CRUZ",
-         "alt_baro": "ground", "gs": 50, "track": 54, "baro_rate": 2, "squawk": "4575", "lat": 51.538891,
+         "alt_baro": "ground", "gs": 50, "track": 54, "baro_rate": 2, "squawk": "4575",
+         "lat": 51.538891,
          "lon": 0.76194, "nic": 0, "rc": 0, "seen_pos": 1.95, "alert": 0, "spi": 0,
          "mlat": ["gs", "track", "baro_rate", "lat", "lon", "nic", "rc"], "tisb": [],
          "messages": 198847, "seen": 0.8, "rssi": -5.4, "dst": 12.2},
@@ -130,7 +133,7 @@ def sample_adsbx_json():
          "seen_pos": 0.123, "version": 2, "nic_baro": 1, "nac_p": 9, "nac_v": 1, "sil": 3,
          "sil_type": "perhour", "gva": 2, "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [],
          "messages": 11755558, "seen": 0, "rssi": -19.9, "dst": 16.02}], "total": 9,
-            "now": 1654367538288, "ctime": 1654367542448, "ptime": 184}
+        "now": 1654367538288, "ctime": 1654367542448, "ptime": 184}
 
 
 @pytest.fixture
@@ -212,7 +215,7 @@ def unexpected_adsbx_json():
          "seen_pos": 0.123, "version": 2, "nic_baro": 1, "nac_p": 9, "nac_v": 1, "sil": 3,
          "sil_type": "perhour", "gva": 2, "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [],
          "messages": 11755558, "seen": 0, "rssi": -19.9, "dst": 16.02}], "total": 9,
-            "now": 1654367538288, "ctime": 1654367542448, "ptime": 184}
+        "now": 1654367538288, "ctime": 1654367542448, "ptime": 184}
 
 
 def test_import():
@@ -222,6 +225,7 @@ def test_import():
 
 class TestADSBValidation:
     """Tests validation of ADSB configuration"""
+
     def test_empty_interval(self, generate_empty_adsb_config):
         with pytest.raises(ValueError) as exc_info:
             airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
@@ -425,11 +429,11 @@ class TestADSBxCall:
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert 'ABC5E3' in [p['icao'] for p in spots.spot_queue]
+        assert '407941' in [p['icao'] for p in spots.spot_queue]
 
     def test_interesting_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
         """Test whether an aircraft flagged as interesting by ADSBx will be spotted"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert 'A98012' in [p['icao'] for p in spots.spot_queue]
+        assert '407536' in [p['icao'] for p in spots.spot_queue]

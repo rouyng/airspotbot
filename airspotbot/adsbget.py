@@ -277,18 +277,20 @@ class Spotter:
                 # TODO: refactor this giant tree of conditionals to something more maintainable
                 logger.debug(
                     f'Spotted aircraft {craft["hex"]}. Full data: {craft}')
+                # add reg and type keys w/ empty string if not present
+                for k in ('r', 't'):
+                    if k not in craft.keys():
+                        craft[k] = ''
+                for k in ('dbFlags', 'alt_baro'):
+                    if k not in craft.keys():
+                        craft[k] = 0
                 if craft['hex'] in self.seen.keys():
                     # if craft icao number is in seen list, do not queue
                     logger.debug(f"{craft['hex']} is already spotted, not added to queue")
                     continue
-                try:
-                    # check if aircraft is on the ground
-                    if craft['alt_baro'] == 'ground':
-                        logger.debug(f'{craft["hex"]} is grounded, skipping')
-                        continue
-                except KeyError:
-                    # sometimes alt_baro is not reported
-                    pass
+                if craft['alt_baro'] == 'ground':
+                    logger.debug(f'{craft["hex"]} is grounded, skipping')
+                    continue
                 if craft['hex'] in self.watchlist_ia.keys():
                     # if the aircraft's ICAO address is on the watchlist, add it to the queue
                     logger.debug(f'{craft["hex"]} in watchlist, adding to spot queue')
@@ -318,8 +320,7 @@ class Spotter:
                         craft['img'] = False
                     self._append_craft(craft)
                 elif craft['t'] in self.watchlist_tc.keys():
-                    if self.watchlist_tc[craft['t']]['mil_only'] is True and \
-                            craft['mil'] == '1':
+                    if self.watchlist_tc[craft['t']]['mil_only'] is True and craft['dbFlags'] & 1:
                         if self.watchlist_tc[craft['t']]['desc'] != '':
                             craft['desc'] = self.watchlist_tc[craft['t']]['desc']
                         else:
