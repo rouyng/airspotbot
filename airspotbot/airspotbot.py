@@ -216,12 +216,9 @@ class SpotBot:
             reg_num = 'unknown'
         if type_code.strip() == '':
             type_code = 'Unknown aircraft type'
-        if callsign == reg_num:
-            # if callsign is same as the registration number, ADSBx is not reporting a callsign
-            callsign = False
-        tweet = f"{description if description else type_code}" \
-                f"{', callsign ' + callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is " \
-                f"{location_description}. Altitude {altitude_feet} ft, speed {speed_knots} kt. {link}"
+        tweet = f"{description if description != '' else type_code}" \
+                f"{', callsign ' + callsign if callsign != reg_num else ''}, ICAO {icao}, RN {reg_num}, is " \
+                f"{location_description}. Altitude {altitude_feet} ft, ground speed {speed_knots} kt. {link}"
         uploaded_media_ids = []
         # generate and upload screenshot image
         if self.enable_screenshot and self.enable_tweets:
@@ -238,7 +235,7 @@ class SpotBot:
                     # if upload fails, handle exception and proceed gracefully without an image
                     logger.warning(f"Error uploading screenshot", exc_info=True)
         # find and upload aircraft image from file specified in watchlist
-        if aircraft['img']:
+        if aircraft['img'] != '':
             image_path = "images/" + aircraft['img']  # hardcoded to look in images/ subfolder
             if self.enable_tweets:
                 try:
