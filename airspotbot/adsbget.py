@@ -25,6 +25,43 @@ class Aircraft(TypedDict):
     img: str  # path to
 
 
+# TODO: replace Aircraft TypedDict with AircraftSpot class. Consolidate all ADSBX API response
+#  data sanitizing into Aircraft __init__ method.
+class AircraftSpot:
+    """
+    Class for storing individual aircraft spot information fetched from ADSB exchange API
+
+    Args:
+            aircraft: Dictionary generated from ADSBX API JSON reply, representing one aircraft
+    """
+
+    def __init__(self, aircraft: dict[str, str]):
+        self.icao: str = str(aircraft['hex'])  # ICAO transponder hex address
+        try:
+            self.type_code: str = str(aircraft['t']).strip()  # ICAO type code
+        except KeyError:
+            self.type_code: str = 'Unknown aircraft type'
+        try:
+            self.reg: str = str(aircraft['r']).strip()
+        except KeyError:
+            self.reg: str = 'unknown'
+        try:
+            if aircraft['alt_baro'] == 'ground':
+                self.grounded: bool = False
+            else:
+                self.altitude: int = int(aircraft['alt_baro'])
+        except (KeyError, ValueError):
+            logger.warning(f"Could not parse altitude for aircraft w/ hex {self.icao}. Setting to 0"
+                           , exc_info=True)
+            self.altitude: int = 0
+        if 'dbFlags' in aircraft.keys():
+            self.military: bool = bool(int(aircraft['dbFlags']) & 1)
+            self.interesting: bool = bool(int(aircraft['dbFlags']) & 2)
+        else:
+            self.military: bool = False
+            self.interesting: bool = False
+
+
 class Spotter:
     """Class for fetching active aircraft from ADSBx API and returning those that meet watchlist
     criteria. Requires a ConfigParser object and path to watchlist.csv as arguments.
@@ -274,6 +311,8 @@ class Spotter:
                 # This loop checks all spotted aircraft against watchlist and preferences to
                 # determine if it should be added to the tweet queue
                 # TODO: refactor this giant tree of conditionals to something more maintainable
+                # TODO: remove all data santiziation from here and put into AircraftSpot __init__
+                #  method
                 logger.debug(
                     f'Spotted aircraft {craft["hex"]}. Full data: {craft}')
                 # add reg and type keys w/ empty string if not present

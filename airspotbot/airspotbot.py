@@ -212,10 +212,6 @@ class SpotBot:
         link = f'https://globe.adsbexchange.com/?icao={icao}'
         location_description = self._loc.get_location_description(latitude_degrees,
                                                                   longitude_degrees)
-        if reg_num.strip() == '':
-            reg_num = 'unknown'
-        if type_code.strip() == '':
-            type_code = 'Unknown aircraft type'
         tweet = f"{description if description != '' else type_code}" \
                 f"{', callsign ' + callsign if callsign != reg_num else ''}, ICAO {icao}, RN {reg_num}, is " \
                 f"{location_description}. Altitude {altitude_feet} ft, ground speed {speed_knots} kt. {link}"
