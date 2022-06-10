@@ -242,7 +242,8 @@ class TestADSBValidation:
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         with pytest.raises(ValueError) as exc_info:
             airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "latitude must be a float value >= -90 and <= 90" in str(exc_info.value)
+        assert "'' is an invalid latitude value. Must be a float between -90 and 90." \
+               in str(exc_info.value)
 
     def test_invalid_latitudes(self, generate_empty_adsb_config):
         """Test impossible latitudes < -90 or > 90 raising an exception"""
@@ -251,11 +252,13 @@ class TestADSBValidation:
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(90.01, 999999))
         with pytest.raises(ValueError) as exc_info:
             airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "latitude must be a float value >= -90 and <= 90" in str(exc_info.value)
+        assert "is an invalid latitude value. Must be a float between -90 and 90." \
+               in str(exc_info.value)
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90.01, -999999))
         with pytest.raises(ValueError) as exc_info:
             airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "latitude must be a float value >= -90 and <= 90" in str(exc_info.value)
+        assert "is an invalid latitude value. Must be a float between -90 and 90." \
+               in str(exc_info.value)
 
     def test_empty_longitude(self, generate_empty_adsb_config):
         generate_empty_adsb_config['ADSB']['cooldown'] = "10"
@@ -263,7 +266,8 @@ class TestADSBValidation:
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90, 90))
         with pytest.raises(ValueError) as exc_info:
             airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "longitude must be a float value >= -180 and <= 180" in str(exc_info.value)
+        assert "'' is an invalid longitude value. Must be a float between -180 and 180." \
+               in str(exc_info.value)
 
     def test_invalid_longitudes(self, generate_empty_adsb_config):
         """Test impossible longitudes < -180 or > 180 raising an exception"""
@@ -273,11 +277,13 @@ class TestADSBValidation:
         generate_empty_adsb_config['ADSB']['long'] = str(random.uniform(180.01, 999999))
         with pytest.raises(ValueError) as exc_info:
             airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "longitude must be a float value >= -180 and <= 180" in str(exc_info.value)
+        assert "is an invalid longitude value. Must be a float between -180 and 180." \
+               in str(exc_info.value)
         generate_empty_adsb_config['ADSB']['long'] = str(random.uniform(-180.01, -999999))
         with pytest.raises(ValueError) as exc_info:
             airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "longitude must be a float value >= -180 and <= 180" in str(exc_info.value)
+        assert "is an invalid longitude value. Must be a float between -180 and 180." \
+               in str(exc_info.value)
 
     def test_invalid_radii(self, generate_empty_adsb_config):
         """Test invalid radii raising an exception"""

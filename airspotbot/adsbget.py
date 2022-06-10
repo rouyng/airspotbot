@@ -88,13 +88,19 @@ class Coordinates:
     """Class for storing latitude/longitude coordinates, with simple sanity checks"""
 
     def __init__(self, latitude: str, longitude: str):
-        if float(latitude) > 90 or float(latitude) < -90:
-            raise ValueError(f"{latitude} is an invalid latitude value. Must "
+        try:
+            if float(latitude) > 90 or float(latitude) < -90:
+                raise ValueError
+        except ValueError:
+            raise ValueError(f"'{latitude}' is an invalid latitude value. Must "
                              f"be a float between -90 and 90.")
         self.latitude: float = float(latitude)
-        if float(longitude) > 180 or float(longitude) < -180:
-            raise ValueError(f"{longitude} is an invalid longitude value. Must "
-                             f"be a float between -180 and 180.")
+        try:
+            if float(longitude) > 180 or float(longitude) < -180:
+                raise ValueError
+        except ValueError:
+            raise ValueError(f"'{longitude}' is an invalid longitude value. Must "
+                                 f"be a float between -180 and 180.")
         self.longitude: float = float(longitude)
 
 
