@@ -200,6 +200,7 @@ class SpotBot:
             KeyboardInterrupt: Exits the main application loop if there is an error when sending
             a tweet or interacting with the Twitter API
         """
+        # TODO: refactor this to accommodate new AircraftSpot object
         icao = aircraft['icao']
         type_code = aircraft['type']
         reg_num = aircraft['reg']
