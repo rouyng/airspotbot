@@ -36,11 +36,11 @@ class AircraftSpot:
                 self.grounded: bool = True
             else:
                 self.grounded: bool = False
-                self.altitude: int | None = int(raw_aircraft['alt_baro'])
+                self.altitude_ft: int | None = int(raw_aircraft['alt_baro'])
         except (KeyError, ValueError):
             logger.warning(f"Could not parse altitude for aircraft w/ hex {self.hex_code}",
                            exc_info=True)
-            self.altitude: int | None = None
+            self.altitude_ft: int | None = None
         if 'dbFlags' in raw_aircraft.keys():
             self.military: bool = bool(int(raw_aircraft['dbFlags']) & 1)
             self.interesting: bool = bool(int(raw_aircraft['dbFlags']) & 2)
@@ -52,7 +52,7 @@ class AircraftSpot:
         except ValueError as e:
             logger.error(f"Aircraft with hex {self.hex_code} has invalid lat/lon coordinates")
             raise e
-        self.ground_speed: int = int(raw_aircraft['gs'])  # ground speed in kts
+        self.ground_speed_kts: int = int(raw_aircraft['gs'])  # ground speed in kts
         if raw_aircraft['flight'].strip() != self.reg:
             self.callsign: str = str(raw_aircraft['flight'].strip())
         else:
@@ -118,8 +118,8 @@ class Spotter:
         self.seen = {}
         self.adsb_interval_seconds = 60  # interval to check adsb_exchange
         self.cooldown_seconds = 3600  # cooldown interval (seconds)
-        self.latitude_degrees = 0  # latitude of center of spot radius
-        self.longitude_degrees = 0  # longitude of center of spot radius
+        # lat/lon coordinates of center of spot radius
+        self.spot_center_coordinates: Coordinates | None = None
         self.radius_nautical_miles = 1  # radius of circle to check for spots (nautical miles)
         self.adsb_api_key = None
         self.spot_queue = []
@@ -153,23 +153,10 @@ class Spotter:
             except ValueError as cooldown_error:
                 raise ValueError(
                     "cooldown must be an integer value") from cooldown_error
-            # TODO: use Coordinates object for lat/lon values
-            try:
-                self.latitude_degrees = float(config_parsed.get('ADSB', 'lat'))
-                if not -90 <= self.latitude_degrees <= 90:
-                    raise ValueError
-                logger.debug(f"Setting latitude to {self.latitude_degrees}")
-            except ValueError as latitude_error:
-                raise ValueError(
-                    "latitude must be a float value >= -90 and <= 90") from latitude_error
-            try:
-                self.longitude_degrees = float(config_parsed.get('ADSB', 'long'))
-                if not -180 <= self.longitude_degrees <= 180:
-                    raise ValueError
-                logger.debug(f"Setting longitude to {self.longitude_degrees}")
-            except ValueError as longitude_error:
-                raise ValueError("longitude must be a float value >= -180 and"
-                                 " <= 180") from longitude_error
+            self.spot_center_coordinates = Coordinates(config_parsed.get('ADSB', 'lat'),
+                                                       config_parsed.get('ADSB', 'long'))
+            logger.debug(f"Set spotting coordinates to: {self.spot_center_coordinates.latitude}, "
+                         f"{self.spot_center_coordinates.longitude}")
             try:
                 self.radius_nautical_miles = int(config_parsed.get('ADSB', 'radius'))
                 if 250 < self.radius_nautical_miles or self.radius_nautical_miles < 1:
@@ -183,8 +170,8 @@ class Spotter:
             # create url and headers for RapidAPI request
             logger.debug("Setting api endpoint to rapidapi")
             self.url = f"https://adsbexchange-com1.p.rapidapi.com/v2/" \
-                       f"lat/{self.latitude_degrees}/lon/{self.longitude_degrees}/dist/" \
-                       f"{self.radius_nautical_miles}/"
+                       f"lat/{self.spot_center_coordinates.latitude}/lon/" \
+                       f"{self.spot_center_coordinates.longitude}/dist/{self.radius_nautical_miles}/"
             logger.debug(f"API request url: {self.url}")
             self.headers = {
                 'X-RapidAPI-Host': "adsbexchange-com1.p.rapidapi.com",
