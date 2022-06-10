@@ -398,7 +398,7 @@ class TestADSBxCall:
         requests_mock.get(spots.url, json=unexpected_adsbx_json, status_code=200)
         caplog.set_level(logging.DEBUG)
         spots.check_spots()
-        assert "Key error when parsing aircraft returned from API, skipping" in caplog.text
+        assert "Error processing raw aircraft data, skipping" in caplog.text
         assert "D-IENE" in caplog.text
 
     def test_type_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
@@ -406,40 +406,41 @@ class TestADSBxCall:
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert len([p for p in spots.spot_queue if p['type'] == 'C25A']) == 2
+        assert len([p for p in spots.spot_queue if p.type_code == 'C25A']) == 2
 
-    def test_watchlist_image(self, requests_mock, generate_spotter, sample_adsbx_json):
+    def test_watchlist_image(self, requests_mock, generate_spotter, sample_adsbx_json, caplog):
         """Test that image path is assigned from watchlist"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        for i in [p['img'] for p in spots.spot_queue if p['type'] == 'C25A']:
-            assert i == 'test.png'
+        logging_output = caplog.text
+        assert "Cannot add image to aircraft with hex 3e232e. No file found at " \
+               "images\\test.png." in logging_output
 
     def test_grounded(self, requests_mock, generate_spotter, sample_adsbx_json):
         """test whether aircraft of a certain type code in watchlist will be spotted"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert '4058c7' not in [p['icao'] for p in spots.spot_queue]
+        assert '4058c7' not in [p.hex_code for p in spots.spot_queue]
 
     def test_rn_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
         """test whether aircraft with reg number in watchlist is spotted"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert '4R-ALN' in [p['reg'] for p in spots.spot_queue]
+        assert '4R-ALN' in [p.reg for p in spots.spot_queue]
 
     def test_mil_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
         """Test whether an aircraft flagged as mil by ADSBx will be spotted"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert '407941' in [p['icao'] for p in spots.spot_queue]
+        assert '407941' in [p.hex_code for p in spots.spot_queue]
 
     def test_interesting_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
         """Test whether an aircraft flagged as interesting by ADSBx will be spotted"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert '407536' in [p['icao'] for p in spots.spot_queue]
+        assert '407536' in [p.hex_code for p in spots.spot_queue]

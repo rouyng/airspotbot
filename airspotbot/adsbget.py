@@ -41,6 +41,7 @@ class AircraftSpot:
             logger.warning(f"Could not parse altitude for aircraft w/ hex {self.hex_code}",
                            exc_info=True)
             self.altitude_ft: int | None = None
+            self.grounded: bool = False
         if 'dbFlags' in raw_aircraft.keys():
             self.military: bool = bool(int(raw_aircraft['dbFlags']) & 1)
             self.interesting: bool = bool(int(raw_aircraft['dbFlags']) & 2)
@@ -327,14 +328,14 @@ class Spotter:
             aircraft_nearby = []
         self._check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
         for raw_aircraft in aircraft_nearby:
-            logger.debug(
-                f'Received ADSBX data for aircraft w/ hex code {raw_aircraft["hex"]}. '
-                f'Full data: {raw_aircraft}')
-            # Attempt to process raw API response into sanitized AircraftSpot
             try:
+                logger.debug(
+                    f'Received ADSBX data for aircraft w/ hex code {raw_aircraft["hex"]}. '
+                    f'Full data: {raw_aircraft}')
+                # Attempt to process raw API response into sanitized AircraftSpot
                 aircraft = AircraftSpot(raw_aircraft)
             except (ValueError, KeyError):
-                logger.warning(f"Error processing raw aircraft data.", exc_info=True)
+                logger.error(f"Error processing raw aircraft data, skipping. Raw data: {raw_aircraft}", exc_info=True)
                 continue
             # Once an instance of AircraftSpot is successfully created, run through spotting logic
             #  to see if it should be added to the tweet queue
