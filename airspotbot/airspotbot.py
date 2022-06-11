@@ -11,6 +11,7 @@ import tweepy
 from . import adsbget, location, screenshot
 import os.path as path
 from io import BytesIO
+from pathlib import Path
 
 logger = logging.getLogger("airspotbot")
 handler = logging.StreamHandler()
@@ -188,40 +189,41 @@ class SpotBot:
             logger.critical('Configuration file error', exc_info=True)
             raise KeyboardInterrupt
 
-    def tweet_spot(self, aircraft: dict):
+    def tweet_spot(self, aircraft: adsbget.AircraftSpot):
         """
         Generate tweet based on aircraft data returned in dictionary format from the adsbget
         module's Spotter.spot_queue list of dictionaries.
 
         Args:
-            aircraft: Dictionary generated from ADSBX API JSON reply, representing one aircraft
+            aircraft: adsbget.AircraftSpot object generated from ADSBX API JSON reply,
+            representing one aircraft
 
         Raises:
             KeyboardInterrupt: Exits the main application loop if there is an error when sending
             a tweet or interacting with the Twitter API
         """
-        # TODO: refactor this to accommodate new AircraftSpot object
-        icao = aircraft['icao']
-        type_code = aircraft['type']
-        reg_num = aircraft['reg']
-        latitude_degrees = aircraft['lat']
-        longitude_degrees = aircraft['lon']
-        description = aircraft['desc']
-        altitude_feet = aircraft['alt']
-        speed_knots = aircraft['spd']
-        callsign = aircraft['call']
-        link = f'https://globe.adsbexchange.com/?icao={icao}'
-        location_description = self._loc.get_location_description(latitude_degrees,
-                                                                  longitude_degrees)
-        tweet = f"{description if description != '' else type_code}" \
-                f"{', callsign ' + callsign if callsign != reg_num else ''}, ICAO {icao}, RN {reg_num}, is " \
+        hex_code: str = aircraft.hex_code
+        type_code: str = aircraft.type_code
+        reg_num: str = aircraft.reg
+        latitude_degrees: float = aircraft.coordinates.latitude
+        longitude_degrees: float = aircraft.coordinates.longitude
+        description: str | None = aircraft.description
+        altitude_feet: int = aircraft.altitude_ft
+        speed_knots: int = aircraft.ground_speed_kts
+        callsign: str | None = aircraft.callsign
+        image_path: Path | None = aircraft.image_path
+        link = f'https://globe.adsbexchange.com/?icao={hex_code}'
+        location_description = self._loc.get_location_description(str(latitude_degrees),
+                                                                  str(longitude_degrees))
+        tweet = f"{description if description else type_code}" \
+                f"{', callsign ' + callsign if callsign else ''}, ICAO hex ID {hex_code}, RN {reg_num}, is " \
                 f"{location_description}. Altitude {altitude_feet} ft, ground speed {speed_knots} kt. {link}"
         uploaded_media_ids = []
         # generate and upload screenshot image
         if self.enable_screenshot and self.enable_tweets:
             # initialize a binary stream to write then read the png screenshot, all in memory
             with BytesIO() as b:
-                b.write(self.screenshotter.get_globe_screenshot(icao))
+                b.write(self.screenshotter.get_globe_screenshot(hex_code))
                 b.seek(0)  # set byte stream position to the start
                 try:
                     # twitter api v2 does not support media upload, so we need a
@@ -232,8 +234,7 @@ class SpotBot:
                     # if upload fails, handle exception and proceed gracefully without an image
                     logger.warning(f"Error uploading screenshot", exc_info=True)
         # find and upload aircraft image from file specified in watchlist
-        if aircraft['img'] != '':
-            image_path = "images/" + aircraft['img']  # hardcoded to look in images/ subfolder
+        if image_path:
             if self.enable_tweets:
                 try:
                     # if an image path is specified, upload it.

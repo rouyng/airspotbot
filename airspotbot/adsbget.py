@@ -40,7 +40,7 @@ class AircraftSpot:
         except (KeyError, ValueError):
             logger.warning(f"Could not parse altitude for aircraft w/ hex {self.hex_code}",
                            exc_info=True)
-            self.altitude_ft: int | None = None
+            self.altitude_ft: int = 0
             self.grounded: bool = False
         if 'dbFlags' in raw_aircraft.keys():
             self.military: bool = bool(int(raw_aircraft['dbFlags']) & 1)
@@ -55,11 +55,11 @@ class AircraftSpot:
             raise e
         self.ground_speed_kts: int = int(raw_aircraft['gs'])  # ground speed in kts
         if raw_aircraft['flight'].strip() != self.reg:
-            self.callsign: str = str(raw_aircraft['flight'].strip())
+            self.callsign: str | None = str(raw_aircraft['flight'].strip())
         else:
-            self.callsign: str = ''
+            self.callsign: str | None = None
         self.description: str | None = None  # custom text description pulled from watchlist
-        self.image_path: str | None = None  # path to custom image file pulled from watchlist
+        self.image_path: Path | None = None  # path to custom image file pulled from watchlist
 
     def update_from_watchlist(self, search_key: str, watchlist: dict[str, dict[str, str]]):
         """Check watchlist for custom description and image path. If present, update description
