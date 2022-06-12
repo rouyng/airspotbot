@@ -4,6 +4,8 @@ Uses Selenium WebDriver to control a headless instance of the Chrome web browser
 """
 
 import logging
+
+import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from sys import platform
@@ -56,7 +58,7 @@ class Screenshotter:
             logger.debug('Starting chromedriver from system path')
         return driver
 
-    def get_globe_screenshot(self, icao: str) -> str:
+    def get_globe_screenshot(self, icao: str) -> str | None:
         """
         Retrieve a screenshot showing the map location and flightpath of an aircraft with the
         specified ICAO address.
@@ -80,6 +82,9 @@ class Screenshotter:
                     ad_element.style.display = "none";
             }
         """)
-        map_element = self.driver.find_element(by=By.CSS_SELECTOR, value="canvas.ol-layer")
-
+        try:
+            map_element = self.driver.find_element(by=By.CSS_SELECTOR, value="canvas.ol-layer")
+        except selenium.common.exceptions.NoSuchElementException:
+            logger.error("Screenshotter could not find canvas.ol-layer element, likely timed out")
+            return None
         return map_element.screenshot_as_png

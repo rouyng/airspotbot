@@ -230,16 +230,20 @@ class SpotBot:
             if self.enable_screenshot:
                 # initialize a binary stream to write then read the png screenshot, all in memory
                 with BytesIO() as b:
-                    b.write(self.screenshotter.get_globe_screenshot(hex_code))
-                    b.seek(0)  # set byte stream position to the start
-                    try:
-                        # Twitter api v2 does not support media upload, so we need a
-                        #  v1.1 tweepy.api instance for media upload
-                        screenshot_media = self._v1_api.media_upload(filename="screenshot.png", file=b)
-                        uploaded_media_ids.append(screenshot_media.media_id)
-                    except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
-                        # if upload fails, handle exception and proceed gracefully without an image
-                        logger.warning(f"Error uploading screenshot", exc_info=True)
+                    screenshot_binary = self.screenshotter.get_globe_screenshot(hex_code)
+                    if screenshot_binary:
+                        b.write(screenshot_binary)
+                        b.seek(0)  # set byte stream position to the start
+                        try:
+                            # Twitter api v2 does not support media upload, so we need a
+                            #  v1.1 tweepy.api instance for media upload
+                            screenshot_media = self._v1_api.media_upload(filename="screenshot.png", file=b)
+                            uploaded_media_ids.append(screenshot_media.media_id)
+                        except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
+                            # if upload fails, handle exception and proceed gracefully without an image
+                            logger.warning(f"Error uploading screenshot", exc_info=True)
+                    else:
+                        logger.warning("No screenshot uploaded!")
             # find and upload aircraft image from file specified in watchlist
             if image_path:
                 try:
