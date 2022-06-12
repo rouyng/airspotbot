@@ -65,9 +65,12 @@ class AircraftSpot:
                 continue
         else:
             self.speed_string: str = 'speed unknown'
-        if raw_aircraft['flight'].strip() != self.reg:
-            self.callsign: str | None = str(raw_aircraft['flight'].strip())
-        else:
+        try:
+            if raw_aircraft['flight'].strip() != self.reg:
+                self.callsign: str | None = str(raw_aircraft['flight'].strip())
+            else:
+                self.callsign: str | None = None
+        except KeyError:
             self.callsign: str | None = None
         self.description: str | None = None  # custom text description pulled from watchlist
         self.image_path: Path | None = None  # path to custom image file pulled from watchlist
