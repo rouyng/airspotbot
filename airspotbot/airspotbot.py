@@ -260,7 +260,10 @@ class SpotBot:
             logger.info(f"Attached Media IDs: {uploaded_media_ids}")
             logger.info(f'Sending tweet...')
             try:
-                self._client.create_tweet(text=tweet, media_ids=uploaded_media_ids)
+                if len(uploaded_media_ids) > 0:
+                    self._client.create_tweet(text=tweet, media_ids=uploaded_media_ids)
+                else:
+                    self._client.create_tweet(text=tweet)
                 logger.info("Tweet successful!")
             except tweepy.errors.TweepyException:
                 logger.error('Error sending tweet', exc_info=True)
