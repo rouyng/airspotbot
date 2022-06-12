@@ -54,7 +54,17 @@ class AircraftSpot:
         except ValueError as e:
             logger.error(f"Aircraft with hex {self.hex_code} has invalid lat/lon coordinates")
             raise e
-        self.ground_speed_kts: int = int(raw_aircraft['gs'])  # ground speed in kts
+        # Create a string describing aircraft speed. Prefer ground speed, then fall back to
+        #  true air speed and indicated air speed in that order. If none are reported, describe
+        #  speed as unknown.
+        for n, k in (("ground", 'gs'), ("true air", 'tas'), ("indicated air", 'ias')):
+            try:
+                self.speed_string: str = f"{n} speed {raw_aircraft[k]} kts"
+                break
+            except KeyError:
+                continue
+        else:
+            self.speed_string: str = 'speed unknown'
         if raw_aircraft['flight'].strip() != self.reg:
             self.callsign: str | None = str(raw_aircraft['flight'].strip())
         else:

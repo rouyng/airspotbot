@@ -209,7 +209,7 @@ class SpotBot:
         longitude_degrees: float = aircraft.coordinates.longitude
         description: str | None = aircraft.description
         altitude_feet: int = aircraft.altitude_ft
-        speed_knots: int = aircraft.ground_speed_kts
+        speed: str = aircraft.speed_string
         callsign: str | None = aircraft.callsign
         image_path: Path | None = aircraft.image_path
         link = f'https://globe.adsbexchange.com/?icao={hex_code}'
@@ -217,7 +217,7 @@ class SpotBot:
                                                                   str(longitude_degrees))
         tweet = f"{description if description else type_code}" \
                 f"{', callsign ' + callsign if callsign else ''}, ICAO hex ID {hex_code}, RN {reg_num}, is " \
-                f"{location_description}. Altitude {altitude_feet} ft, ground speed {speed_knots} kt. {link}"
+                f"{location_description}. Altitude {altitude_feet} ft, {speed}. {link}"
         uploaded_media_ids = []
         # generate and upload screenshot image
         if self.enable_screenshot and self.enable_tweets:
