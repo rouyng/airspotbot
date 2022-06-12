@@ -42,7 +42,7 @@ class AircraftSpot:
                            exc_info=True)
             self.altitude_ft: int = 0
             self.grounded: bool = False
-        if 'dbFlags' in raw_aircraft.keys():
+        if 'dbFlags' in raw_aircraft:
             self.military: bool = bool(int(raw_aircraft['dbFlags']) & 1)
             self.interesting: bool = bool(int(raw_aircraft['dbFlags']) & 2)
         else:
@@ -339,24 +339,24 @@ class Spotter:
                 continue
             # Once an instance of AircraftSpot is successfully created, run through spotting logic
             #  to see if it should be added to the tweet queue
-            if aircraft.hex_code in self.seen.keys():
+            if aircraft.hex_code in self.seen:
                 # if craft icao number is in seen list, do not queue
                 logger.debug(f"{aircraft.hex_code} is already spotted, not added to queue")
                 continue
             if aircraft.grounded:
                 logger.debug(f'{aircraft.hex_code} is grounded, skipping')
                 continue
-            if aircraft.hex_code in self.watchlist_ia.keys():
+            if aircraft.hex_code in self.watchlist_ia:
                 # if the aircraft's ICAO address is on the watchlist, add it to the queue
                 logger.debug(f'{aircraft.hex_code} in watchlist, adding to spot queue')
                 aircraft.update_from_watchlist(aircraft.hex_code, self.watchlist_ia)
                 self._append_craft(aircraft)
-            elif aircraft.reg in self.watchlist_rn.keys():
+            elif aircraft.reg in self.watchlist_rn:
                 # if the aircraft's registration number is on the watchlist, add it to the queue
                 logger.debug(f'{aircraft.reg} in watchlist, adding to spot queue')
                 aircraft.update_from_watchlist(aircraft.reg, self.watchlist_rn)
                 self._append_craft(aircraft)
-            elif aircraft.type_code in self.watchlist_tc.keys():
+            elif aircraft.type_code in self.watchlist_tc:
                 if self.watchlist_tc[aircraft.type_code]['mil_only'] is True and aircraft.military:
                     logger.debug(
                         f'{aircraft.type_code} in watchlist as military-only and this one is '
