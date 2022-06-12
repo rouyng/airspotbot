@@ -8,6 +8,7 @@ import configparser
 import csv
 import requests
 from pathlib import Path
+from collections import deque
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +130,7 @@ class Spotter:
         self.spot_center_coordinates: Coordinates | None = None
         self.radius_nautical_miles = 1  # radius of circle to check for spots (nautical miles)
         self.adsb_api_key = None
-        self.spot_queue = []
+        self.spot_queue: deque[AircraftSpot] = deque()
         self.spot_unknown = True  # always spot unknown reg #s
         self.spot_mil = True  # always spot mil-format serial numbers
         self.spot_interesting = True  # always spot aircraft designated "interesting"

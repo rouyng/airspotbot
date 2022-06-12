@@ -277,8 +277,8 @@ def run_bot(config_path: str, watchlist_path: str):
     spot_time_seconds = time()
     # check for aircraft and tweet any when bot first starts
     spots.check_spots()
-    for _ in range(0, len(spots.spot_queue)):
-        spot = spots.spot_queue.pop(0)
+    while spots.spot_queue:
+        spot = spots.spot_queue.popleft()
         bot.tweet_spot(spot)
     # perpetually loop through checking aircraft spots and tweeting according to interval in config
     while True:
@@ -286,8 +286,8 @@ def run_bot(config_path: str, watchlist_path: str):
             spots.check_spots()
             spot_time_seconds = time()
         elif time() > bot_time_seconds + bot.tweet_interval_seconds:
-            for _ in range(0, len(spots.spot_queue)):
-                spot = spots.spot_queue.pop(0)
+            while spots.spot_queue:
+                spot = spots.spot_queue.popleft()
                 bot.tweet_spot(spot)
             bot_time_seconds = time()
         else:
