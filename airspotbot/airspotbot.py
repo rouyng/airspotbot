@@ -218,24 +218,30 @@ class SpotBot:
         tweet = f"{description if description else type_code}" \
                 f"{', callsign ' + callsign if callsign else ''}, ICAO hex ID {hex_code}, RN {reg_num}, is " \
                 f"{location_description}. Altitude {altitude_feet} ft, {speed}. {link}"
-        uploaded_media_ids = []
-        # generate and upload screenshot image
-        if self.enable_screenshot and self.enable_tweets:
-            # initialize a binary stream to write then read the png screenshot, all in memory
-            with BytesIO() as b:
-                b.write(self.screenshotter.get_globe_screenshot(hex_code))
-                b.seek(0)  # set byte stream position to the start
-                try:
-                    # twitter api v2 does not support media upload, so we need a
-                    #  v1.1 tweepy.api instance for media upload
-                    screenshot_media = self._v1_api.media_upload(filename="screenshot.png", file=b)
-                    uploaded_media_ids.append(screenshot_media.media_id)
-                except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
-                    # if upload fails, handle exception and proceed gracefully without an image
-                    logger.warning(f"Error uploading screenshot", exc_info=True)
-        # find and upload aircraft image from file specified in watchlist
-        if image_path:
-            if self.enable_tweets:
+        logger.info(f"Generated tweet text: {tweet}")
+        if len(tweet) <= 280:
+            valid_tweet = True
+        else:
+            logger.error(f"Tweet is too long: {len(tweet)}/280 characters. Skipping!")
+            valid_tweet = False
+        if self.enable_tweets and valid_tweet:
+            uploaded_media_ids = []
+            # generate and upload screenshot image
+            if self.enable_screenshot:
+                # initialize a binary stream to write then read the png screenshot, all in memory
+                with BytesIO() as b:
+                    b.write(self.screenshotter.get_globe_screenshot(hex_code))
+                    b.seek(0)  # set byte stream position to the start
+                    try:
+                        # Twitter api v2 does not support media upload, so we need a
+                        #  v1.1 tweepy.api instance for media upload
+                        screenshot_media = self._v1_api.media_upload(filename="screenshot.png", file=b)
+                        uploaded_media_ids.append(screenshot_media.media_id)
+                    except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
+                        # if upload fails, handle exception and proceed gracefully without an image
+                        logger.warning(f"Error uploading screenshot", exc_info=True)
+            # find and upload aircraft image from file specified in watchlist
+            if image_path:
                 try:
                     # if an image path is specified, upload it.
                     # Twitter api v2 does not support media upload, so we need a
@@ -247,16 +253,13 @@ class SpotBot:
                     # if upload fails, handle exception and proceed gracefully without an image
                     logger.warning(f"Error uploading image from {image_path}, check if file exists",
                                    exc_info=True)
-        logger.info(f"Generated tweet: {tweet}")
-        logger.info(f"Attached Media IDs: {uploaded_media_ids}")
-        if self.enable_tweets:
+            logger.info(f"Attached Media IDs: {uploaded_media_ids}")
             logger.info(f'Sending tweet...')
             try:
                 self._client.create_tweet(text=tweet, media_ids=uploaded_media_ids)
                 logger.info("Tweet successful!")
             except tweepy.errors.TweepyException:
-                logger.critical('Error sending tweet', exc_info=True)
-                raise KeyboardInterrupt
+                logger.error('Error sending tweet', exc_info=True)
 
 
 def run_bot(config_path: str, watchlist_path: str):
@@ -277,6 +280,7 @@ def run_bot(config_path: str, watchlist_path: str):
     spot_time_seconds = time()
     # check for aircraft and tweet any when bot first starts
     spots.check_spots()
+    logger.info(f"{len(spots.spot_queue)} spots in tweet queue.")
     while spots.spot_queue:
         spot = spots.spot_queue.popleft()
         bot.tweet_spot(spot)
@@ -286,6 +290,7 @@ def run_bot(config_path: str, watchlist_path: str):
             spots.check_spots()
             spot_time_seconds = time()
         elif time() > bot_time_seconds + bot.tweet_interval_seconds:
+            logger.info(f"{len(spots.spot_queue)} spots in tweet queue.")
             while spots.spot_queue:
                 spot = spots.spot_queue.popleft()
                 bot.tweet_spot(spot)

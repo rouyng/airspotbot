@@ -20,6 +20,8 @@ class AircraftSpot:
 
     Args:
             raw_aircraft: Dictionary generated from ADSBX API JSON reply, representing one aircraft
+    Raises:
+            ValueError: If raw strings returned by the API cannot be coerced into expected types
     """
 
     def __init__(self, raw_aircraft: dict[str, str]):
@@ -39,8 +41,7 @@ class AircraftSpot:
                 self.grounded: bool = False
                 self.altitude_ft: int | None = int(raw_aircraft['alt_baro'])
         except (KeyError, ValueError):
-            logger.warning(f"Could not parse altitude for aircraft w/ hex {self.hex_code}",
-                           exc_info=True)
+            logger.warning(f"Could not parse altitude for aircraft w/ hex {self.hex_code}")
             self.altitude_ft: int = 0
             self.grounded: bool = False
         if 'dbFlags' in raw_aircraft:
@@ -64,6 +65,7 @@ class AircraftSpot:
             except KeyError:
                 continue
         else:
+            logger.warning(f"Could not parse speed for aircraft w/ hex {self.hex_code}")
             self.speed_string: str = 'speed unknown'
         try:
             if raw_aircraft['flight'].strip() != self.reg:
@@ -294,7 +296,6 @@ class Spotter:
             spotted_aircraft: AircraftSpot object, representing a single aircraft
         """
         try:
-
             hex_code = spotted_aircraft.hex_code
             logger.info(f'Aircraft added to queue. ICAO #: {hex_code}')
             self.spot_queue.append(spotted_aircraft)
