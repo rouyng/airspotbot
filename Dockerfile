@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.10-alpine
 COPY . /src
 WORKDIR /src
 RUN apk add --no-cache --virtual .build-deps gcc libc-dev libffi-dev rust cargo openssl-dev
