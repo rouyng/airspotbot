@@ -70,15 +70,16 @@ class Screenshotter:
              PNG screenshot as binary data
         """
         logger.debug(f"Getting browser screenshot for ICAO {icao}")
-        self.driver.get(f"https://globe.adsbexchange.com/?icao={icao}&zoom={self.zoom}")
-
+        url = f"https://globe.adsbexchange.com/?icao={icao}&zoom={self.zoom}"
+        self.driver.get(url)
         try:
             map_element = WebDriverWait(self.driver, timeout=10)\
                 .until(lambda d: d.find_element(by=By.CSS_SELECTOR,
                                                 value="canvas.ol-layer"))
             sleep(3)  # hardcoded delay to let map canvas render fully
         except selenium.common.exceptions.TimeoutException:
-            logger.error("Screenshotter could not find canvas.ol-layer element, timed out")
+            logger.error(f"Screenshotter could not find canvas.ol-layer element at {url}, "
+                         f"timed out")
             return None
         self.driver.execute_script("""
             // javascript snippet to hide ad banner elements
