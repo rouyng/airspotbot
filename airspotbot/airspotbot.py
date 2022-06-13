@@ -216,7 +216,7 @@ class SpotBot:
         location_description = self._loc.get_location_description(str(latitude_degrees),
                                                                   str(longitude_degrees))
         tweet = f"{description if description else type_code}" \
-                f"{', callsign ' + callsign if callsign else ''}, ICAO hex ID {hex_code}, RN {reg_num}, is " \
+                f"{', callsign ' + callsign if callsign else ''}, hex ID {hex_code.upper()}, RN {reg_num}, is " \
                 f"{location_description}. Altitude {altitude_feet} ft, {speed}. {link}"
         logger.info(f"Generated tweet text: {tweet}")
         if len(tweet) <= 280:

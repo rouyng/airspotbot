@@ -8,6 +8,7 @@ import logging
 import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
 from sys import platform
 from time import sleep
 
@@ -70,9 +71,15 @@ class Screenshotter:
         """
         logger.debug(f"Getting browser screenshot for ICAO {icao}")
         self.driver.get(f"https://globe.adsbexchange.com/?icao={icao}&zoom={self.zoom}")
-        # TODO: use a webdriver wait instead of sleep
-        sleep(2)  # sleep to let the page finish loading, otherwise a shaded grid overlay appears
-        # execute javascript to hide ad banners
+
+        try:
+            map_element = WebDriverWait(self.driver, timeout=10)\
+                .until(lambda d: d.find_element(by=By.CSS_SELECTOR,
+                                                value="canvas.ol-layer"))
+            sleep(3)  # hardcoded delay to let map canvas render fully
+        except selenium.common.exceptions.NoSuchElementException:
+            logger.error("Screenshotter could not find canvas.ol-layer element, likely timed out")
+            return None
         self.driver.execute_script("""
             // javascript snippet to hide ad banner elements
             var ad_selectors = [".FIOnDemandWrapper"]; // banner selectors
@@ -82,9 +89,4 @@ class Screenshotter:
                     ad_element.style.display = "none";
             }
         """)
-        try:
-            map_element = self.driver.find_element(by=By.CSS_SELECTOR, value="canvas.ol-layer")
-        except selenium.common.exceptions.NoSuchElementException:
-            logger.error("Screenshotter could not find canvas.ol-layer element, likely timed out")
-            return None
         return map_element.screenshot_as_png
