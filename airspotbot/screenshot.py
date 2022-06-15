@@ -80,6 +80,7 @@ class Screenshotter:
         except selenium.common.exceptions.TimeoutException:
             logger.error(f"Screenshotter could not find canvas.ol-layer element at {url}, "
                          f"timed out")
+            logger.debug(f"Page source: {self.driver.page_source}")
             return None
         self.driver.execute_script("""
             // javascript snippet to hide ad banner elements
