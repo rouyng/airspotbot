@@ -9,6 +9,7 @@ import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.expected_conditions import presence_of_element_located
 from sys import platform
 from time import sleep
 
@@ -74,9 +75,8 @@ class Screenshotter:
         self.driver.get(url)
         try:
             map_element = WebDriverWait(self.driver, timeout=10)\
-                .until(lambda d: d.find_element(by=By.CSS_SELECTOR,
-                                                value="canvas.ol-layer"))
-            sleep(3)  # hardcoded delay to let map canvas render fully
+                .until(presence_of_element_located((By.CSS_SELECTOR, "div.ol-layer")))
+            sleep(5)  # hardcoded delay to let map canvas render fully
         except selenium.common.exceptions.TimeoutException:
             logger.error(f"Screenshotter could not find canvas.ol-layer element at {url}, "
                          f"timed out")
