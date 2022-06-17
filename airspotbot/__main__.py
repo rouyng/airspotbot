@@ -2,6 +2,7 @@ import logging
 from . import airspotbot
 import argparse
 
+VERSION = "2.0.0"
 DEFAULT_CONFIG_PATH = './config/asb.config'
 DEFAULT_WATCHLIST_PATH = './config/watchlist.csv'
 
@@ -21,6 +22,7 @@ parser.add_argument('-w', '--watchlist',
                     nargs='?',
                     help=f'Optional path to watchlist file. Defaults to {DEFAULT_WATCHLIST_PATH}',
                     default=DEFAULT_WATCHLIST_PATH)
+parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
 
 # TODO: argument to disable twitter API connection and only print tweets to stdout
 # TODO: argument to set logging level/verbosity
