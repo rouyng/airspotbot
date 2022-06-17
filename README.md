@@ -131,7 +131,6 @@ Here are some planned features/fixes. You are welcome to work on these if you ar
 * CL argument to set logging level/verbosity
 * Support [geoapify.com reverse geocoding API](https://apidocs.geoapify.com/docs/geocoding/reverse-geocoding/#about)
 * Fetch aircraft photos using [Planespotters.net API](https://www.planespotters.net/photo/api)
-* Set custom user agent string for all API requests
 
  ## Contributing
  Contributions are welcome, including those from new/novice contributors. Source code contributions should be via pull requests. Bug reports and feature requests via opening issues. 

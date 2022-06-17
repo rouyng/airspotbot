@@ -37,12 +37,14 @@ class SpotBot:
         sleep(30)
     """
 
-    def __init__(self, config_parsed: configparser.ConfigParser):
+    def __init__(self, config_parsed: configparser.ConfigParser, user_agent: str):
         """
         Args:
             config_parsed: ConfigParser object, generated from the config/ini file whose path is
              specified as a command line argument when airspotbot is started.
+            user_agent: User agent string used in API requests
         """
+        self.user_agent = user_agent
         self.tweet_interval_seconds = 5
         self._consumer_key = None
         self._consumer_secret = None
@@ -57,7 +59,7 @@ class SpotBot:
             self._v1_api = self._initialize_twitter_api_v1()
         if self.enable_screenshot:
             self.screenshotter = screenshot.Screenshotter(self.zoom_level)
-        self._loc = location.Locator(config_parsed)
+        self._loc = location.Locator(config_parsed=config_parsed, user_agent=self.user_agent)
 
     def _read_logging_config(self, config_parsed: configparser.ConfigParser):
         """
@@ -97,6 +99,7 @@ class SpotBot:
                                    consumer_secret=self._consumer_secret,
                                    access_token=self._access_token,
                                    access_token_secret=self._access_token_secret)
+            client.user_agent = self.user_agent
             user_info = client.get_me()
             logger.info(f"Authentication OK. Connected as user {user_info.data.username}")
         except tweepy.errors.TweepyException as tp_error:
@@ -128,6 +131,7 @@ class SpotBot:
         try:
             # test that authentication worked
             api.verify_credentials()
+            api.user_agent = self.user_agent
             logger.info("Authentication OK")
         except (tweepy.errors.TweepyException, tweepy.errors.HTTPException) as tp_error:
             logger.critical('Error during Twitter API authentication', exc_info=True)
@@ -269,7 +273,7 @@ class SpotBot:
                 logger.error('Error sending tweet', exc_info=True)
 
 
-def run_bot(config_path: str, watchlist_path: str):
+def run_bot(config_path: str, watchlist_path: str, user_agent: str):
     """
     Main program loop of airspotbot. Handles initial configuration and instantiation of
      config, SpotBot and Spotter objects. After this, runs an infinite loop for checking ADSBX API
@@ -278,11 +282,15 @@ def run_bot(config_path: str, watchlist_path: str):
     Args:
         config_path: String containing relative or absolute path to config INI file.
         watchlist_path: String containing relative or absolute path to watchlist CSV file.
+        user_agent: User agent string used in API requests
     """
 
     config = read_config(config_path)
-    bot = SpotBot(config)
-    spots = adsbget.Spotter(config, watchlist_path)
+    bot = SpotBot(config_parsed=config,
+                  user_agent=user_agent)
+    spots = adsbget.Spotter(config_parsed=config,
+                            watchlist_path=watchlist_path,
+                            user_agent=user_agent)
     bot_time_seconds = time()
     spot_time_seconds = time()
     # check for aircraft and tweet any when bot first starts

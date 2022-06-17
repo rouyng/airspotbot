@@ -23,12 +23,14 @@ class Locator:
     """Class for generating location descriptions, using either manual description, coordinates,
     pelias reverse geocoder or 3geonames reverse geocoder"""
 
-    def __init__(self, config_parsed):
+    def __init__(self, config_parsed: configparser.ConfigParser, user_agent: str):
         """
         Args:
             config_parsed: ConfigParser object, generated from the config/ini file whose path is
              specified as a command line argument when airspotbot is started.
+            user_agent: User agent string used in API requests
          """
+        self.user_agent = user_agent
         self.location_type = 'MANUAL'
         self.location_manual_description = ''
         self.pelias_host = ''
@@ -111,7 +113,7 @@ class Locator:
             # make sure we can connect to the pelias host over http
             try:
                 logger.info(f"Testing Pelias API at {pelias_test_url}")
-                test_result = requests.get(pelias_test_url)
+                test_result = requests.get(pelias_test_url, headers={'User-Agent': self.user_agent})
                 test_result.raise_for_status()
                 # once we know we can connect to the host, make sure the response looks right
                 try:
@@ -229,7 +231,8 @@ class Locator:
         geo_results = {}
         try:
             if self.pelias_point_layer is not None:
-                pelias_result = requests.get(self.pelias_url + f"&layers={self.pelias_point_layer}")
+                pelias_result = requests.get(self.pelias_url + f"&layers={self.pelias_point_layer}",
+                                             headers={'User-Agent': self.user_agent})
                 pelias_result.raise_for_status()
                 try:
                     point_name = pelias_result.json()["features"][0]["properties"]["name"]
@@ -239,7 +242,8 @@ class Locator:
             else:
                 point_name = None
             if self.pelias_area_layer is not None:
-                pelias_result = requests.get(self.pelias_url + f"&layers={self.pelias_area_layer}")
+                pelias_result = requests.get(self.pelias_url + f"&layers={self.pelias_area_layer}",
+                                             headers={'User-Agent': self.user_agent})
                 pelias_result.raise_for_status()
                 try:
                     area_name = pelias_result.json()["features"][0]["properties"]["name"]
@@ -257,8 +261,7 @@ class Locator:
             geo_results['area'] = None
         return geo_results
 
-    @staticmethod
-    def _reverse_geocode_geonames(latitude_degrees: str, longitude_degrees: str):
+    def _reverse_geocode_geonames(self, latitude_degrees: str, longitude_degrees: str):
         """
         Fetch geocoding from the free https://3geonames.org/api
 
@@ -273,7 +276,8 @@ class Locator:
         sleep(1)  # hardcoded delay to limit rate of requests to this free API
         try:
             response = requests.get(
-                f"https://api.3geonames.org/{latitude_degrees},{longitude_degrees}.json", timeout=4)
+                f"https://api.3geonames.org/{latitude_degrees},{longitude_degrees}.json", timeout=4,
+                headers={'User-Agent': self.user_agent})
             return response.json()
         except (requests.exceptions.ConnectionError,
                 requests.exceptions.HTTPError) as conn_err:

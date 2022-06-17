@@ -3,6 +3,7 @@ from . import airspotbot
 import argparse
 
 VERSION = "2.0.0"
+USER_AGENT = f"airspotbot/{VERSION} (https://github.com/rouyng/airspotbot)"
 DEFAULT_CONFIG_PATH = './config/asb.config'
 DEFAULT_WATCHLIST_PATH = './config/watchlist.csv'
 
@@ -29,6 +30,8 @@ parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}'
 
 args = parser.parse_args()
 try:
-    airspotbot.run_bot(config_path=args.config, watchlist_path=args.watchlist)
+    airspotbot.run_bot(config_path=args.config,
+                       watchlist_path=args.watchlist,
+                       user_agent=USER_AGENT)
 except KeyboardInterrupt:
     logger.critical("Exiting!")

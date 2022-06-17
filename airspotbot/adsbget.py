@@ -126,14 +126,19 @@ class Spotter:
     criteria. Requires a ConfigParser object and path to watchlist.csv as arguments.
     """
 
-    def __init__(self, config_parsed: configparser.ConfigParser, watchlist_path: str):
+    def __init__(self,
+                 config_parsed: configparser.ConfigParser,
+                 watchlist_path: str,
+                 user_agent: str):
         """
         Args:
             config_parsed: ConfigParser object, generated from the config/ini file whose path is
              specified as a command line argument when airspotbot is started.
             watchlist_path: String containing path to watchlist csv file, specified as a command
              line argument when airspotbot is started.
+            user_agent: User agent string used in API requests
         """
+        self.user_agent = user_agent
         self.watchlist_path = watchlist_path
         self.watchlist_rn = {}
         self.watchlist_tc = {}
@@ -197,6 +202,7 @@ class Spotter:
                        f"{self.spot_center_coordinates.longitude}/dist/{self.radius_nautical_miles}/"
             logger.debug(f"API request url: {self.url}")
             self.headers = {
+                'User-Agent': self.user_agent,
                 'X-RapidAPI-Host': "adsbexchange-com1.p.rapidapi.com",
                 'X-RapidAPI-Key': self.adsb_api_key
             }
