@@ -72,8 +72,8 @@ class Screenshotter:
         """
         logger.debug(f"Getting browser screenshot for ICAO {icao}")
         url = f"https://globe.adsbexchange.com/?icao={icao}&zoom={self.zoom}"
-        self.driver.get(url)
         try:
+            self.driver.get(url)
             map_element = WebDriverWait(self.driver, timeout=10)\
                 .until(presence_of_element_located((By.CSS_SELECTOR, "div.ol-layer")))
             sleep(5)  # hardcoded delay to let map canvas render fully
