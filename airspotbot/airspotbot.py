@@ -291,6 +291,7 @@ def run_bot(config_path: str, watchlist_path: str, image_dir: str, user_agent: s
                   user_agent=user_agent)
     spots = adsbget.Spotter(config_parsed=config,
                             watchlist_path=watchlist_path,
+                            image_dir=image_dir,
                             user_agent=user_agent)
     bot_time_seconds = time()
     spot_time_seconds = time()
