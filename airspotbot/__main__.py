@@ -6,6 +6,7 @@ VERSION = "2.0.0"
 USER_AGENT = f"airspotbot/{VERSION} (https://github.com/rouyng/airspotbot)"
 DEFAULT_CONFIG_PATH = './config/asb.config'
 DEFAULT_WATCHLIST_PATH = './config/watchlist.csv'
+DEFAULT_IMAGE_DIRECTORY = './images/'
 
 logger = logging.getLogger("airspotbot")
 
@@ -23,6 +24,13 @@ parser.add_argument('-w', '--watchlist',
                     nargs='?',
                     help=f'Optional path to watchlist file. Defaults to {DEFAULT_WATCHLIST_PATH}',
                     default=DEFAULT_WATCHLIST_PATH)
+parser.add_argument('-i', '--imagedir',
+                    type=str,
+                    nargs='?',
+                    help=f'Optional path to directory of images. airspotbot will search here for '
+                         f'image files defined in the watchlist. Defaults to '
+                         f'{DEFAULT_IMAGE_DIRECTORY}',
+                    default=DEFAULT_IMAGE_DIRECTORY)
 parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
 
 # TODO: argument to disable twitter API connection and only print tweets to stdout
@@ -32,6 +40,7 @@ args = parser.parse_args()
 try:
     airspotbot.run_bot(config_path=args.config,
                        watchlist_path=args.watchlist,
+                       image_dir=args.imagedir,
                        user_agent=USER_AGENT)
 except KeyboardInterrupt:
     logger.critical("Exiting!")

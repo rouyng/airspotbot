@@ -50,20 +50,19 @@ Run airspotbot with `python3 -m airspotbot`
 Command line arguments are as follows:
 ```
 $ python -m airspotbot --help
-usage: airspotbot [-h] [-c [CONFIG]] [-w [WATCHLIST]]
+usage: airspotbot [-h] [-c [CONFIG]] [-w [WATCHLIST]] [-i [IMAGEDIR]] [--version]
 
-A twitter bot for reporting aircraft activity in an area, using the ADS-B
-Exchange API. For more details, see README.md.
+A twitter bot for reporting aircraft activity in an area, using the ADS-B Exchange API. For more details, see README.md.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -c [CONFIG], --config [CONFIG]
-                        Optional path to config file. Defaults to
-                        ./config/asb.config
+                        Optional path to config file. Defaults to ./config/asb.config
   -w [WATCHLIST], --watchlist [WATCHLIST]
-                        Optional path to watchlist file. Defaults to
-                        ./config/watchlist.csv
-
+                        Optional path to watchlist file. Defaults to ./config/watchlist.csv
+  -i [IMAGEDIR], --imagedir [IMAGEDIR]
+                        Optional path to directory of images. airspotbot will search here for image files defined in the watchlist. Defaults to ./images/
+  --version             show program's version number and exit
 ```
 
 
@@ -126,7 +125,6 @@ N174SY,RN,,,
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
 
-* Command line argument for image directory path
 * CL argument to disable twitter API connection and only print tweets to stdout
 * CL argument to set logging level/verbosity
 * Support [geoapify.com reverse geocoding API](https://apidocs.geoapify.com/docs/geocoding/reverse-geocoding/#about)

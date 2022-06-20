@@ -273,7 +273,7 @@ class SpotBot:
                 logger.error('Error sending tweet', exc_info=True)
 
 
-def run_bot(config_path: str, watchlist_path: str, user_agent: str):
+def run_bot(config_path: str, watchlist_path: str, image_dir: str, user_agent: str):
     """
     Main program loop of airspotbot. Handles initial configuration and instantiation of
      config, SpotBot and Spotter objects. After this, runs an infinite loop for checking ADSBX API
@@ -282,6 +282,7 @@ def run_bot(config_path: str, watchlist_path: str, user_agent: str):
     Args:
         config_path: String containing relative or absolute path to config INI file.
         watchlist_path: String containing relative or absolute path to watchlist CSV file.
+        image_dir: String containing relative or absoluter path to directory of images
         user_agent: User agent string used in API requests
     """
 

@@ -77,7 +77,10 @@ class AircraftSpot:
         self.description: str | None = None  # custom text description pulled from watchlist
         self.image_path: Path | None = None  # path to custom image file pulled from watchlist
 
-    def update_from_watchlist(self, search_key: str, watchlist: dict[str, dict[str, str]]):
+    def update_from_watchlist(self,
+                              search_key: str,
+                              watchlist: dict[str, dict[str, str]],
+                              image_dir: str):
         """Check watchlist for custom description and image path. If present, update description
         and image path.
 
@@ -87,13 +90,15 @@ class AircraftSpot:
             watchlist: Watchlist dictionary, consisting of keys which can be registration number,
                 ICAO hex code or an ICAO type code, and values which are dictionaries containing
                 'desc' and 'img' key/value pairs for custom descriptions and image paths.
+            image_dir: String containing relative or absolute path of image directory containing
+                images defined in watchlist.
             """
         if watchlist[search_key]['desc'] != '':
             self.description = watchlist[search_key]['desc']
         image_filename = watchlist[search_key]['img']
         # Check if file exists at path defined by image_path, then update self.image_path
         if image_filename != '':
-            full_path = Path("./images/" + image_filename)
+            full_path = Path(image_dir + image_filename)
             if full_path.is_file():
                 self.image_path = full_path
             else:
@@ -129,6 +134,7 @@ class Spotter:
     def __init__(self,
                  config_parsed: configparser.ConfigParser,
                  watchlist_path: str,
+                 image_dir: str,
                  user_agent: str):
         """
         Args:
@@ -136,10 +142,12 @@ class Spotter:
              specified as a command line argument when airspotbot is started.
             watchlist_path: String containing path to watchlist csv file, specified as a command
              line argument when airspotbot is started.
-            user_agent: User agent string used in API requests
+            image_dir: String containing relative or absoluter path to directory of images.
+            user_agent: User agent string used in API requests.
         """
         self.user_agent = user_agent
         self.watchlist_path = watchlist_path
+        self.image_dir = image_dir
         self.watchlist_rn = {}
         self.watchlist_tc = {}
         self.watchlist_ia = {}
@@ -370,19 +378,21 @@ class Spotter:
             if aircraft.hex_code in self.watchlist_ia:
                 # if the aircraft's ICAO address is on the watchlist, add it to the queue
                 logger.debug(f'{aircraft.hex_code} in watchlist, adding to spot queue')
-                aircraft.update_from_watchlist(aircraft.hex_code, self.watchlist_ia)
+                aircraft.update_from_watchlist(aircraft.hex_code, self.watchlist_ia, self.image_dir)
                 self._append_craft(aircraft)
             elif aircraft.reg in self.watchlist_rn:
                 # if the aircraft's registration number is on the watchlist, add it to the queue
                 logger.debug(f'{aircraft.reg} in watchlist, adding to spot queue')
-                aircraft.update_from_watchlist(aircraft.reg, self.watchlist_rn)
+                aircraft.update_from_watchlist(aircraft.reg, self.watchlist_rn, self.image_dir)
                 self._append_craft(aircraft)
             elif aircraft.type_code in self.watchlist_tc:
                 if self.watchlist_tc[aircraft.type_code]['mil_only'] is True and aircraft.military:
                     logger.debug(
                         f'{aircraft.type_code} in watchlist as military-only and this one is '
                         f'military, adding to spot queue')
-                    aircraft.update_from_watchlist(aircraft.type_code, self.watchlist_tc)
+                    aircraft.update_from_watchlist(aircraft.type_code,
+                                                   self.watchlist_tc,
+                                                   self.image_dir)
                     self._append_craft(aircraft)
                 elif self.watchlist_tc[aircraft.type_code]['mil_only'] is True and \
                         not aircraft.military:
@@ -393,7 +403,9 @@ class Spotter:
                 else:
                     logger.debug(
                         f'{aircraft.type_code} in watchlist, adding to spot queue')
-                    aircraft.update_from_watchlist(aircraft.type_code, self.watchlist_tc)
+                    aircraft.update_from_watchlist(aircraft.type_code,
+                                                   self.watchlist_tc,
+                                                   self.image_dir)
                     self._append_craft(aircraft)
             elif aircraft.reg == 'unknown' and self.spot_unknown is True:
                 # if there's no registration number and spot_unknown is set, add to tweet queue
