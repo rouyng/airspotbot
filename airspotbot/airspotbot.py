@@ -37,7 +37,9 @@ class SpotBot:
         sleep(30)
     """
 
-    def __init__(self, config_parsed: configparser.ConfigParser, user_agent: str):
+    def __init__(self, config_parsed: configparser.ConfigParser,
+                 user_agent: str,
+                 enable_tweets: bool):
         """
         Args:
             config_parsed: ConfigParser object, generated from the config/ini file whose path is
@@ -51,12 +53,15 @@ class SpotBot:
         self._access_token = None
         self._access_token_secret = None
         self._use_descriptions = False
+        self._enable_tweets = enable_tweets
         self._read_logging_config(config_parsed)
         self._validate_twitter_config(config_parsed)
-        if self.enable_tweets:
+        if self._enable_tweets:
             self._client = self._initialize_twitter_api()
             # instantiate v1.1 api instance only for uploading media
             self._v1_api = self._initialize_twitter_api_v1()
+        else:
+            logger.warning("Tweeting is disabled, did not create Twitter API connection")
         if self.enable_screenshot:
             self.screenshotter = screenshot.Screenshotter(self.zoom_level)
         self._loc = location.Locator(config_parsed=config_parsed, user_agent=self.user_agent)
@@ -154,14 +159,6 @@ class SpotBot:
             options from the file with the ConfigParser.get() method (for example, a missing option)
         """
         try:
-            if config_parsed.get('TWITTER', 'enable_tweets') == 'y':
-                self.enable_tweets = True
-            elif config_parsed.get('TWITTER', 'enable_tweets') == 'n':
-                logger.warning("Tweeting disabled in config file")
-                self.enable_tweets = False
-            else:
-                raise ValueError("Bad value in config file for TWITTER/enable_tweets. "
-                                 "Must be 'y' or 'n'.")
             self.tweet_interval_seconds = int(config_parsed.get('TWITTER', 'tweet_interval'))
             self._consumer_key = config_parsed.get('TWITTER', 'consumer_key')
             self._consumer_secret = config_parsed.get('TWITTER', 'consumer_secret')
@@ -228,7 +225,7 @@ class SpotBot:
         else:
             logger.error(f"Tweet is too long: {len(tweet)}/280 characters. Skipping!")
             valid_tweet = False
-        if self.enable_tweets and valid_tweet:
+        if self._enable_tweets and valid_tweet:
             uploaded_media_ids = []
             # generate and upload screenshot image
             if self.enable_screenshot:
@@ -273,7 +270,11 @@ class SpotBot:
                 logger.error('Error sending tweet', exc_info=True)
 
 
-def run_bot(config_path: str, watchlist_path: str, image_dir: str, user_agent: str):
+def run_bot(config_path: str,
+            watchlist_path: str,
+            image_dir: str,
+            user_agent: str,
+            enable_tweets: bool):
     """
     Main program loop of airspotbot. Handles initial configuration and instantiation of
      config, SpotBot and Spotter objects. After this, runs an infinite loop for checking ADSBX API
@@ -284,11 +285,14 @@ def run_bot(config_path: str, watchlist_path: str, image_dir: str, user_agent: s
         watchlist_path: String containing relative or absolute path to watchlist CSV file.
         image_dir: String containing relative or absoluter path to directory of images
         user_agent: User agent string used in API requests
+        enable_tweets: Boolean, if True enables Twitter authentication and creation of tweets.
+          Otherwise, tweet text will only be printed to the log.
     """
 
     config = read_config(config_path)
     bot = SpotBot(config_parsed=config,
-                  user_agent=user_agent)
+                  user_agent=user_agent,
+                  enable_tweets=enable_tweets)
     spots = adsbget.Spotter(config_parsed=config,
                             watchlist_path=watchlist_path,
                             image_dir=image_dir,

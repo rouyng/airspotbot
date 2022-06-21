@@ -62,6 +62,7 @@ options:
                         Optional path to watchlist file. Defaults to ./config/watchlist.csv
   -i [IMAGEDIR], --imagedir [IMAGEDIR]
                         Optional path to directory of images. airspotbot will search here for image files defined in the watchlist. Defaults to ./images/
+  -d, --disable-tweets  Optional flag to disable tweets. Can be used for testing without TwitterAPI credentials.
   --version             show program's version number and exit
 ```
 
@@ -125,7 +126,6 @@ N174SY,RN,,,
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
 
-* CL argument to disable twitter API connection and only print tweets to stdout
 * CL argument to set logging level/verbosity
 * Support [geoapify.com reverse geocoding API](https://apidocs.geoapify.com/docs/geocoding/reverse-geocoding/#about)
 * Fetch aircraft photos using [Planespotters.net API](https://www.planespotters.net/photo/api)

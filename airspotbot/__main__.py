@@ -31,6 +31,10 @@ parser.add_argument('-i', '--imagedir',
                          f'image files defined in the watchlist. Defaults to '
                          f'{DEFAULT_IMAGE_DIRECTORY}',
                     default=DEFAULT_IMAGE_DIRECTORY)
+parser.add_argument('-d', '--disable-tweets',
+                    action='store_false',
+                    help="Optional flag to disable tweets. Can be used for testing without Twitter"
+                         "API credentials.")
 parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
 
 # TODO: argument to disable twitter API connection and only print tweets to stdout
@@ -41,6 +45,7 @@ try:
     airspotbot.run_bot(config_path=args.config,
                        watchlist_path=args.watchlist,
                        image_dir=args.imagedir,
-                       user_agent=USER_AGENT)
+                       user_agent=USER_AGENT,
+                       enable_tweets=args.disable_tweets)
 except KeyboardInterrupt:
     logger.critical("Exiting!")
