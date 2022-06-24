@@ -98,7 +98,7 @@ class AircraftSpot:
         image_filename = watchlist[search_key]['img']
         # Check if file exists at path defined by image_path, then update self.image_path
         if image_filename != '':
-            full_path = Path(image_dir + image_filename)
+            full_path = Path(image_dir) / image_filename
             if full_path.is_file():
                 self.image_path = full_path
             else:

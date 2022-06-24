@@ -37,7 +37,6 @@ parser.add_argument('-d', '--disable-tweets',
                          "API credentials.")
 parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
 
-# TODO: argument to disable twitter API connection and only print tweets to stdout
 # TODO: argument to set logging level/verbosity
 
 args = parser.parse_args()
