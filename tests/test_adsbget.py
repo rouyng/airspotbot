@@ -452,8 +452,7 @@ class TestADSBxCall:
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
         logging_output = caplog.text
-        assert "Cannot add image to aircraft with hex 3e232e. No file found at " \
-               "images\\test.png." in logging_output
+        assert "Cannot add image to aircraft with hex 3e232e." in logging_output
 
     def test_grounded(self, requests_mock, generate_spotter, sample_adsbx_json):
         """test whether aircraft of a certain type code in watchlist will be spotted"""
