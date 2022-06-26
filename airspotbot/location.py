@@ -179,8 +179,6 @@ class Locator:
             String containing location description of the type set when the Locator object is
              instantiated.
         """
-        # TODO: check that latitude_degrees and longitude_degrees are valid, pass to
-        #  geocode functions as floats
         coord_string = str(round(float(latitude_degrees), 4)) + ', ' + str(
             round(float(longitude_degrees), 4))
         if self.location_type == 'MANUAL':
