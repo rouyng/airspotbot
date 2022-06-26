@@ -45,7 +45,7 @@ parser.add_argument('-v', '--verbose',
                     help="Print debug messages.")
 parser.add_argument('-q', '--quiet',
                     action='store_true',
-                    help="Only print critical error messages.")
+                    help="Only print critical error messages, ignores -v.")
 parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
 
 args = parser.parse_args()

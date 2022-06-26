@@ -62,7 +62,9 @@ options:
                         Optional path to watchlist file. Defaults to ./config/watchlist.csv
   -i [IMAGEDIR], --imagedir [IMAGEDIR]
                         Optional path to directory of images. airspotbot will search here for image files defined in the watchlist. Defaults to ./images/
-  -d, --disable-tweets  Optional flag to disable tweets. Can be used for testing without TwitterAPI credentials.
+  -d, --disable-tweets  Disable tweets. Can be used for testing without Twitter API credentials.
+  -v, --verbose         Print debug messages.
+  -q, --quiet           Only print critical error messages, ignores -v.
   --version             show program's version number and exit
 ```
 
@@ -129,7 +131,7 @@ Here are some planned features/fixes. You are welcome to work on these if you ar
 * Fetch aircraft photos using [Planespotters.net API](https://www.planespotters.net/photo/api)
 
  ## Contributing
- Contributions are welcome, including those from new/novice contributors. Source code contributions should be via pull requests. Bug reports and feature requests via opening issues. 
+Contributions are welcome, including those from new/novice contributors. Source code contributions should be via pull requests. Bug reports and feature requests via opening issues. 
  
 If you want to suggest a specific aircraft type or registration number for @phxairspots or another airspotbot-powered account to monitor, please contact the account directly.
  
