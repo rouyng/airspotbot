@@ -13,8 +13,10 @@ import requests_mock
 import requests
 import string
 
-valid_watchlist = "./tests/valid_watchlist.csv"
-invalid_watchlist = "./tests/invalid_watchlist.csv"
+VALID_WATCHLIST = "./tests/valid_watchlist.csv"
+INVALID_WATCHLIST = "./tests/invalid_watchlist.csv"
+USER_AGENT = "airspotbot/testing"
+DEFAULT_IMAGE_DIRECTORY = "./images/"
 
 
 @pytest.fixture
@@ -49,7 +51,10 @@ def generate_valid_adsb_config(scope="module"):
 
 @pytest.fixture
 def generate_spotter(generate_valid_adsb_config, scope="module"):
-    return airspotbot.adsbget.Spotter(generate_valid_adsb_config, valid_watchlist)
+    return airspotbot.adsbget.Spotter(config_parsed=generate_valid_adsb_config,
+                                      watchlist_path=VALID_WATCHLIST,
+                                      image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                      user_agent=USER_AGENT)
 
 
 @pytest.fixture
@@ -228,20 +233,29 @@ class TestADSBValidation:
 
     def test_empty_interval(self, generate_empty_adsb_config):
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
         assert "adsb_interval must be an integer value" in str(exc_info.value)
 
     def test_empty_cooldown(self, generate_empty_adsb_config):
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
         assert "cooldown must be an integer value" in str(exc_info.value)
 
     def test_empty_latitude(self, generate_empty_adsb_config):
         generate_empty_adsb_config['ADSB']['cooldown'] = "10"
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
         assert "'' is an invalid latitude value. Must be a float between -90 and 90." \
                in str(exc_info.value)
 
@@ -251,12 +265,18 @@ class TestADSBValidation:
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(90.01, 999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
         assert "is an invalid latitude value. Must be a float between -90 and 90." \
                in str(exc_info.value)
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90.01, -999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
         assert "is an invalid latitude value. Must be a float between -90 and 90." \
                in str(exc_info.value)
 
@@ -265,7 +285,10 @@ class TestADSBValidation:
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90, 90))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
         assert "'' is an invalid longitude value. Must be a float between -180 and 180." \
                in str(exc_info.value)
 
@@ -276,12 +299,18 @@ class TestADSBValidation:
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90, 90))
         generate_empty_adsb_config['ADSB']['long'] = str(random.uniform(180.01, 999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
         assert "is an invalid longitude value. Must be a float between -180 and 180." \
                in str(exc_info.value)
         generate_empty_adsb_config['ADSB']['long'] = str(random.uniform(-180.01, -999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
         assert "is an invalid longitude value. Must be a float between -180 and 180." \
                in str(exc_info.value)
 
@@ -297,7 +326,10 @@ class TestADSBValidation:
             while invalid_radius in range(1, 251):
                 invalid_radius = random.randint(0, 9999)
             with pytest.raises(ValueError) as exc_info:
-                airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+                airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                           watchlist_path=VALID_WATCHLIST,
+                                           image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                           user_agent=USER_AGENT)
             assert "Error in configuration file: radius value must be an integer between 1 and 250" \
                    in str(exc_info.value)
 
@@ -307,7 +339,10 @@ class TestWatchlistImport:
 
     def test_invalid_watchlist_file(self, generate_valid_adsb_config, caplog):
         """Test exception thrown when bogus watchlist file is read"""
-        test_spotter = airspotbot.adsbget.Spotter(generate_valid_adsb_config, invalid_watchlist)
+        test_spotter = airspotbot.adsbget.Spotter(config_parsed=generate_valid_adsb_config,
+                                                  watchlist_path=INVALID_WATCHLIST,
+                                                  image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                                  user_agent=USER_AGENT)
         logging_output = caplog.text
         assert "Error reading row 1 from ./tests/invalid_watchlist.csv, please check the " \
                "watchlist file. This error is usually caused by missing columns in a row." \
@@ -318,7 +353,10 @@ class TestWatchlistImport:
 
     def test_missing_watchlist_file(self, generate_valid_adsb_config, caplog):
         """Test that warning message is generated when watchlist file is missing"""
-        test_spotter = airspotbot.adsbget.Spotter(generate_valid_adsb_config, "foo.csv")
+        test_spotter = airspotbot.adsbget.Spotter(config_parsed=generate_valid_adsb_config,
+                                                  watchlist_path="foo.csv",
+                                                  image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                                  user_agent=USER_AGENT)
         logging_output = caplog.text
         assert "Watchlist file not found at foo.csv. Aircraft will only be spotted based on " \
                "rules in asb.config." \
