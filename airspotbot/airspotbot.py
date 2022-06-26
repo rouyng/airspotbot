@@ -91,10 +91,10 @@ class SpotBot:
             KeyboardInterrupt: Exits the main application loop if Twitter API authentication fails
         """
         logger.info('Connecting to Twitter API v2')
-        logger.info(f'Twitter consumer key: {self._consumer_key}')
-        logger.info(f'Twitter consumer secret: {self._consumer_secret}')
-        logger.info(f'Twitter access token: {self._access_token}')
-        logger.info(f'Twitter access token secret: {self._access_token_secret}')
+        logger.debug(f'Twitter consumer key: {self._consumer_key}')
+        logger.debug(f'Twitter consumer secret: {self._consumer_secret}')
+        logger.debug(f'Twitter access token: {self._access_token}')
+        logger.debug(f'Twitter access token secret: {self._access_token_secret}')
         try:
             client = tweepy.Client(consumer_key=self._consumer_key,
                                    consumer_secret=self._consumer_secret,
