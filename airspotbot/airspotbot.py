@@ -14,11 +14,7 @@ from io import BytesIO
 from pathlib import Path
 
 logger = logging.getLogger("airspotbot")
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s',
-                              datefmt='%d-%b-%y %H:%M:%S')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+
 
 
 class SpotBot:
@@ -37,7 +33,8 @@ class SpotBot:
         sleep(30)
     """
 
-    def __init__(self, config_parsed: configparser.ConfigParser,
+    def __init__(self,
+                 config_parsed: configparser.ConfigParser,
                  user_agent: str,
                  enable_tweets: bool):
         """
@@ -68,21 +65,20 @@ class SpotBot:
 
     def _read_logging_config(self, config_parsed: configparser.ConfigParser):
         """
-        Set root logger verbosity from parsed config file
+        This function is used to display a warning message when the user tries to set logger
+        verbosity from the config file. This method of setting log verbosity is deprecated with
+        v2.0.0.
 
         Args:
             config_parsed: ConfigParser object, generated from the config/ini file whose path is
              specified as a command line argument when airspotbot is started.
         """
         try:
-            self.logging_level = str(config_parsed.get('MISC', 'logging_level')).upper()
-            assert self.logging_level != ''
-            assert self.logging_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
-            logger.setLevel(self.logging_level)
-            logger.warning(f"Set logging level to {self.logging_level}")
-        except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-            logger.warning("Logging verbosity level is not set in config, defaulting to DEBUG")
-            logger.setLevel('DEBUG')
+            logging_level = str(config_parsed.get('MISC', 'logging_level')).upper()
+            logger.warning(f"Setting log level via config file is deprecated as of v2.0.0. Use"
+                           f"the '--quiet' or '--verbose' command line options instead.")
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            pass
 
     def _initialize_twitter_api(self) -> tweepy.client:
         """

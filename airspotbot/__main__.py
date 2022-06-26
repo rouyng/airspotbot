@@ -9,6 +9,11 @@ DEFAULT_WATCHLIST_PATH = './config/watchlist.csv'
 DEFAULT_IMAGE_DIRECTORY = './images/'
 
 logger = logging.getLogger("airspotbot")
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s',
+                              datefmt='%d-%b-%y %H:%M:%S')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 parser = argparse.ArgumentParser(description='A twitter bot for reporting aircraft activity in '
                                              'an area, using the ADS-B Exchange API. For more '
@@ -33,13 +38,27 @@ parser.add_argument('-i', '--imagedir',
                     default=DEFAULT_IMAGE_DIRECTORY)
 parser.add_argument('-d', '--disable-tweets',
                     action='store_false',
-                    help="Optional flag to disable tweets. Can be used for testing without Twitter"
+                    help="Disable tweets. Can be used for testing without Twitter "
                          "API credentials.")
+parser.add_argument('-v', '--verbose',
+                    action='store_true',
+                    help="Print debug messages.")
+parser.add_argument('-q', '--quiet',
+                    action='store_true',
+                    help="Only print critical error messages.")
 parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
 
-# TODO: argument to set logging level/verbosity
-
 args = parser.parse_args()
+
+# set logging level
+if args.quiet:
+    logger.setLevel("CRITICAL")
+elif args.verbose:
+    logger.setLevel("DEBUG")
+    logger.warning("Log level set to debug")
+else:
+    logger.setLevel("INFO")
+
 try:
     airspotbot.run_bot(config_path=args.config,
                        watchlist_path=args.watchlist,

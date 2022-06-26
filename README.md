@@ -75,7 +75,6 @@ This file, structured in INI format, contains various configuration options orga
 - `[TWITTER]`: Twitter API credentials and options related to tweet interval and format. Also includes options related to screenshots.
 - `[ADSB]`: ADS-B Exchange API credentials, spotting location information and filters to determine which aircraft are spotted/tweeted.
 - `[LOCATION]`: Options for configuring location descriptions and reverse geocoding of aircraft locations. Has options for manually specifying a location description or connecting to Pelias and 3geonames APIs. See "Location description" section below for more details
-- `[MISC]`: Various debugging options for testing and logging purposes.
 
 Additional documentation on each individual option is provided as comments in the example `asb.config` file included in this repository.
 
@@ -126,7 +125,6 @@ N174SY,RN,,,
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
 
-* CL argument to set logging level/verbosity
 * Support [geoapify.com reverse geocoding API](https://apidocs.geoapify.com/docs/geocoding/reverse-geocoding/#about)
 * Fetch aircraft photos using [Planespotters.net API](https://www.planespotters.net/photo/api)
 

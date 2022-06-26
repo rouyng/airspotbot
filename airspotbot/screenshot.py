@@ -46,7 +46,13 @@ class Screenshotter:
         # The following two options help the webdriver play nice in Docker environment
         options.add_argument('disable-dev-shm-usage')
         options.add_argument('no-sandbox')
-        options.add_argument('log-level=3')  # suppress chrome logging messages
+        if logger.parent.level == 50:
+            options.add_argument('log-level="SEVERE"')
+            options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        elif logger.parent.level == 10:
+            options.add_argument('log-level="DEBUG"')
+        else:
+            options.add_argument('log-level="INFO"')
         if platform == 'win32':
             driver = webdriver.Chrome(
                 executable_path=WINDOWS_CHROMEDRIVER_PATH,
