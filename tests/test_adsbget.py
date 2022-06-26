@@ -13,21 +13,23 @@ import requests_mock
 import requests
 import string
 
-valid_watchlist = "./tests/valid_watchlist.csv"
-invalid_watchlist = "./tests/invalid_watchlist.csv"
+VALID_WATCHLIST = "./tests/valid_watchlist.csv"
+INVALID_WATCHLIST = "./tests/invalid_watchlist.csv"
+USER_AGENT = "airspotbot/testing"
+DEFAULT_IMAGE_DIRECTORY = "./images/"
+
 
 @pytest.fixture
 def generate_empty_adsb_config(scope="module"):
     dummy_config = configparser.ConfigParser()
     dummy_config['ADSB'] = {"lat": "",
-                                "long": "",
-                                "radius": "",
-                                "adsb_interval": "",
-                                "cooldown": "",
-                                "spot_unknown": "",
-                                "spot_mil": "",
-                                "adsb_api": "",
-                                "adsb_api_key": ""}
+                            "long": "",
+                            "radius": "",
+                            "adsb_interval": "",
+                            "cooldown": "",
+                            "spot_unknown": "",
+                            "spot_mil": "",
+                            "adsb_api_key": ""}
     return dummy_config
 
 
@@ -35,367 +37,190 @@ def generate_empty_adsb_config(scope="module"):
 def generate_valid_adsb_config(scope="module"):
     dummy_config = configparser.ConfigParser()
     dummy_config['ADSB'] = {"lat": str(random.uniform(-90, 90)),
-                                "long": str(random.uniform(-180, 180)),
-                                "radius": str(random.choice((1, 5, 10, 25, 100, 250))),
-                                "adsb_interval": str(random.randint(1, 20)),
-                                "cooldown": str(random.randint(1, 20)),
-                                "spot_unknown": "y",
-                                "spot_mil": "y",
-                                "spot_interesting": "y",
-                                "adsb_api": "adsbx",
-                                "adsb_api_key": ''.join(random.choices(string.ascii_letters + string.digits, k=16))}
+                            "long": str(random.uniform(-180, 180)),
+                            "radius": str(random.randint(1, 250)),
+                            "adsb_interval": str(random.randint(1, 20)),
+                            "cooldown": str(random.randint(1, 20)),
+                            "spot_unknown": "y",
+                            "spot_mil": "y",
+                            "spot_interesting": "y",
+                            "adsb_api_key": ''.join(
+                                random.choices(string.ascii_letters + string.digits, k=16))}
     return dummy_config
 
 
 @pytest.fixture
 def generate_spotter(generate_valid_adsb_config, scope="module"):
-    return airspotbot.adsbget.Spotter(generate_valid_adsb_config, valid_watchlist)
+    return airspotbot.adsbget.Spotter(config_parsed=generate_valid_adsb_config,
+                                      watchlist_path=VALID_WATCHLIST,
+                                      image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                      user_agent=USER_AGENT)
 
 
 @pytest.fixture
 def sample_adsbx_json():
     """A sample JSON response from the ADSBx API showing some busy airspace"""
-    return {'ac':
-            [
-                {'postime': '1602439568508',
-                 'icao': 'A12986',
-                 'reg': 'N174RF',
-                 'type': 'C414',
-                 'wtc': '1', 'spd': '0', 'altt': '0', 'alt': '300', 'galt': '380', 'talt': '',
-                 'lat': '32.811687', 'lon': '-117.137686', 'vsit': '0', 'vsi': '', 'trkh': '0',
-                 'ttrk': '', 'trak': '', 'sqk': '1200', 'call': 'N174RF', 'gnd': '1', 'trt': '5',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.05'},
-                {'postime': '1602439570493', 'icao': 'A6FC66', 'reg': 'N5495D', 'type': 'C172',
-                 'wtc': '1', 'spd': '49.7', 'altt': '0', 'alt': '300', 'galt': '380', 'talt': '',
-                 'lat': '32.814905', 'lon': '-117.140322', 'vsit': '1', 'vsi': '0', 'trkh': '0',
-                 'ttrk': '', 'trak': '295', 'sqk': '1200', 'call': 'N5495D', 'gnd': '0', 'trt': '2',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.22'},
-                {'postime': '1602439569723', 'icao': 'AAFA92', 'reg': 'N8060U', 'type': 'P28A',
-                 'wtc': '1', 'spd': '90.3', 'altt': '0', 'alt': '2200', 'galt': '2289', 'talt': '',
-                 'lat': '32.779495', 'lon': '-117.052679', 'vsit': '1', 'vsi': '-576', 'trkh': '0',
-                 'ttrk': '', 'trak': '291.4', 'sqk': '1200', 'call': 'N8060U', 'gnd': '0',
-                 'trt': '2', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.69'},
-                {'postime': '1602439568699', 'icao': 'A321DF', 'reg': 'N3001T', 'type': 'P28A',
-                 'wtc': '1', 'spd': '104.8', 'altt': '0', 'alt': '3400', 'galt': '3489', 'talt': '',
-                 'lat': '32.787532', 'lon': '-116.938701', 'vsit': '1', 'vsi': '128', 'trkh': '0',
-                 'ttrk': '', 'trak': '110.7', 'sqk': '1200', 'call': 'N3001T', 'gnd': '0',
-                 'trt': '2', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '11.98'},
-                {'postime': '1602439568696', 'icao': 'A8E87B', 'reg': 'N673SP', 'type': 'C172',
-                 'wtc': '1', 'spd': '92', 'altt': '0', 'alt': '6900', 'galt': '6989', 'talt': '',
-                 'lat': '32.840555', 'lon': '-116.706082', 'vsit': '0', 'vsi': '512', 'trkh': '0',
-                 'ttrk': '', 'trak': '88.8', 'sqk': '1370', 'call': 'N673SP', 'gnd': '0',
-                 'trt': '2', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '24.09'},
-                {'postime': '1602439569417', 'icao': 'A67A47', 'reg': 'N5161U', 'type': 'C206',
-                 'wtc': '1', 'spd': '100', 'altt': '0', 'alt': '7275', 'galt': '7355', 'talt': '',
-                 'lat': '32.563989', 'lon': '-117.173337', 'vsit': '1', 'vsi': '448', 'trkh': '0',
-                 'ttrk': '', 'trak': '178.9', 'sqk': '4224', 'call': 'N5161U', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '8.94'},
-                {'postime': '1602439568503', 'icao': 'A40A17', 'reg': 'N36BL', 'type': 'LJ31',
-                 'wtc': '2', 'spd': '0', 'altt': '0', 'alt': '300', 'galt': '389', 'talt': '',
-                 'lat': '32.821644', 'lon': '-116.970875', 'vsit': '0', 'vsi': '', 'trkh': '0',
-                 'ttrk': '', 'trak': '', 'sqk': '1440', 'call': 'N36BL', 'gnd': '1', 'trt': '5',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '11.52'},
-                {'postime': '1602439569571', 'icao': 'A54819', 'reg': 'N43983', 'type': 'P28A',
-                 'wtc': '1', 'spd': '7', 'altt': '0', 'alt': '300', 'galt': '380', 'talt': '',
-                 'lat': '32.812408', 'lon': '-117.135681', 'vsit': '1', 'vsi': '0', 'trkh': '0',
-                 'ttrk': '', 'trak': '90', 'sqk': '1200', 'call': 'N43983', 'gnd': '0', 'trt': '5',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.11'},
-                {'postime': '1602439569135', 'icao': 'ABC07B', 'reg': 'N8563Z', 'type': 'B738',
-                 'wtc': '2', 'spd': '212.3', 'altt': '0', 'alt': '1925', 'galt': '2005',
-                 'talt': '23008', 'lat': '32.74704', 'lon': '-117.248071', 'vsit': '0',
-                 'vsi': '1088', 'trkh': '0', 'ttrk': '102.7', 'trak': '285', 'sqk': '2046',
-                 'call': 'SWA1322', 'gnd': '0', 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0',
-                 'sat': '0', 'opicao': 'SWA', 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'from': 'CMH Port Columbus United States',
-                 'to': 'PVD Theodore Francis Green State Providence United States', 'dst': '4.96'},
-                {'postime': '1602439568370', 'icao': 'AB540D', 'reg': 'N829UA', 'type': 'A319',
-                 'wtc': '2', 'spd': '51.5', 'altt': '0', 'alt': '-25', 'galt': '55', 'talt': '',
-                 'lat': '32.730526', 'lon': '-117.177182', 'vsit': '0', 'vsi': '', 'trkh': '1',
-                 'ttrk': '', 'trak': '286.9', 'sqk': '7240', 'call': 'UAL2475', 'gnd': '1',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': 'UAL',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '1.43'},
-                {'postime': '1602439570701', 'icao': 'A06651', 'reg': 'N125AM', 'type': 'RV10',
-                 'wtc': '1', 'spd': '155.1', 'altt': '0', 'alt': '2175', 'galt': '2255', 'talt': '',
-                 'lat': '32.815231', 'lon': '-117.103888', 'vsit': '1', 'vsi': '448', 'trkh': '0',
-                 'ttrk': '', 'trak': '125', 'sqk': '1200', 'call': 'N125AM', 'gnd': '0', 'trt': '5',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.76'},
-                {'postime': '1602439569129', 'icao': 'A98012', 'reg': 'N711DC', 'type': 'C170',
-                 'wtc': '1', 'spd': '7.1', 'altt': '0', 'alt': '325', 'galt': '414', 'talt': '',
-                 'lat': '32.827242', 'lon': '-116.964989', 'vsit': '1', 'vsi': '0', 'trkh': '0',
-                 'ttrk': '', 'trak': '8.1', 'sqk': '1200', 'call': 'N711DC', 'gnd': '0', 'trt': '5',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '1', 'dst': '11.96'},
-                {'postime': '1602439568505', 'icao': 'A4CA8C', 'reg': 'N408CA', 'type': 'P28A',
-                 'wtc': '1', 'spd': '107.5', 'altt': '0', 'alt': '3825', 'galt': '3905',
-                 'talt': '3008', 'lat': '32.708533', 'lon': '-117.221487', 'vsit': '0',
-                 'vsi': '-320', 'trkh': '0', 'ttrk': '', 'trak': '185.3', 'sqk': '5214',
-                 'call': 'N408CA', 'gnd': '0', 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0',
-                 'sat': '0', 'opicao': '', 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'dst': '3.18'},
-                {'postime': '1602439570700', 'icao': 'A956CC', 'reg': '', 'type': '', 'wtc': '0',
-                 'spd': '0', 'altt': '0', 'alt': '350', 'galt': '430', 'talt': '',
-                 'lat': '32.811893', 'lon': '-117.131232', 'vsit': '0', 'vsi': '', 'trkh': '1',
-                 'ttrk': '', 'trak': '306.6', 'sqk': '0264', 'call': 'N700YZ', 'gnd': '1',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.13'},
-                {'postime': '1602439568820', 'icao': 'AC2320', 'reg': 'N881SD', 'type': 'AS50',
-                 'wtc': '1', 'spd': '59', 'altt': '0', 'alt': '2275', 'galt': '2355', 'talt': '',
-                 'lat': '32.834747', 'lon': '-117.088275', 'vsit': '1', 'vsi': '0', 'trkh': '0',
-                 'ttrk': '', 'trak': '51.2', 'sqk': '4212', 'call': 'N881SD', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '8.15'},
-                {'postime': '1602439570332', 'icao': 'A31FB5', 'reg': 'N300DZ', 'type': 'DHC6',
-                 'wtc': '1', 'spd': '166', 'altt': '0', 'alt': '4250', 'galt': '4330', 'talt': '',
-                 'lat': '32.606827', 'lon': '-116.862231', 'vsit': '1', 'vsi': '-2880', 'trkh': '0',
-                 'ttrk': '', 'trak': '90.3', 'sqk': '4221', 'call': 'N300DZ', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '16.26'},
-                {'postime': '1602439568501', 'icao': 'A61A28', 'reg': 'N4922D', 'type': 'C172',
-                 'wtc': '1', 'spd': '97.5', 'altt': '0', 'alt': '4475', 'galt': '4546', 'talt': '',
-                 'lat': '33.064332', 'lon': '-117.327034', 'vsit': '0', 'vsi': '-64', 'trkh': '0',
-                 'ttrk': '', 'trak': '334.5', 'sqk': '0204', 'call': 'N4922D', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '22.75'},
-                {'postime': '1602439570200', 'icao': 'A48315', 'reg': 'N390DA', 'type': 'B738',
-                 'wtc': '2', 'spd': '512.2', 'altt': '0', 'alt': '26025', 'galt': '26035',
-                 'talt': '39008', 'lat': '32.925839', 'lon': '-117.402593', 'vsit': '1',
-                 'vsi': '960', 'trkh': '0', 'ttrk': '125.9', 'trak': '136.9', 'sqk': '7375',
-                 'call': 'DAL1805', 'gnd': '0', 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0',
-                 'sat': '0', 'opicao': 'DAL', 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'from': 'ATL Hartsfield Jackson Atlanta United States',
-                 'to': 'YVR Vancouver Canada', 'dst': '17.75'},
-                {'postime': '1602439569132', 'icao': 'A36968', 'reg': 'N319MW', 'type': 'B407',
-                 'wtc': '1', 'spd': '116.9', 'altt': '0', 'alt': '1700', 'galt': '1789', 'talt': '',
-                 'lat': '33.082767', 'lon': '-117.063642', 'vsit': '1', 'vsi': '-384', 'trkh': '0',
-                 'ttrk': '', 'trak': '165.1', 'sqk': '1200', 'call': 'N319MW', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '22.73'},
-                {'postime': '1602439570681', 'icao': 'A65ED4', 'reg': 'N5098E', 'type': 'C172',
-                 'wtc': '1', 'spd': '89.3', 'altt': '0', 'alt': '4475', 'galt': '4546', 'talt': '',
-                 'lat': '33.101715', 'lon': '-117.299048', 'vsit': '1', 'vsi': '448', 'trkh': '0',
-                 'ttrk': '', 'trak': '99.7', 'sqk': '1200', 'call': 'N5098E', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '24.4'},
-                {'postime': '1602439568508', 'icao': 'ABACEB', 'reg': 'N851VA', 'type': 'A320',
-                 'wtc': '2', 'spd': '481.8', 'altt': '0', 'alt': '29075', 'galt': '29065',
-                 'talt': '36992', 'lat': '32.455353', 'lon': '-116.844598', 'vsit': '1',
-                 'vsi': '352', 'trkh': '0', 'ttrk': '', 'trak': '133.1', 'sqk': '1354',
-                 'call': 'ASA220', 'gnd': '0', 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0',
-                 'sat': '0', 'opicao': 'ASA', 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'from': 'SFO San Francisco United States', 'to': 'ORD Chicago OHare United States',
-                 'dst': '22.14'},
-                {'postime': '1602439569272', 'icao': 'A6D50B', 'reg': 'N5396E', 'type': 'C172',
-                 'wtc': '1', 'spd': '93.4', 'altt': '0', 'alt': '800', 'galt': '871', 'talt': '',
-                 'lat': '32.834783', 'lon': '-117.300969', 'vsit': '1', 'vsi': '192', 'trkh': '0',
-                 'ttrk': '', 'trak': '5.5', 'sqk': '1200', 'call': 'N5396E', 'gnd': '0', 'trt': '2',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '10.27'},
-                {'postime': '1602439569288', 'icao': 'A9D70D', 'reg': 'N733JW', 'type': 'C172',
-                 'wtc': '1', 'spd': '67.4', 'altt': '0', 'alt': '2000', 'galt': '2089', 'talt': '',
-                 'lat': '33.015701', 'lon': '-116.895026', 'vsit': '1', 'vsi': '0', 'trkh': '0',
-                 'ttrk': '', 'trak': '32.3', 'sqk': '1200', 'call': 'N733JW', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '22.53'},
-                {'postime': '1602439569571', 'icao': 'A4F488', 'reg': 'N4182T', 'type': 'C172',
-                 'wtc': '1', 'spd': '97.8', 'altt': '0', 'alt': '1000', 'galt': '1080', 'talt': '',
-                 'lat': '32.81309', 'lon': '-117.09918', 'vsit': '1', 'vsi': '-448', 'trkh': '0',
-                 'ttrk': '', 'trak': '196', 'sqk': '1200', 'call': 'N4182T', 'gnd': '0', 'trt': '5',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.74'},
-                {'postime': '1602439569418', 'icao': 'A336DF', 'reg': 'N306NY', 'type': 'B738',
-                 'wtc': '2', 'spd': '2.2', 'altt': '0', 'alt': '-50', 'galt': '30', 'talt': '',
-                 'lat': '32.735045', 'lon': '-117.202737', 'vsit': '0', 'vsi': '', 'trkh': '1',
-                 'ttrk': '', 'trak': '109.7', 'sqk': '1341', 'call': 'AAL1064', 'gnd': '1',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': 'AAL',
-                 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'from': 'DFW Dallas Fort Worth Dallas-Fort Worth United States',
-                 'to': 'DFW Dallas Fort Worth Dallas-Fort Worth United States', 'dst': '2.6'},
-                {'postime': '1602439570330', 'icao': 'A6E8AE', 'reg': 'N544VL', 'type': 'A20N',
-                 'wtc': '2', 'spd': '131.2', 'altt': '0', 'alt': '1675', 'galt': '1785',
-                 'talt': '6016', 'lat': '32.515202', 'lon': '-116.880798', 'vsit': '0',
-                 'vsi': '-704', 'trkh': '0', 'ttrk': '0', 'trak': '293.8', 'sqk': '6302',
-                 'call': 'VOI501', 'gnd': '0', 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0',
-                 'sat': '0', 'opicao': 'VOI', 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'from': 'PBC Hermanos Serdán Puebla Mexico',
-                 'to': 'TIJ General Abelardo L Rodríguez Tijuana Mexico', 'dst': '18.37'},
-                {'postime': '1602439570474', 'icao': 'AC259F', 'reg': 'N882DS', 'type': 'DA40',
-                 'wtc': '1', 'spd': '0', 'altt': '0', 'alt': '350', 'galt': '430', 'talt': '672',
-                 'lat': '32.811756', 'lon': '-117.131314', 'vsit': '1', 'vsi': '128', 'trkh': '1',
-                 'ttrk': '', 'trak': '306.6', 'sqk': '4627', 'call': 'N882DS', 'gnd': '1',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.12'},
-                {'postime': '1602439570703', 'icao': 'A08588', 'reg': 'N1324E', 'type': 'C172',
-                 'wtc': '1', 'spd': '12.2', 'altt': '0', 'alt': '300', 'galt': '380', 'talt': '',
-                 'lat': '32.813152', 'lon': '-117.137686', 'vsit': '1', 'vsi': '0', 'trkh': '0',
-                 'ttrk': '', 'trak': '106.9', 'sqk': '1200', 'call': 'N1324E', 'gnd': '1',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.13'},
-                {'postime': '1602439570329', 'icao': 'A5523E', 'reg': 'N442CA', 'type': 'P28A',
-                 'wtc': '1', 'spd': '89.7', 'altt': '0', 'alt': '1325', 'galt': '1405',
-                 'talt': '1504', 'lat': '32.580231', 'lon': '-116.963306', 'vsit': '1',
-                 'vsi': '-192', 'trkh': '0', 'ttrk': '', 'trak': '97', 'sqk': '1200',
-                 'call': 'N442CA', 'gnd': '0', 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0',
-                 'sat': '0', 'opicao': '', 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'dst': '12.66'},
-                {'postime': '1602439569129', 'icao': 'A9E5D2', 'reg': 'N737HY', 'type': 'C172',
-                 'wtc': '1', 'spd': '63.1', 'altt': '0', 'alt': '350', 'galt': '430', 'talt': '',
-                 'lat': '32.816209', 'lon': '-117.139818', 'vsit': '1', 'vsi': '128', 'trkh': '0',
-                 'ttrk': '', 'trak': '295.3', 'sqk': '1200', 'call': 'N737HY', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.3'},
-                {'postime': '1602439568355', 'icao': 'A959E3', 'reg': 'N701SP', 'type': 'C172',
-                 'wtc': '1', 'spd': '102', 'altt': '0', 'alt': '3300', 'galt': '3389', 'talt': '',
-                 'lat': '32.808574', 'lon': '-116.856079', 'vsit': '1', 'vsi': '-256', 'trkh': '0',
-                 'ttrk': '', 'trak': '245.7', 'sqk': '1200', 'call': 'N701SP', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '16.32'},
-                {'postime': '1602439570684', 'icao': 'A1D0D8', 'reg': 'N216LT', 'type': 'C172',
-                 'wtc': '1', 'spd': '70.2', 'altt': '0', 'alt': '1000', 'galt': '1089', 'talt': '',
-                 'lat': '32.820398', 'lon': '-116.938084', 'vsit': '1', 'vsi': '-704', 'trkh': '0',
-                 'ttrk': '', 'trak': '280.7', 'sqk': '1200', 'call': 'N216LT', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '12.88'},
-                {'postime': '1602439568822', 'icao': 'A19555', 'reg': 'N2007E', 'type': 'BE76',
-                 'wtc': '1', 'spd': '98', 'altt': '0', 'alt': '5100', 'galt': '5189', 'talt': '',
-                 'lat': '32.816162', 'lon': '-116.800543', 'vsit': '1', 'vsi': '-1600', 'trkh': '0',
-                 'ttrk': '', 'trak': '268.8', 'sqk': '1200', 'call': 'N2007E', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '19.11'},
-                {'postime': '1602439569134', 'icao': 'A5F55C', 'reg': 'N483SP', 'type': 'C172',
-                 'wtc': '1', 'spd': '115.7', 'altt': '0', 'alt': '5900', 'galt': '5989', 'talt': '',
-                 'lat': '32.949463', 'lon': '-116.92348', 'vsit': '1', 'vsi': '128', 'trkh': '0',
-                 'ttrk': '', 'trak': '123', 'sqk': '5266', 'call': 'N483SP', 'gnd': '0', 'trt': '5',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '18.52'},
-                {'postime': '1602439568964', 'icao': 'A47408', 'reg': 'N38603', 'type': 'P28A',
-                 'wtc': '1', 'spd': '68', 'altt': '0', 'alt': '600', 'galt': '680', 'talt': '',
-                 'lat': '32.8089', 'lon': '-117.121208', 'vsit': '1', 'vsi': '-704', 'trkh': '0',
-                 'ttrk': '', 'trak': '296.2', 'sqk': '1200', 'call': 'N38603', 'gnd': '1',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.09'},
-                {'postime': '1602439568508', 'icao': 'A4B7D3', 'reg': 'N403AN', 'type': 'A21N',
-                 'wtc': '2', 'spd': '2.8', 'altt': '0', 'alt': '-50', 'galt': '30', 'talt': '',
-                 'lat': '32.733559', 'lon': '-117.202505', 'vsit': '0', 'vsi': '', 'trkh': '1',
-                 'ttrk': '', 'trak': '137.8', 'sqk': '1323', 'call': 'AAL438', 'gnd': '1',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': 'AAL',
-                 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'from': 'PHX Phoenix Sky Harbor United States',
-                 'to': 'PHX Phoenix Sky Harbor United States', 'dst': '2.55'},
-                {'postime': '1602439568354', 'icao': 'A129B0', 'reg': 'N174SY', 'type': 'E170',
-                 'wtc': '2', 'spd': '315.4', 'altt': '0', 'alt': '11200', 'galt': '11280',
-                 'talt': '6016', 'lat': '32.995422', 'lon': '-117.330634', 'vsit': '0',
-                 'vsi': '-1664', 'trkh': '0', 'ttrk': '128', 'trak': '135.3', 'sqk': '3333',
-                 'call': 'SKW3354', 'gnd': '0', 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0',
-                 'sat': '0', 'opicao': 'SKW', 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'from': 'SFO San Francisco United States',
-                 'to': 'MSP Minneapolis-St Paul InternationalWold-Chamberlain Minneapolis United States',
-                 'dst': '19.06'},
-                {'postime': '1602439570181', 'icao': 'A3B6B6', 'reg': 'N3386E', 'type': 'C172',
-                 'wtc': '1', 'spd': '101.6', 'altt': '0', 'alt': '4350', 'galt': '4430',
-                 'talt': '4512', 'lat': '32.732461', 'lon': '-116.857649', 'vsit': '1',
-                 'vsi': '-64', 'trkh': '0', 'ttrk': '', 'trak': '280.2', 'sqk': '0241',
-                 'call': 'N3386E', 'gnd': '0', 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0',
-                 'sat': '0', 'opicao': '', 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'dst': '15.24'},
-                {'postime': '1602439570336', 'icao': 'AA4138', 'reg': 'N76WW', 'type': 'PA18',
-                 'wtc': '1', 'spd': '39.5', 'altt': '0', 'alt': '500', 'galt': '571', 'talt': '',
-                 'lat': '33.080978', 'lon': '-117.315143', 'vsit': '1', 'vsi': '64', 'trkh': '0',
-                 'ttrk': '', 'trak': '171.3', 'sqk': '1200', 'call': 'ADS6', 'gnd': '0', 'trt': '5',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '23.47'},
-                {'postime': '1602439570198', 'icao': 'AD8A80', 'reg': 'N97154', 'type': 'C172',
-                 'wtc': '1', 'spd': '88.9', 'altt': '0', 'alt': '1400', 'galt': '1471', 'talt': '',
-                 'lat': '33.092468', 'lon': '-117.268396', 'vsit': '1', 'vsi': '-384', 'trkh': '0',
-                 'ttrk': '', 'trak': '251', 'sqk': '1200', 'call': 'N97154', 'gnd': '0', 'trt': '5',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '23.46'},
-                {'postime': '1602439568505', 'icao': 'A43CE3', 'reg': 'N372TA', 'type': 'C172',
-                 'wtc': '1', 'spd': '88.1', 'altt': '0', 'alt': '2600', 'galt': '2680', 'talt': '',
-                 'lat': '32.807271', 'lon': '-117.068799', 'vsit': '1', 'vsi': '640', 'trkh': '0',
-                 'ttrk': '', 'trak': '116.3', 'sqk': '5225', 'call': 'N372TA', 'gnd': '0',
-                 'trt': '2', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '7.28'},
-                {'postime': '1602439568819', 'icao': 'A1A0FC', 'reg': 'N204BD', 'type': 'DHC6',
-                 'wtc': '1', 'spd': '103.3', 'altt': '0', 'alt': '9000', 'galt': '9080', 'talt': '',
-                 'lat': '32.59192', 'lon': '-116.881415', 'vsit': '1', 'vsi': '1216', 'trkh': '0',
-                 'ttrk': '', 'trak': '94.4', 'sqk': '4223', 'call': 'N204BD', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '15.76'},
-                {'postime': '1602439570335', 'icao': 'A0BCE6', 'reg': 'N147CC', 'type': 'P28T',
-                 'wtc': '1', 'spd': '148.1', 'altt': '0', 'alt': '2875', 'galt': '2955',
-                 'talt': '672', 'lat': '32.764618', 'lon': '-117.009503', 'vsit': '1',
-                 'vsi': '-1152', 'trkh': '0', 'ttrk': '', 'trak': '295.2', 'sqk': '3355',
-                 'call': 'N147CC', 'gnd': '0', 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0',
-                 'sat': '0', 'opicao': '', 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'dst': '8.16'},
-                {'postime': '1602439569414', 'icao': 'ABC5E3', 'reg': 'N858JL', 'type': 'GALX',
-                 'wtc': '2', 'spd': '201.9', 'altt': '0', 'alt': '3650', 'galt': '3730', 'talt': '',
-                 'lat': '32.686933', 'lon': '-116.995818', 'vsit': '1', 'vsi': '-1408', 'trkh': '0',
-                 'ttrk': '', 'trak': '286.1', 'sqk': '2234', 'call': 'N858JL', 'gnd': '0',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '1', 'interested': '0', 'dst': '8.37'},
-                {'postime': '1602439569727', 'icao': 'A7A59F', 'reg': 'N592JB', 'type': 'A320',
-                 'wtc': '2', 'spd': '0', 'altt': '0', 'alt': '-50', 'galt': '30', 'talt': '2496',
-                 'lat': '32.733753', 'lon': '-117.198561', 'vsit': '0', 'vsi': '-64', 'trkh': '1',
-                 'ttrk': '0', 'trak': '177.2', 'sqk': '2032', 'call': 'JBU530', 'gnd': '1',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': 'JBU',
-                 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'from': 'SAN San Diego United States',
-                 'to': 'FLL Fort Lauderdale Hollywood United States', 'dst': '2.38'},
-                {'postime': '1602439569133', 'icao': 'A0FAF3', 'reg': 'N162UW', 'type': 'A321',
-                 'wtc': '2', 'spd': '15.5', 'altt': '0', 'alt': '-25', 'galt': '55', 'talt': '',
-                 'lat': '32.733706', 'lon': '-117.194581', 'vsit': '0', 'vsi': '', 'trkh': '1',
-                 'ttrk': '', 'trak': '106.9', 'sqk': '1045', 'call': 'AAL639', 'gnd': '1',
-                 'trt': '5', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': 'AAL',
-                 'cou': 'United States', 'mil': '0', 'interested': '0',
-                 'from': 'CLT Charlotte Douglas United States',
-                 'to': 'CLT Charlotte Douglas United States', 'dst': '2.21'}], 'total': 46,
-            'ctime': 1602439574290, 'ptime': 109}
+    return {"ac": [
+        {"hex": "3e232e", "type": "adsb_icao", "flight": "DIENE   ", "r": "D-IENE", "t": "C25A",
+         "alt_baro": 1200, "alt_geom": 1525, "gs": 177.6, "ias": 163, "tas": 164, "mach": 0.252,
+         "wd": 61, "ws": 20, "track": 204.98, "track_rate": -0.19, "roll": -1.76,
+         "mag_heading": 200.57, "true_heading": 201.14, "baro_rate": -288, "geom_rate": -64,
+         "squawk": "2751", "emergency": "none", "category": "A1", "nav_qnh": 1019.2,
+         "nav_altitude_mcp": 1344, "nav_altitude_fms": 1808, "nav_heading": 198.98,
+         "lat": 51.374119, "lon": 0.0354, "nic": 8, "rc": 186, "seen_pos": 0.086, "version": 2,
+         "nic_baro": 1, "nac_p": 11, "nac_v": 1, "sil": 3, "sil_type": "perhour", "gva": 2,
+         "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [], "messages": 7566034, "seen": 0,
+         "rssi": -2.8, "dst": 16.71},
+        {"hex": "407941", "type": "mlat", "flight": "GAWGB   ", "r": "G-AWGB", "t": "SPIT",
+         "dbFlags": 1, "gs": 250, "track": 229, "squawk": "7047", "emergency": "none",
+         "category": "A1",
+         "lat": 51.310141, "lon": 0.128013, "nic": 0, "rc": 0, "seen_pos": 3.919, "version": 0,
+         "alert": 0, "spi": 0, "mlat": ["gs", "track", "lat", "lon", "nic", "rc"], "tisb": [],
+         "messages": 3194830, "seen": 0.5, "rssi": -8.6, "dst": 15.52},
+        {"hex": "407968", "type": "mlat", "flight": "GHCNX   ", "r": "G-HCNX", "t": "EC55",
+         "alt_baro": 1250, "gs": 145, "tas": 278, "track": 12, "roll": -0.18, "baro_rate": 0,
+         "squawk": "6600", "category": "A7", "nav_qnh": 1013.2, "nav_altitude_mcp": 27008,
+         "nav_altitude_fms": 27008, "lat": 51.296933, "lon": 0.188649, "nic": 0, "rc": 0,
+         "seen_pos": 0.095, "version": 0, "alert": 0, "spi": 0,
+         "mlat": ["gs", "track", "baro_rate", "lat", "lon", "nic", "rc"], "tisb": [],
+         "messages": 365967, "seen": 0.1, "rssi": -7.5, "dst": 14.36},
+        {"hex": "407536", "type": "adsb_icao", "flight": "BAW622  ", "r": "G-TTNF", "t": "A20N",
+         "dbFlags": 2, "alt_baro": 14525, "alt_geom": 15075, "gs": 383.4, "ias": 306, "tas": 378,
+         "mach": 0.6,
+         "wd": 218, "ws": 12, "oat": -12, "tat": 7, "track": 101.28, "track_rate": 0, "roll": -0.35,
+         "mag_heading": 102.3, "true_heading": 102.95, "baro_rate": 2624, "geom_rate": 2592,
+         "squawk": "3473", "emergency": "none", "category": "A3", "nav_qnh": 1012.8,
+         "nav_altitude_mcp": 27008, "lat": 51.360199, "lon": 0.270386, "nic": 8, "rc": 186,
+         "seen_pos": 0.195, "version": 2, "nic_baro": 1, "nac_p": 9, "nac_v": 1, "sil": 3,
+         "sil_type": "perhour", "gva": 2, "sda": 3, "alert": 0, "spi": 0, "mlat": [], "tisb": [],
+         "messages": 22288110, "seen": 0, "rssi": -10, "dst": 9.51},
+        {"hex": "4ca708", "type": "adsb_icao", "flight": "RYR89BZ ", "r": "EI-EBL", "t": "B738",
+         "alt_baro": 35025, "alt_geom": 35825, "gs": 422.4, "ias": 259, "tas": 442, "mach": 0.764,
+         "wd": 210, "ws": 102, "oat": -53, "tat": -27, "track": 124.29, "track_rate": 0,
+         "roll": -0.35, "mag_heading": 136.76, "true_heading": 137.46, "baro_rate": 0,
+         "geom_rate": 32, "squawk": "5256", "emergency": "none", "category": "A3",
+         "nav_qnh": 1013.6, "nav_altitude_mcp": 35008, "nav_altitude_fms": 35008,
+         "nav_heading": 136.41, "lat": 51.380636, "lon": 0.488815, "nic": 7, "rc": 371,
+         "seen_pos": 0.39, "version": 2, "nic_baro": 1, "nac_p": 8, "nac_v": 1, "sil": 3,
+         "sil_type": "perhour", "gva": 1, "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [],
+         "messages": 31308987, "seen": 0.2, "rssi": -12.7, "dst": 5.44},
+        {"hex": "3e2bcd", "type": "adsb_icao", "flight": "AWU504E ", "r": "D-IHUB", "t": "C25A",
+         "alt_baro": 5825, "alt_geom": 6225, "gs": 257.6, "ias": 244, "tas": 266, "mach": 0.408,
+         "wd": 166, "ws": 10, "oat": 7, "tat": 16, "track": 186.46, "track_rate": -0.03,
+         "roll": -0.18, "mag_heading": 184.92, "true_heading": 185.72, "baro_rate": 32,
+         "geom_rate": 0, "squawk": "2037", "emergency": "none", "category": "A1", "nav_qnh": 1020,
+         "nav_altitude_mcp": 6016, "nav_heading": 184.92, "lat": 51.419174, "lon": 0.727473,
+         "nic": 8, "rc": 186, "seen_pos": 0.221, "version": 2, "nic_baro": 1, "nac_p": 10,
+         "nac_v": 1, "sil": 3, "sil_type": "perhour", "gva": 2, "sda": 2, "alert": 0, "spi": 0,
+         "mlat": [], "tisb": [], "messages": 5724763, "seen": 0, "rssi": -5.5, "dst": 10.6},
+        {"hex": "40796c", "type": "adsb_icao", "flight": "TOM7NT  ", "r": "G-TUMN", "t": "B38M",
+         "alt_baro": 14375, "alt_geom": 14950, "gs": 344.1, "ias": 277, "tas": 342, "mach": 0.54,
+         "wd": 183, "ws": 16, "oat": -9, "tat": 6, "track": 83.66, "track_rate": 0.03, "roll": 0,
+         "mag_heading": 85.25, "true_heading": 86.07, "baro_rate": 2432, "geom_rate": 2432,
+         "squawk": "3441", "emergency": "none", "category": "A3", "nav_qnh": 1013.6,
+         "nav_altitude_mcp": 27008, "nav_altitude_fms": 27008, "nav_heading": 85.08,
+         "lat": 51.207733, "lon": 0.736307, "nic": 8, "rc": 186, "seen_pos": 0, "version": 2,
+         "nic_baro": 1, "nac_p": 10, "nac_v": 2, "sil": 3, "sil_type": "perhour", "gva": 2,
+         "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [], "messages": 19732262, "seen": 0,
+         "rssi": -18.8, "dst": 18.88},
+        {"hex": "4058c7", "type": "mlat", "flight": "GZAAP   ", "r": "G-ZAAP", "t": "CRUZ",
+         "alt_baro": "ground", "gs": 50, "track": 54, "baro_rate": 2, "squawk": "4575",
+         "lat": 51.538891,
+         "lon": 0.76194, "nic": 0, "rc": 0, "seen_pos": 1.95, "alert": 0, "spi": 0,
+         "mlat": ["gs", "track", "baro_rate", "lat", "lon", "nic", "rc"], "tisb": [],
+         "messages": 198847, "seen": 0.8, "rssi": -5.4, "dst": 12.2},
+        {"hex": "77058e", "type": "adsb_icao", "flight": "ALK503  ", "r": "4R-ALN", "t": "A333",
+         "alt_baro": 14100, "alt_geom": 14750, "gs": 373, "ias": 307, "tas": 376, "mach": 0.596,
+         "wd": 321, "ws": 5, "oat": -11, "tat": 8, "track": 270.61, "track_rate": 0, "roll": 0,
+         "mag_heading": 270.35, "true_heading": 271.15, "baro_rate": -1856, "geom_rate": -1856,
+         "squawk": "3260", "emergency": "none", "category": "A5", "nav_qnh": 1013.6,
+         "nav_altitude_mcp": 8000, "lat": 51.643295, "lon": 0.780549, "nic": 8, "rc": 186,
+         "seen_pos": 0.123, "version": 2, "nic_baro": 1, "nac_p": 9, "nac_v": 1, "sil": 3,
+         "sil_type": "perhour", "gva": 2, "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [],
+         "messages": 11755558, "seen": 0, "rssi": -19.9, "dst": 16.02}], "total": 9,
+        "now": 1654367538288, "ctime": 1654367542448, "ptime": 184}
 
 
 @pytest.fixture
 def unexpected_adsbx_json():
     """A sample JSON response from the ADSBx API with some missing keys"""
-    return {'ac':
-            [
-                {'postime': '1602439568508',
-                 'icao': 'A12986',
-                 'reg': 'N174RF',
-                 'type': 'C414',
-                 'wtc': '1', 'spd': '0', 'altt': '0', 'alt': '300', 'galt': '380', 'talt': '',
-                 'lat': '32.811687', 'lon': '-117.137686', 'vsit': '0', 'vsi': '', 'trkh': '0',
-                 'ttrk': '', 'trak': '', 'sqk': '1200', 'call': 'N174RF', 'gnd': '1', 'trt': '5',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.05'},
-                {'postime': '1602439570493', 'icao': 'A6FC66', 'reg': 'N5495D', 'type': 'C172',
-                 'wtc': '1', 'spd': '49.7', 'altt': '0', 'alt': '300', 'galt': '380', 'talt': '',
-                 'lat': '32.814905', 'lon': '-117.140322', 'vsit': '1', 'vsi': '0', 'trkh': '0',
-                 'ttrk': '', 'trak': '295', 'sqk': '1200', 'call': 'N5495D', 'gnd': '0', 'trt': '2',
-                 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'blah': '0', 'foo': '0', 'dst': '6.22'},
-                {'postime': '1602439569723', 'icao': 'AAFA92', 'reg': 'N8060U', 'type': 'P28A',
-                 'wtc': '1', 'spd': '90.3', 'altt': '0', 'alt': '2200', 'galt': '2289', 'talt': '',
-                 'lat': '32.779495', 'lon': '-117.052679', 'vsit': '1', 'vsi': '-576', 'trkh': '0',
-                 'ttrk': '', 'trak': '291.4', 'sqk': '1200', 'call': 'N8060U', 'gnd': '0',
-                 'trt': '2', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '6.69'},
-                {'postime': '1602439568699', 'fuzz': 'A321DF', 'reg': 'N3001T', 'type': 'P28A',
-                 'wtc': '1', 'spd': '104.8', 'altt': '0', 'alt': '3400', 'galt': '3489', 'talt': '',
-                 'lat': '32.787532', 'lon': '-116.938701', 'vsit': '1', 'vsi': '128', 'trkh': '0',
-                 'ttrk': '', 'trak': '110.7', 'sqk': '1200', 'call': 'N3001T', 'gnd': '0',
-                 'trt': '2', 'pos': '1', 'mlat': '0', 'tisb': '0', 'sat': '0', 'opicao': '',
-                 'cou': 'United States', 'mil': '0', 'interested': '0', 'dst': '11.98'}
-            ]
-            }
+    # first aircraft is missing hex key
+    return {"ac": [
+        {"type": "adsb_icao", "flight": "DIENE   ", "r": "D-IENE", "t": "C25A",
+         "alt_baro": 1200, "alt_geom": 1525, "gs": 177.6, "ias": 163, "tas": 164, "mach": 0.252,
+         "wd": 61, "ws": 20, "track": 204.98, "track_rate": -0.19, "roll": -1.76,
+         "mag_heading": 200.57, "true_heading": 201.14, "baro_rate": -288, "geom_rate": -64,
+         "squawk": "2751", "emergency": "none", "category": "A1", "nav_qnh": 1019.2,
+         "nav_altitude_mcp": 1344, "nav_altitude_fms": 1808, "nav_heading": 198.98,
+         "lat": 51.374119, "lon": 0.0354, "nic": 8, "rc": 186, "seen_pos": 0.086, "version": 2,
+         "nic_baro": 1, "nac_p": 11, "nac_v": 1, "sil": 3, "sil_type": "perhour", "gva": 2,
+         "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [], "messages": 7566034, "seen": 0,
+         "rssi": -2.8, "dst": 16.71},
+        {"hex": "407941", "type": "mlat", "flight": "GAWGB   ", "r": "G-AWGB", "t": "SPIT",
+         "gs": 250, "track": 229, "squawk": "7047", "emergency": "none", "category": "A1",
+         "lat": 51.310141, "lon": 0.128013, "nic": 0, "rc": 0, "seen_pos": 3.919, "version": 0,
+         "alert": 0, "spi": 0, "mlat": ["gs", "track", "lat", "lon", "nic", "rc"], "tisb": [],
+         "messages": 3194830, "seen": 0.5, "rssi": -8.6, "dst": 15.52},
+        {"hex": "407968", "type": "mlat", "flight": "GHCNX   ", "r": "G-HCNX", "t": "EC55",
+         "alt_baro": 1250, "gs": 145, "tas": 278, "track": 12, "roll": -0.18, "baro_rate": 0,
+         "squawk": "6600", "category": "A7", "nav_qnh": 1013.2, "nav_altitude_mcp": 27008,
+         "nav_altitude_fms": 27008, "lat": 51.296933, "lon": 0.188649, "nic": 0, "rc": 0,
+         "seen_pos": 0.095, "version": 0, "alert": 0, "spi": 0,
+         "mlat": ["gs", "track", "baro_rate", "lat", "lon", "nic", "rc"], "tisb": [],
+         "messages": 365967, "seen": 0.1, "rssi": -7.5, "dst": 14.36},
+        {"hex": "407536", "type": "adsb_icao", "flight": "BAW622  ", "r": "G-TTNF", "t": "A20N",
+         "alt_baro": 14525, "alt_geom": 15075, "gs": 383.4, "ias": 306, "tas": 378, "mach": 0.6,
+         "wd": 218, "ws": 12, "oat": -12, "tat": 7, "track": 101.28, "track_rate": 0, "roll": -0.35,
+         "mag_heading": 102.3, "true_heading": 102.95, "baro_rate": 2624, "geom_rate": 2592,
+         "squawk": "3473", "emergency": "none", "category": "A3", "nav_qnh": 1012.8,
+         "nav_altitude_mcp": 27008, "lat": 51.360199, "lon": 0.270386, "nic": 8, "rc": 186,
+         "seen_pos": 0.195, "version": 2, "nic_baro": 1, "nac_p": 9, "nac_v": 1, "sil": 3,
+         "sil_type": "perhour", "gva": 2, "sda": 3, "alert": 0, "spi": 0, "mlat": [], "tisb": [],
+         "messages": 22288110, "seen": 0, "rssi": -10, "dst": 9.51},
+        {"hex": "4ca708", "type": "adsb_icao", "flight": "RYR89BZ ", "r": "EI-EBL", "t": "B738",
+         "alt_baro": 35025, "alt_geom": 35825, "gs": 422.4, "ias": 259, "tas": 442, "mach": 0.764,
+         "wd": 210, "ws": 102, "oat": -53, "tat": -27, "track": 124.29, "track_rate": 0,
+         "roll": -0.35, "mag_heading": 136.76, "true_heading": 137.46, "baro_rate": 0,
+         "geom_rate": 32, "squawk": "5256", "emergency": "none", "category": "A3",
+         "nav_qnh": 1013.6, "nav_altitude_mcp": 35008, "nav_altitude_fms": 35008,
+         "nav_heading": 136.41, "lat": 51.380636, "lon": 0.488815, "nic": 7, "rc": 371,
+         "seen_pos": 0.39, "version": 2, "nic_baro": 1, "nac_p": 8, "nac_v": 1, "sil": 3,
+         "sil_type": "perhour", "gva": 1, "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [],
+         "messages": 31308987, "seen": 0.2, "rssi": -12.7, "dst": 5.44},
+        {"hex": "3e2bcd", "type": "adsb_icao", "flight": "AWU504E ", "r": "D-IHUB", "t": "C25A",
+         "alt_baro": 5825, "alt_geom": 6225, "gs": 257.6, "ias": 244, "tas": 266, "mach": 0.408,
+         "wd": 166, "ws": 10, "oat": 7, "tat": 16, "track": 186.46, "track_rate": -0.03,
+         "roll": -0.18, "mag_heading": 184.92, "true_heading": 185.72, "baro_rate": 32,
+         "geom_rate": 0, "squawk": "2037", "emergency": "none", "category": "A1", "nav_qnh": 1020,
+         "nav_altitude_mcp": 6016, "nav_heading": 184.92, "lat": 51.419174, "lon": 0.727473,
+         "nic": 8, "rc": 186, "seen_pos": 0.221, "version": 2, "nic_baro": 1, "nac_p": 10,
+         "nac_v": 1, "sil": 3, "sil_type": "perhour", "gva": 2, "sda": 2, "alert": 0, "spi": 0,
+         "mlat": [], "tisb": [], "messages": 5724763, "seen": 0, "rssi": -5.5, "dst": 10.6},
+        {"hex": "40796c", "type": "adsb_icao", "flight": "TOM7NT  ", "r": "G-TUMN", "t": "B38M",
+         "alt_baro": 14375, "alt_geom": 14950, "gs": 344.1, "ias": 277, "tas": 342, "mach": 0.54,
+         "wd": 183, "ws": 16, "oat": -9, "tat": 6, "track": 83.66, "track_rate": 0.03, "roll": 0,
+         "mag_heading": 85.25, "true_heading": 86.07, "baro_rate": 2432, "geom_rate": 2432,
+         "squawk": "3441", "emergency": "none", "category": "A3", "nav_qnh": 1013.6,
+         "nav_altitude_mcp": 27008, "nav_altitude_fms": 27008, "nav_heading": 85.08,
+         "lat": 51.207733, "lon": 0.736307, "nic": 8, "rc": 186, "seen_pos": 0, "version": 2,
+         "nic_baro": 1, "nac_p": 10, "nac_v": 2, "sil": 3, "sil_type": "perhour", "gva": 2,
+         "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [], "messages": 19732262, "seen": 0,
+         "rssi": -18.8, "dst": 18.88},
+        {"hex": "4058c7", "type": "mlat", "flight": "GZAAP   ", "r": "G-ZAAP", "t": "CRUZ",
+         "alt_baro": 300, "gs": 50, "track": 54, "baro_rate": 2, "squawk": "4575", "lat": 51.538891,
+         "lon": 0.76194, "nic": 0, "rc": 0, "seen_pos": 1.95, "alert": 0, "spi": 0,
+         "mlat": ["gs", "track", "baro_rate", "lat", "lon", "nic", "rc"], "tisb": [],
+         "messages": 198847, "seen": 0.8, "rssi": -5.4, "dst": 12.2},
+        {"hex": "77058e", "type": "adsb_icao", "flight": "ALK503  ", "r": "4R-ALN", "t": "A333",
+         "alt_baro": 14100, "alt_geom": 14750, "gs": 373, "ias": 307, "tas": 376, "mach": 0.596,
+         "wd": 321, "ws": 5, "oat": -11, "tat": 8, "track": 270.61, "track_rate": 0, "roll": 0,
+         "mag_heading": 270.35, "true_heading": 271.15, "baro_rate": -1856, "geom_rate": -1856,
+         "squawk": "3260", "emergency": "none", "category": "A5", "nav_qnh": 1013.6,
+         "nav_altitude_mcp": 8000, "lat": 51.643295, "lon": 0.780549, "nic": 8, "rc": 186,
+         "seen_pos": 0.123, "version": 2, "nic_baro": 1, "nac_p": 9, "nac_v": 1, "sil": 3,
+         "sil_type": "perhour", "gva": 2, "sda": 2, "alert": 0, "spi": 0, "mlat": [], "tisb": [],
+         "messages": 11755558, "seen": 0, "rssi": -19.9, "dst": 16.02}], "total": 9,
+        "now": 1654367538288, "ctime": 1654367542448, "ptime": 184}
 
 
 def test_import():
@@ -405,23 +230,34 @@ def test_import():
 
 class TestADSBValidation:
     """Tests validation of ADSB configuration"""
+
     def test_empty_interval(self, generate_empty_adsb_config):
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
         assert "adsb_interval must be an integer value" in str(exc_info.value)
 
     def test_empty_cooldown(self, generate_empty_adsb_config):
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
         assert "cooldown must be an integer value" in str(exc_info.value)
 
     def test_empty_latitude(self, generate_empty_adsb_config):
         generate_empty_adsb_config['ADSB']['cooldown'] = "10"
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "latitude must be a float value >= -90 and <= 90" in str(exc_info.value)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
+        assert "'' is an invalid latitude value. Must be a float between -90 and 90." \
+               in str(exc_info.value)
 
     def test_invalid_latitudes(self, generate_empty_adsb_config):
         """Test impossible latitudes < -90 or > 90 raising an exception"""
@@ -429,20 +265,32 @@ class TestADSBValidation:
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(90.01, 999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "latitude must be a float value >= -90 and <= 90" in str(exc_info.value)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
+        assert "is an invalid latitude value. Must be a float between -90 and 90." \
+               in str(exc_info.value)
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90.01, -999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "latitude must be a float value >= -90 and <= 90" in str(exc_info.value)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
+        assert "is an invalid latitude value. Must be a float between -90 and 90." \
+               in str(exc_info.value)
 
     def test_empty_longitude(self, generate_empty_adsb_config):
         generate_empty_adsb_config['ADSB']['cooldown'] = "10"
         generate_empty_adsb_config['ADSB']['adsb_interval'] = "10"
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90, 90))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "longitude must be a float value >= -180 and <= 180" in str(exc_info.value)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
+        assert "'' is an invalid longitude value. Must be a float between -180 and 180." \
+               in str(exc_info.value)
 
     def test_invalid_longitudes(self, generate_empty_adsb_config):
         """Test impossible longitudes < -180 or > 180 raising an exception"""
@@ -451,12 +299,20 @@ class TestADSBValidation:
         generate_empty_adsb_config['ADSB']['lat'] = str(random.uniform(-90, 90))
         generate_empty_adsb_config['ADSB']['long'] = str(random.uniform(180.01, 999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "longitude must be a float value >= -180 and <= 180" in str(exc_info.value)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
+        assert "is an invalid longitude value. Must be a float between -180 and 180." \
+               in str(exc_info.value)
         generate_empty_adsb_config['ADSB']['long'] = str(random.uniform(-180.01, -999999))
         with pytest.raises(ValueError) as exc_info:
-            airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-        assert "longitude must be a float value >= -180 and <= 180" in str(exc_info.value)
+            airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                       watchlist_path=VALID_WATCHLIST,
+                                       image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                       user_agent=USER_AGENT)
+        assert "is an invalid longitude value. Must be a float between -180 and 180." \
+               in str(exc_info.value)
 
     def test_invalid_radii(self, generate_empty_adsb_config):
         """Test invalid radii raising an exception"""
@@ -467,11 +323,15 @@ class TestADSBValidation:
         # try 5 different invalid radii and make sure they raise the correct exception
         for _ in range(0, 5):
             invalid_radius = 1
-            while invalid_radius in (1, 5, 10, 25, 100, 250):
+            while invalid_radius in range(1, 251):
                 invalid_radius = random.randint(0, 9999)
             with pytest.raises(ValueError) as exc_info:
-                airspotbot.adsbget.Spotter(generate_empty_adsb_config, valid_watchlist)
-            assert "Error in configuration file: radius value is not 1, 5, 10, 25, 100, or 250" in str(exc_info.value)
+                airspotbot.adsbget.Spotter(config_parsed=generate_empty_adsb_config,
+                                           watchlist_path=VALID_WATCHLIST,
+                                           image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                           user_agent=USER_AGENT)
+            assert "Error in configuration file: radius value must be an integer between 1 and 250" \
+                   in str(exc_info.value)
 
 
 class TestWatchlistImport:
@@ -479,7 +339,10 @@ class TestWatchlistImport:
 
     def test_invalid_watchlist_file(self, generate_valid_adsb_config, caplog):
         """Test exception thrown when bogus watchlist file is read"""
-        test_spotter = airspotbot.adsbget.Spotter(generate_valid_adsb_config, invalid_watchlist)
+        test_spotter = airspotbot.adsbget.Spotter(config_parsed=generate_valid_adsb_config,
+                                                  watchlist_path=INVALID_WATCHLIST,
+                                                  image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                                  user_agent=USER_AGENT)
         logging_output = caplog.text
         assert "Error reading row 1 from ./tests/invalid_watchlist.csv, please check the " \
                "watchlist file. This error is usually caused by missing columns in a row." \
@@ -490,7 +353,10 @@ class TestWatchlistImport:
 
     def test_missing_watchlist_file(self, generate_valid_adsb_config, caplog):
         """Test that warning message is generated when watchlist file is missing"""
-        test_spotter = airspotbot.adsbget.Spotter(generate_valid_adsb_config, "foo.csv")
+        test_spotter = airspotbot.adsbget.Spotter(config_parsed=generate_valid_adsb_config,
+                                                  watchlist_path="foo.csv",
+                                                  image_dir=DEFAULT_IMAGE_DIRECTORY,
+                                                  user_agent=USER_AGENT)
         logging_output = caplog.text
         assert "Watchlist file not found at foo.csv. Aircraft will only be spotted based on " \
                "rules in asb.config." \
@@ -570,48 +436,48 @@ class TestADSBxCall:
         requests_mock.get(spots.url, json=unexpected_adsbx_json, status_code=200)
         caplog.set_level(logging.DEBUG)
         spots.check_spots()
-        assert "Key error when parsing aircraft returned from API, skipping" in caplog.text
-        assert "1602439570493" in caplog.text
+        assert "Error processing raw aircraft data, skipping" in caplog.text
+        assert "D-IENE" in caplog.text
 
     def test_type_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
         """test whether aircraft of a certain type code in watchlist will be spotted"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert len([p for p in spots.spot_queue if p['type'] == 'P28A']) == 5
+        assert len([p for p in spots.spot_queue if p.type_code == 'C25A']) == 2
 
-    def test_watchlist_image(self, requests_mock, generate_spotter, sample_adsbx_json):
+    def test_watchlist_image(self, requests_mock, generate_spotter, sample_adsbx_json, caplog):
         """Test that image path is assigned from watchlist"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        for i in [p['img'] for p in spots.spot_queue if p['type'] == 'P28A']:
-            assert i == 'test.png'
+        logging_output = caplog.text
+        assert "Cannot add image to aircraft with hex 3e232e." in logging_output
 
     def test_grounded(self, requests_mock, generate_spotter, sample_adsbx_json):
         """test whether aircraft of a certain type code in watchlist will be spotted"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert 'A47408' not in [p['icao'] for p in spots.spot_queue]
+        assert '4058c7' not in [p.hex_code for p in spots.spot_queue]
 
     def test_rn_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
         """test whether aircraft with reg number in watchlist is spotted"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert 'N174SY' in [p['reg'] for p in spots.spot_queue]
+        assert '4R-ALN' in [p.reg for p in spots.spot_queue]
 
     def test_mil_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
         """Test whether an aircraft flagged as mil by ADSBx will be spotted"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert 'ABC5E3' in [p['icao'] for p in spots.spot_queue]
+        assert '407941' in [p.hex_code for p in spots.spot_queue]
 
     def test_interesting_spotted(self, requests_mock, generate_spotter, sample_adsbx_json):
         """Test whether an aircraft flagged as interesting by ADSBx will be spotted"""
         spots = generate_spotter
         requests_mock.get(spots.url, json=sample_adsbx_json, status_code=200)
         spots.check_spots()
-        assert 'A98012' in [p['icao'] for p in spots.spot_queue]
+        assert '407536' in [p.hex_code for p in spots.spot_queue]

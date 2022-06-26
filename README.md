@@ -1,6 +1,6 @@
 [![build status shield](https://img.shields.io/github/workflow/status/rouyng/airspotbot/test%20and%20lint%20airspotbot)](https://github.com/rouyng/airspotbot/actions?query=workflow%3A%22test+and+lint+airspotbot%22) [![license shield](https://img.shields.io/github/license/rouyng/airspotbot)](https://github.com/rouyng/airspotbot/blob/master/LICENSE.md)
-# airspotbot 1.0.1
-airspotbot is a Twitter bot designed to provide simple, flexible way to report interesting aircraft activity in a designated area via Twitter posts. It uses [Tweepy](https://www.tweepy.org/) and the [ADS-B exchange API](https://www.adsbexchange.com/data/). airspotbot is designed to be extremely configurable, so it can be used to monitor diverse kinds of activity.
+# airspotbot 2.0.0
+airspotbot is a Twitter bot designed to provide simple, flexible way to report interesting aircraft activity in a designated area via twitter posts. It uses [Tweepy](https://www.tweepy.org/) and the [ADS-B exchange API](https://www.adsbexchange.com/data/). airspotbot is designed to be extremely configurable, so it can be used to monitor diverse kinds of activity.
 
 
 ## What can it do?
@@ -17,7 +17,7 @@ Tweets generated for any of these use cases can be enhanced with additional info
 
 
 ### Limitations
-Please note that due to limitations of the ADS-B Exchange API, airspotbot is designed to only track spots within a 1, 5, 10, 25, 100 or 250 nautical mile radius of the latitude and longitude specified in the configuration file. In other words, you can't use one instance of airspotbot to track aircraft across the world. airspotbot is intended to monitor a specific area, such as an airport or city.
+airspotbot is intended to monitor a specific area, such as an airport or city. Due to limitations of the ADS-B Exchange API, airspotbot is can only track aircraft within a circle centered on the latitude and longitude specified in the configuration file. The radius of this circle must be between 1 and 250 nautical miles. 
  
 airspotbot is only as good as the data it receives. While ADS-B Exchange is a great resource that provides a huge amount of unfiltered data, there are still gaps in coverage. There are also many military aircraft that cannot be tracked or identified using their transponders. See [the ADS-B Exchange FAQ](https://www.adsbexchange.com/faq/) for more details.
 
@@ -28,9 +28,9 @@ airspotbot currently runs [@phxairspots on twitter](https://www.twitter.com/phxa
 
 ### Requirements
 
- - Python 3.7 or later.
- - Valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key (v1.1 only). Your Twitter developer account must have "Elevated" access.
- - Valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key (v1 only). Please note that as of 2021, ADS-B Exchange is no longer giving API keys to all feeders, so their API is now solely accessed through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1). The "adsbx" endpoint option in asb.config is provided for legacy support, or if you have some preexisting agreement with ADSBX to use their endpoint directly.
+ - Python 3.10 or later.
+ - Valid [Twitter API](https://developer.twitter.com/en/docs/twitter-api) key. airspotbot requires both v1.1 and v2 access. v1.1 access is only required because v2 does not currently support image upload. Once v2 has this feature, v1.1 access will no longer be required. All required API functionality is available with an "Essential" level developer account.
+ - Valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key (v2 only). An API key can be obtained through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1)
  - (Optional) Chrome/Chromium web browser and a compatible version of [ChromeDriver](https://chromedriver.chromium.org/home). Used to capture screenshots of globe.adsbexchange.com for inclusion in tweets.
  
 Please operate your installation of airspotbot in accordance with all relevant API terms of service. 
@@ -50,22 +50,23 @@ Run airspotbot with `python3 -m airspotbot`
 Command line arguments are as follows:
 ```
 $ python -m airspotbot --help
-usage: airspotbot [-h] [-c [CONFIG]] [-w [WATCHLIST]]
+usage: airspotbot [-h] [-c [CONFIG]] [-w [WATCHLIST]] [-i [IMAGEDIR]] [--version]
 
-A twitter bot for reporting aircraft activity in an area, using the ADS-B
-Exchange API. For more details, see README.md.
+A twitter bot for reporting aircraft activity in an area, using the ADS-B Exchange API. For more details, see README.md.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -c [CONFIG], --config [CONFIG]
-                        Optional path to config file. Defaults to
-                        ./config/asb.config
+                        Optional path to config file. Defaults to ./config/asb.config
   -w [WATCHLIST], --watchlist [WATCHLIST]
-                        Optional path to watchlist file. Defaults to
-                        ./config/watchlist.csv
-
+                        Optional path to watchlist file. Defaults to ./config/watchlist.csv
+  -i [IMAGEDIR], --imagedir [IMAGEDIR]
+                        Optional path to directory of images. airspotbot will search here for image files defined in the watchlist. Defaults to ./images/
+  -d, --disable-tweets  Disable tweets. Can be used for testing without Twitter API credentials.
+  -v, --verbose         Print debug messages.
+  -q, --quiet           Only print critical error messages, ignores -v.
+  --version             show program's version number and exit
 ```
-
 
 
 ## Configuration
@@ -76,7 +77,6 @@ This file, structured in INI format, contains various configuration options orga
 - `[TWITTER]`: Twitter API credentials and options related to tweet interval and format. Also includes options related to screenshots.
 - `[ADSB]`: ADS-B Exchange API credentials, spotting location information and filters to determine which aircraft are spotted/tweeted.
 - `[LOCATION]`: Options for configuring location descriptions and reverse geocoding of aircraft locations. Has options for manually specifying a location description or connecting to Pelias and 3geonames APIs. See "Location description" section below for more details
-- `[MISC]`: Various debugging options for testing and logging purposes.
 
 Additional documentation on each individual option is provided as comments in the example `asb.config` file included in this repository.
 
@@ -126,14 +126,12 @@ N174SY,RN,,,
 
 ## TODO list
 Here are some planned features/fixes. You are welcome to work on these if you are interested and able (see "Contributing" section below)
-* [Support ADSB Exchange API version 2](https://www.adsbexchange.com/version-2-api-wip/)
-* Support Twitter API v2
-* Add automatic tweeting to notify followers of ADS-B Exchange API outage/error. Bot followers should be informed if an error/outage is preventing spots from being tweeted. (`down_tweet` option in config file is a placeholder for this)
+
+* Support [geoapify.com reverse geocoding API](https://apidocs.geoapify.com/docs/geocoding/reverse-geocoding/#about)
 * Fetch aircraft photos using [Planespotters.net API](https://www.planespotters.net/photo/api)
-* Set custom user agent string for all API requests
 
  ## Contributing
- Contributions are welcome, including those from new/novice contributors. Source code contributions should be via pull requests. Bug reports and feature requests via opening issues. 
+Contributions are welcome, including those from new/novice contributors. Source code contributions should be via pull requests. Bug reports and feature requests via opening issues. 
  
 If you want to suggest a specific aircraft type or registration number for @phxairspots or another airspotbot-powered account to monitor, please contact the account directly.
  

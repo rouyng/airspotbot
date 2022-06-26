@@ -7,8 +7,123 @@ from time import time
 import configparser
 import csv
 import requests
+from pathlib import Path
+from collections import deque
 
 logger = logging.getLogger(__name__)
+
+
+class AircraftSpot:
+    """
+    Class for storing individual aircraft spot information fetched from ADSB exchange API. Converts
+    string data from API response into correct types and does some sanity checks.
+
+    Args:
+            raw_aircraft: Dictionary generated from ADSBX API JSON reply, representing one aircraft
+    Raises:
+            ValueError: If raw strings returned by the API cannot be coerced into expected types
+    """
+
+    def __init__(self, raw_aircraft: dict[str, str]):
+        self.hex_code: str = str(raw_aircraft['hex'])  # ICAO transponder hex address
+        try:
+            self.type_code: str = str(raw_aircraft['t']).strip()  # ICAO type code
+        except KeyError:
+            self.type_code: str = 'Unknown aircraft type'
+        try:
+            self.reg: str = str(raw_aircraft['r']).strip()
+        except KeyError:
+            self.reg: str = 'unknown'
+        try:
+            if raw_aircraft['alt_baro'] == 'ground':
+                self.grounded: bool = True
+            else:
+                self.grounded: bool = False
+                self.altitude_ft: int | None = int(raw_aircraft['alt_baro'])
+        except (KeyError, ValueError):
+            logger.warning(f"Could not parse altitude for aircraft w/ hex {self.hex_code}")
+            self.altitude_ft: int = 0
+            self.grounded: bool = False
+        if 'dbFlags' in raw_aircraft:
+            self.military: bool = bool(int(raw_aircraft['dbFlags']) & 1)
+            self.interesting: bool = bool(int(raw_aircraft['dbFlags']) & 2)
+        else:
+            self.military: bool = False
+            self.interesting: bool = False
+        try:
+            self.coordinates = Coordinates(raw_aircraft['lat'], raw_aircraft['lon'])
+        except ValueError as e:
+            logger.error(f"Aircraft with hex {self.hex_code} has invalid lat/lon coordinates")
+            raise e
+        # Create a string describing aircraft speed. Prefer ground speed, then fall back to
+        #  true air speed and indicated air speed in that order. If none are reported, describe
+        #  speed as unknown.
+        for n, k in (("ground", 'gs'), ("true air", 'tas'), ("indicated air", 'ias')):
+            try:
+                self.speed_string: str = f"{n} speed {raw_aircraft[k]} kts"
+                break
+            except KeyError:
+                continue
+        else:
+            logger.warning(f"Could not parse speed for aircraft w/ hex {self.hex_code}")
+            self.speed_string: str = 'speed unknown'
+        try:
+            if raw_aircraft['flight'].strip() != self.reg:
+                self.callsign: str | None = str(raw_aircraft['flight'].strip())
+            else:
+                self.callsign: str | None = None
+        except KeyError:
+            self.callsign: str | None = None
+        self.description: str | None = None  # custom text description pulled from watchlist
+        self.image_path: Path | None = None  # path to custom image file pulled from watchlist
+
+    def update_from_watchlist(self,
+                              search_key: str,
+                              watchlist: dict[str, dict[str, str]],
+                              image_dir: str):
+        """Check watchlist for custom description and image path. If present, update description
+        and image path.
+
+        Args:
+            search_key: Key used to search watchlist. Can be a registration number, ICAO hex code
+                or an ICAO type code
+            watchlist: Watchlist dictionary, consisting of keys which can be registration number,
+                ICAO hex code or an ICAO type code, and values which are dictionaries containing
+                'desc' and 'img' key/value pairs for custom descriptions and image paths.
+            image_dir: String containing relative or absolute path of image directory containing
+                images defined in watchlist.
+            """
+        if watchlist[search_key]['desc'] != '':
+            self.description = watchlist[search_key]['desc']
+        image_filename = watchlist[search_key]['img']
+        # Check if file exists at path defined by image_path, then update self.image_path
+        if image_filename != '':
+            full_path = Path(image_dir) / image_filename
+            if full_path.is_file():
+                self.image_path = full_path
+            else:
+                logger.error(f"Cannot add image to aircraft with hex {self.hex_code}. "
+                             f"No file found at {full_path}.")
+
+
+class Coordinates:
+    """Class for storing latitude/longitude coordinates, with simple sanity checks"""
+
+    def __init__(self, latitude: str, longitude: str):
+        try:
+            if float(latitude) > 90 or float(latitude) < -90:
+                raise ValueError
+        except ValueError:
+            raise ValueError(f"'{latitude}' is an invalid latitude value. Must "
+                             f"be a float between -90 and 90.")
+        self.latitude: float = float(latitude)
+        try:
+            if float(longitude) > 180 or float(longitude) < -180:
+                raise ValueError
+        except ValueError:
+            raise ValueError(f"'{longitude}' is an invalid longitude value. Must "
+                                 f"be a float between -180 and 180.")
+        self.longitude: float = float(longitude)
 
 
 class Spotter:
@@ -16,27 +131,34 @@ class Spotter:
     criteria. Requires a ConfigParser object and path to watchlist.csv as arguments.
     """
 
-    def __init__(self, config_parsed: configparser.ConfigParser, watchlist_path: str):
+    def __init__(self,
+                 config_parsed: configparser.ConfigParser,
+                 watchlist_path: str,
+                 image_dir: str,
+                 user_agent: str):
         """
         Args:
             config_parsed: ConfigParser object, generated from the config/ini file whose path is
              specified as a command line argument when airspotbot is started.
             watchlist_path: String containing path to watchlist csv file, specified as a command
              line argument when airspotbot is started.
+            image_dir: String containing relative or absoluter path to directory of images.
+            user_agent: User agent string used in API requests.
         """
+        self.user_agent = user_agent
         self.watchlist_path = watchlist_path
+        self.image_dir = image_dir
         self.watchlist_rn = {}
         self.watchlist_tc = {}
         self.watchlist_ia = {}
         self.seen = {}
         self.adsb_interval_seconds = 60  # interval to check adsb_exchange
         self.cooldown_seconds = 3600  # cooldown interval (seconds)
-        self.latitude_degrees = 0  # latitude of center of spot radius
-        self.longitude_degrees = 0  # longitude of center of spot radius
+        # lat/lon coordinates of center of spot radius
+        self.spot_center_coordinates: Coordinates | None = None
         self.radius_nautical_miles = 1  # radius of circle to check for spots (nautical miles)
         self.adsb_api_key = None
-        self.adsb_api_endpoint = None
-        self.spot_queue = []
+        self.spot_queue: deque[AircraftSpot] = deque()
         self.spot_unknown = True  # always spot unknown reg #s
         self.spot_mil = True  # always spot mil-format serial numbers
         self.spot_interesting = True  # always spot aircraft designated "interesting"
@@ -67,57 +189,31 @@ class Spotter:
             except ValueError as cooldown_error:
                 raise ValueError(
                     "cooldown must be an integer value") from cooldown_error
-            try:
-                self.latitude_degrees = float(config_parsed.get('ADSB', 'lat'))
-                if not -90 <= self.latitude_degrees <= 90:
-                    raise ValueError
-                logger.debug(f"Setting latitude to {self.latitude_degrees}")
-            except ValueError as latitude_error:
-                raise ValueError(
-                    "latitude must be a float value >= -90 and <= 90") from latitude_error
-            try:
-                self.longitude_degrees = float(config_parsed.get('ADSB', 'long'))
-                if not -180 <= self.longitude_degrees <= 180:
-                    raise ValueError
-                logger.debug(f"Setting longitude to {self.longitude_degrees}")
-            except ValueError as longitude_error:
-                raise ValueError("longitude must be a float value >= -180 and"
-                                 " <= 180") from longitude_error
+            self.spot_center_coordinates = Coordinates(config_parsed.get('ADSB', 'lat'),
+                                                       config_parsed.get('ADSB', 'long'))
+            logger.debug(f"Set spotting coordinates to: {self.spot_center_coordinates.latitude}, "
+                         f"{self.spot_center_coordinates.longitude}")
             try:
                 self.radius_nautical_miles = int(config_parsed.get('ADSB', 'radius'))
-                if self.radius_nautical_miles not in (1, 5, 10, 25, 100, 250):
+                if 250 < self.radius_nautical_miles or self.radius_nautical_miles < 1:
                     raise ValueError
                 logger.debug(f"Setting radius to {self.radius_nautical_miles}")
             except ValueError as radius_error:
-                raise ValueError('Error in configuration file: radius value is'
-                                 ' not 1, 5, 10, 25, 100, or 250') from radius_error
-            self.adsb_api_endpoint = config_parsed.get('ADSB', 'adsb_api').strip()
+                raise ValueError('Error in configuration file: radius value must be an integer '
+                                 'between 1 and 250') from radius_error
             self.adsb_api_key = config_parsed.get('ADSB', 'adsb_api_key').strip()
             logger.debug(f'Setting API key value to {self.adsb_api_key}')
-            if self.adsb_api_endpoint == 'rapidapi':
-                # create url and headers for RapidAPI request
-                logger.debug("Setting api endpoint to rapidapi")
-                self.url = f"https://adsbexchange-com1.p.rapidapi.com/json/" \
-                           f"lat/{self.latitude_degrees}/lon/{self.longitude_degrees}/dist/" \
-                           f"{self.radius_nautical_miles}/"
-                logger.debug(f"API request url: {self.url}")
-                self.headers = {
-                    'x-rapidapi-host': "adsbexchange-com1.p.rapidapi.com",
-                    'x-rapidapi-key': self.adsb_api_key
-                }
-            elif self.adsb_api_endpoint == 'adsbx':
-                # create url and headers for ADSBx API request
-                logger.debug("Setting api endpoint to adsbx")
-                self.url = f"https://adsbexchange.com/api/aircraft/json/lat/" \
-                           f"{self.latitude_degrees}/lon/{self.longitude_degrees}/dist/{self.radius_nautical_miles}/"
-                logger.debug(f"API request url: {self.url}")
-                self.headers = {
-                    'api-auth': self.adsb_api_key
-                }
-            else:
-                logger.critical(
-                    f"{self.adsb_api_endpoint} is not a valid API endpoint")
-                raise Exception('Invalid API endpoint')
+            # create url and headers for RapidAPI request
+            logger.debug("Setting api endpoint to rapidapi")
+            self.url = f"https://adsbexchange-com1.p.rapidapi.com/v2/" \
+                       f"lat/{self.spot_center_coordinates.latitude}/lon/" \
+                       f"{self.spot_center_coordinates.longitude}/dist/{self.radius_nautical_miles}/"
+            logger.debug(f"API request url: {self.url}")
+            self.headers = {
+                'User-Agent': self.user_agent,
+                'X-RapidAPI-Host': "adsbexchange-com1.p.rapidapi.com",
+                'X-RapidAPI-Key': self.adsb_api_key
+            }
             if config_parsed.get('ADSB', 'spot_unknown').lower() == 'y':
                 logger.debug('Set spot_unknown to True')
                 self.spot_unknown = True
@@ -205,17 +301,22 @@ class Spotter:
                 f'Added {len(self.watchlist_rn) + len(self.watchlist_tc) + len(self.watchlist_ia)}'
                 f' entries to the watchlist')
 
-    def _append_craft(self, aircraft: dict):
+    def _append_craft(self, spotted_aircraft: AircraftSpot):
         """
-        Add aircraft to self.spot_queue list and self.seen dictionary
+        Add aircraft to self.spot_queue list and self.seen dictionary. Called when the logic
+        in check_spots matches an aircraft seen nearby.
 
         Args:
-            aircraft: Dictionary generated from ADSBX API JSON reply, representing one aircraft
+            spotted_aircraft: AircraftSpot object, representing a single aircraft
         """
-        icao = aircraft['icao']
-        logger.info(f'Aircraft added to queue. ICAO #: {icao}')
-        self.spot_queue.append(aircraft)
-        self.seen[icao] = time()
+        try:
+            hex_code = spotted_aircraft.hex_code
+            logger.info(f'Aircraft added to queue. ICAO #: {hex_code}')
+            self.spot_queue.append(spotted_aircraft)
+            self.seen[hex_code] = time()
+        except ValueError:
+            logger.warning("Error adding aircraft to queue. Value could not be coerced to expected"
+                           "type.", exc_info=True)
 
     def _check_seen(self):
         """
@@ -237,127 +338,93 @@ class Spotter:
         Aircraft that meet spotting criteria are passed to self._append_craft function.
         """
         logger.info(
-            f'Checking for aircraft via ADSBx API (endpoint: {self.adsb_api_endpoint})')
+            f'Checking for aircraft via ADSBx API (endpoint: RapidAPI)')
         try:
             response = requests.request("GET", self.url, headers=self.headers,
                                         timeout=4)
             response.raise_for_status()
             logger.debug('API request appears successful')
-            spotted_aircraft = response.json()['ac']
-            if spotted_aircraft is None:
+            aircraft_nearby = response.json()['ac']
+            if aircraft_nearby is None:
                 # prevent an empty list of spots from creating a TypeError in the next for loop
                 logger.info('No aircraft detected in spotting area')
-                spotted_aircraft = []
+                aircraft_nearby = []
+            else:
+                logger.info(f'API returned {len(aircraft_nearby)} aircraft in spotting area')
         except (requests.exceptions.HTTPError, requests.exceptions.Timeout,
                 AttributeError) as err:
             logger.error('Error with ADSB Exchange API request', exc_info=True)
-            spotted_aircraft = []
+            aircraft_nearby = []
         self._check_seen()  # clear off aircraft from the seen list if cooldown on them has expired
-        for aircraft in spotted_aircraft:
+        for raw_aircraft in aircraft_nearby:
             try:
-                # This loop checks all spotted aircraft against watchlist and preferences to
-                # determine if it should be added to the tweet queue
-                # TODO: refactor this giant tree of conditionals to something more maintainable
-                craft = dict(aircraft)  # convert json object provided by API to dictionary
                 logger.debug(
-                    f'Spotted aircraft {craft["icao"]}. Full data: {craft}')
-                if craft['icao'] in self.seen.keys():
-                    # if craft icao number is in seen list, do not queue
-                    logger.debug(f"{craft['icao']} is already spotted, not added to queue")
-                    continue
-                if craft['gnd'] == '1':
-                    # if craft is on ground, do not queue
-                    logger.debug(f"{craft['icao']} is on the ground, not added to queue")
-                    continue
-                if craft['icao'] in self.watchlist_ia.keys():
-                    # if the aircraft's ICAO address is on the watchlist, add it to the queue
-                    logger.debug(f'{craft["icao"]} in watchlist, adding to spot queue')
-                    if self.watchlist_ia[craft['icao']]['desc'] != '':
-                        # if there is a description in the watchlist entry for this ICAO address,
-                        # add it to the dict
-                        craft['desc'] = self.watchlist_ia[craft['icao']]['desc']
-                    else:
-                        craft['desc'] = False
-                    if self.watchlist_ia[craft['icao']]['img'] != '':
-                        craft['img'] = self.watchlist_ia[craft['icao']]['img']
-                    else:
-                        craft['img'] = False
-                    self._append_craft(craft)
-                elif craft['reg'] in self.watchlist_rn.keys():
-                    logger.debug(f'{craft["reg"]} in watchlist, adding to spot queue')
-                    # if the aircraft's registration number is on the watchlist, add it to the queue
-                    if self.watchlist_rn[craft['reg']]['desc'] != '':
-                        # if there is a description in the watchlist entry for this reg number,
-                        # add it to the dict
-                        craft['desc'] = self.watchlist_rn[craft['reg']]['desc']
-                    else:
-                        craft['desc'] = False
-                    if self.watchlist_rn[craft['reg']]['img'] != '':
-                        craft['img'] = self.watchlist_rn[craft['reg']]['img']
-                    else:
-                        craft['img'] = False
-                    self._append_craft(craft)
-                elif craft['type'] in self.watchlist_tc.keys():
-                    if self.watchlist_tc[craft['type']]['mil_only'] is True and \
-                            craft['mil'] == '1':
-                        if self.watchlist_tc[craft['type']]['desc'] != '':
-                            craft['desc'] = self.watchlist_tc[craft['type']]['desc']
-                        else:
-                            craft['desc'] = False
-                        if self.watchlist_tc[craft['type']]['img'] != '':
-                            craft['img'] = self.watchlist_tc[craft['type']]['img']
-                        else:
-                            craft['img'] = False
-                        logger.debug(
-                            f'{craft["type"]} in watchlist as military-only and mil=1, adding to '
-                            f'spot queue')
-                        self._append_craft(craft)
-                    elif self.watchlist_tc[craft['type']]['mil_only'] is True and \
-                            craft['mil'] == '0':
-                        logger.debug(
-                            f'{craft["type"]} in watchlist as military-only and mil=0, not adding '
-                            f'to spot queue')
-                        continue
-                    else:
-                        if self.watchlist_tc[craft['type']]['desc'] != '':
-                            craft['desc'] = self.watchlist_tc[craft['type']]['desc']
-                        else:
-                            craft['desc'] = False
-                        if self.watchlist_tc[craft['type']]['img'] != '':
-                            craft['img'] = self.watchlist_tc[craft['type']]['img']
-                        else:
-                            craft['img'] = False
-                        logger.debug(
-                            f'{craft["type"]} in watchlist, adding to spot queue')
-                        self._append_craft(craft)
-                elif craft['reg'] == '' and self.spot_unknown is True:
-                    # if there's no registration number and spot_unknown is set, add to tweet queue
-                    craft['desc'] = False
-                    craft['img'] = False
-                    logger.info('Unknown registration number, adding to spot queue')
-                    self._append_craft(craft)
-                elif craft['mil'] == '1' and self.spot_mil is True:
-                    # if craft is designated military by ADS-B exchange and spot_mil is set,
-                    # add to tweet queue
-                    craft['desc'] = False
-                    craft['img'] = False
+                    f'Received ADSBX data for aircraft w/ hex code {raw_aircraft["hex"]}. '
+                    f'Full data: {raw_aircraft}')
+                # Attempt to process raw API response into sanitized AircraftSpot
+                aircraft = AircraftSpot(raw_aircraft)
+            except (ValueError, KeyError):
+                logger.error(f"Error processing raw aircraft data, skipping. Raw data: {raw_aircraft}", exc_info=True)
+                continue
+            # Once an instance of AircraftSpot is successfully created, run through spotting logic
+            #  to see if it should be added to the tweet queue
+            if aircraft.hex_code in self.seen:
+                # if craft icao number is in seen list, do not queue
+                logger.debug(f"{aircraft.hex_code} is already spotted, not added to queue")
+                continue
+            if aircraft.grounded:
+                logger.debug(f'{aircraft.hex_code} is grounded, skipping')
+                continue
+            if aircraft.hex_code in self.watchlist_ia:
+                # if the aircraft's ICAO address is on the watchlist, add it to the queue
+                logger.debug(f'{aircraft.hex_code} in watchlist, adding to spot queue')
+                aircraft.update_from_watchlist(aircraft.hex_code, self.watchlist_ia, self.image_dir)
+                self._append_craft(aircraft)
+            elif aircraft.reg in self.watchlist_rn:
+                # if the aircraft's registration number is on the watchlist, add it to the queue
+                logger.debug(f'{aircraft.reg} in watchlist, adding to spot queue')
+                aircraft.update_from_watchlist(aircraft.reg, self.watchlist_rn, self.image_dir)
+                self._append_craft(aircraft)
+            elif aircraft.type_code in self.watchlist_tc:
+                if self.watchlist_tc[aircraft.type_code]['mil_only'] is True and aircraft.military:
                     logger.debug(
-                        "Aircraft is designated as military, adding to spot queue")
-                    self._append_craft(craft)
-                elif craft['interested'] == '1' and self.spot_interesting is True:
-                    # if craft is designated military by ADS-B exchange and spot_mil is set,
-                    # add to tweet queue
-                    craft['desc'] = False
-                    craft['img'] = False
+                        f'{aircraft.type_code} in watchlist as military-only and this one is '
+                        f'military, adding to spot queue')
+                    aircraft.update_from_watchlist(aircraft.type_code,
+                                                   self.watchlist_tc,
+                                                   self.image_dir)
+                    self._append_craft(aircraft)
+                elif self.watchlist_tc[aircraft.type_code]['mil_only'] is True and \
+                        not aircraft.military:
                     logger.debug(
-                        "Aircraft is designated as interesting, adding to spot queue")
-                    self._append_craft(craft)
+                        f'{aircraft.type_code} in watchlist as military-only, but this one isn\'t '
+                        f'military, not adding to spot queue')
+                    continue
                 else:
-                    # if none of these criteria are met, iterate to next aircraft in the list
                     logger.debug(
-                        f"{craft['icao']} did not meet any spotting criteria, not added to queue")
-                    continue
-            except KeyError:
-                logger.warning("Key error when parsing aircraft returned from API, skipping")
-                logger.debug(f"Raw json object: {aircraft}")
+                        f'{aircraft.type_code} in watchlist, adding to spot queue')
+                    aircraft.update_from_watchlist(aircraft.type_code,
+                                                   self.watchlist_tc,
+                                                   self.image_dir)
+                    self._append_craft(aircraft)
+            elif aircraft.reg == 'unknown' and self.spot_unknown is True:
+                # if there's no registration number and spot_unknown is set, add to tweet queue
+                logger.info('Unknown registration number, adding to spot queue')
+                self._append_craft(aircraft)
+            elif aircraft.military and self.spot_mil is True:
+                # if craft is designated military by ADS-B exchange and spot_mil is set,
+                # add to tweet queue
+                logger.debug(
+                    "Aircraft is designated as military, adding to spot queue")
+                self._append_craft(aircraft)
+            elif aircraft.interesting and self.spot_interesting is True:
+                # if craft is designated military by ADS-B exchange and spot_mil is set,
+                # add to tweet queue
+                logger.debug(
+                    "Aircraft is designated as interesting, adding to spot queue")
+                self._append_craft(aircraft)
+            else:
+                # if none of these criteria are met, iterate to next aircraft in the list
+                logger.debug(
+                    f"{aircraft.hex_code} did not meet any spotting criteria, not added to queue")
                 continue

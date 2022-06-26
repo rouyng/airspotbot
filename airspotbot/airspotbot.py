@@ -11,17 +11,11 @@ import tweepy
 from . import adsbget, location, screenshot
 import os.path as path
 from io import BytesIO
+from pathlib import Path
 
 logger = logging.getLogger("airspotbot")
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s',
-                              datefmt='%d-%b-%y %H:%M:%S')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 
-# TODO: TypedDict class to replace dict of aircraft information (requires python 3.8 or later)
-# TODO: check for tweepy usage broken by upgrade from 3.8.0 => 4.8.0.
 
 class SpotBot:
     """
@@ -39,52 +33,95 @@ class SpotBot:
         sleep(30)
     """
 
-    def __init__(self, config_parsed: configparser.ConfigParser):
+    def __init__(self,
+                 config_parsed: configparser.ConfigParser,
+                 user_agent: str,
+                 enable_tweets: bool):
         """
         Args:
             config_parsed: ConfigParser object, generated from the config/ini file whose path is
              specified as a command line argument when airspotbot is started.
+            user_agent: User agent string used in API requests
         """
+        self.user_agent = user_agent
         self.tweet_interval_seconds = 5
         self._consumer_key = None
         self._consumer_secret = None
         self._access_token = None
         self._access_token_secret = None
         self._use_descriptions = False
-        self._down_tweet = False
+        self._enable_tweets = enable_tweets
         self._read_logging_config(config_parsed)
         self._validate_twitter_config(config_parsed)
-        if self.enable_tweets:
-            self._api = self._initialize_twitter_api()
+        if self._enable_tweets:
+            self._client = self._initialize_twitter_api()
+            # instantiate v1.1 api instance only for uploading media
+            self._v1_api = self._initialize_twitter_api_v1()
+        else:
+            logger.warning("Tweeting is disabled, did not create Twitter API connection")
         if self.enable_screenshot:
             self.screenshotter = screenshot.Screenshotter(self.zoom_level)
-        self._loc = location.Locator(config_parsed)
+        self._loc = location.Locator(config_parsed=config_parsed, user_agent=self.user_agent)
 
     def _read_logging_config(self, config_parsed: configparser.ConfigParser):
         """
-        Set root logger verbosity from parsed config file
+        This function is used to display a warning message when the user tries to set logger
+        verbosity from the config file. This method of setting log verbosity is deprecated with
+        v2.0.0.
 
         Args:
             config_parsed: ConfigParser object, generated from the config/ini file whose path is
              specified as a command line argument when airspotbot is started.
         """
         try:
-            self.logging_level = str(config_parsed.get('MISC', 'logging_level')).upper()
-            assert self.logging_level != ''
-            assert self.logging_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
-            logger.setLevel(self.logging_level)
-            logger.warning(f"Set logging level to {self.logging_level}")
-        except (configparser.NoOptionError, configparser.NoSectionError, AssertionError):
-            logger.warning("Logging verbosity level is not set in config, defaulting to DEBUG")
-            logger.setLevel('DEBUG')
+            logging_level = str(config_parsed.get('MISC', 'logging_level')).upper()
+            logger.warning(f"Setting log level via config file is deprecated as of v2.0.0. Use"
+                           f"the '--quiet' or '--verbose' command line options instead.")
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            pass
 
-    def _initialize_twitter_api(self):
+    def _initialize_twitter_api(self) -> tweepy.client:
         """
-        Authenticate to Twitter API, check credentials and connection
+        Authenticate to Twitter API v2 via OAuth 1.0a, check credentials and connection
+
+        Returns:
+            tweepy.client object
 
         Raises:
             KeyboardInterrupt: Exits the main application loop if Twitter API authentication fails
         """
+        logger.info('Connecting to Twitter API v2')
+        logger.debug(f'Twitter consumer key: {self._consumer_key}')
+        logger.debug(f'Twitter consumer secret: {self._consumer_secret}')
+        logger.debug(f'Twitter access token: {self._access_token}')
+        logger.debug(f'Twitter access token secret: {self._access_token_secret}')
+        try:
+            client = tweepy.Client(consumer_key=self._consumer_key,
+                                   consumer_secret=self._consumer_secret,
+                                   access_token=self._access_token,
+                                   access_token_secret=self._access_token_secret)
+            client.user_agent = self.user_agent
+            user_info = client.get_me()
+            logger.info(f"Authentication OK. Connected as user {user_info.data.username}")
+        except tweepy.errors.TweepyException as tp_error:
+            logger.critical('Error during Twitter API authentication', exc_info=True)
+            raise KeyboardInterrupt
+        logger.info('Twitter API v2 client created')
+        return client
+
+    def _initialize_twitter_api_v1(self) -> tweepy.API:
+        """
+        Authenticate to Twitter API v1.1 via OAuth 1.0a, check credentials and connection.
+        This API connection is only used for media uploads, as twitter API v2 does not support
+        them yet. Once v2 and tweepy support uploads, this will be removed
+
+        Returns:
+            tweepy.API object
+
+        Raises:
+            KeyboardInterrupt: Exits the main application loop if Twitter API authentication fails
+        """
+        logger.info('Connecting to Twitter API v1.1')
         logger.info(f'Twitter consumer key: {self._consumer_key}')
         logger.info(f'Twitter consumer secret: {self._consumer_secret}')
         logger.info(f'Twitter access token: {self._access_token}')
@@ -95,11 +132,12 @@ class SpotBot:
         try:
             # test that authentication worked
             api.verify_credentials()
+            api.user_agent = self.user_agent
             logger.info("Authentication OK")
         except (tweepy.errors.TweepyException, tweepy.errors.HTTPException) as tp_error:
             logger.critical('Error during Twitter API authentication', exc_info=True)
             raise KeyboardInterrupt
-        logger.info('Twitter API created')
+        logger.info('Twitter API v1.1 client created')
         return api
 
     def _validate_twitter_config(self, config_parsed: configparser.ConfigParser):
@@ -117,14 +155,6 @@ class SpotBot:
             options from the file with the ConfigParser.get() method (for example, a missing option)
         """
         try:
-            if config_parsed.get('TWITTER', 'enable_tweets') == 'y':
-                self.enable_tweets = True
-            elif config_parsed.get('TWITTER', 'enable_tweets') == 'n':
-                logger.warning("Tweeting disabled in config file")
-                self.enable_tweets = False
-            else:
-                raise ValueError("Bad value in config file for TWITTER/enable_tweets. "
-                                 "Must be 'y' or 'n'.")
             self.tweet_interval_seconds = int(config_parsed.get('TWITTER', 'tweet_interval'))
             self._consumer_key = config_parsed.get('TWITTER', 'consumer_key')
             self._consumer_secret = config_parsed.get('TWITTER', 'consumer_secret')
@@ -136,13 +166,6 @@ class SpotBot:
                 self._use_descriptions = False
             else:
                 raise ValueError("Bad value in config file for TWITTER/use_descriptions. "
-                                 "Must be 'y' or 'n'.")
-            if config_parsed.get('TWITTER', 'down_tweet').lower() == 'y':
-                self._down_tweet = True
-            elif config_parsed.get('TWITTER', 'down_tweet').lower() == 'n':
-                self._down_tweet = False
-            else:
-                raise ValueError("Bad value in config file for TWITTER/down_tweet. "
                                  "Must be 'y' or 'n'.")
             if config_parsed.get('TWITTER', 'enable_screenshot').lower() == 'y':
                 self.enable_screenshot = True
@@ -163,83 +186,91 @@ class SpotBot:
             logger.critical('Configuration file error', exc_info=True)
             raise KeyboardInterrupt
 
-    def tweet_spot(self, aircraft: dict):
+    def tweet_spot(self, aircraft: adsbget.AircraftSpot):
         """
         Generate tweet based on aircraft data returned in dictionary format from the adsbget
         module's Spotter.spot_queue list of dictionaries.
 
         Args:
-            aircraft: Dictionary generated from ADSBX API JSON reply, representing one aircraft
+            aircraft: adsbget.AircraftSpot object generated from ADSBX API JSON reply,
+            representing one aircraft
 
         Raises:
             KeyboardInterrupt: Exits the main application loop if there is an error when sending
             a tweet or interacting with the Twitter API
         """
-        icao = aircraft['icao']
-        type_code = aircraft['type']
-        reg_num = aircraft['reg']
-        latitude_degrees = aircraft['lat']
-        longitude_degrees = aircraft['lon']
-        description = aircraft['desc']
-        altitude_feet = aircraft['alt']
-        speed_knots = aircraft['spd']
-        callsign = aircraft['call']
-        link = f'https://globe.adsbexchange.com/?icao={icao}'
-        location_description = self._loc.get_location_description(latitude_degrees,
-                                                                  longitude_degrees)
-        if reg_num.strip() == '':
-            reg_num = 'unknown'
-        if type_code.strip() == '':
-            type_code = 'Unknown aircraft type'
-        if callsign == reg_num:
-            # if callsign is same as the registration number, ADSBx is not reporting a callsign
-            callsign = False
+        hex_code: str = aircraft.hex_code
+        type_code: str = aircraft.type_code
+        reg_num: str = aircraft.reg
+        latitude_degrees: float = aircraft.coordinates.latitude
+        longitude_degrees: float = aircraft.coordinates.longitude
+        description: str | None = aircraft.description
+        altitude_feet: int = aircraft.altitude_ft
+        speed: str = aircraft.speed_string
+        callsign: str | None = aircraft.callsign
+        image_path: Path | None = aircraft.image_path
+        link = f'https://globe.adsbexchange.com/?icao={hex_code}'
+        location_description = self._loc.get_location_description(str(latitude_degrees),
+                                                                  str(longitude_degrees))
         tweet = f"{description if description else type_code}" \
-                f"{', callsign ' + callsign if callsign else ''}, ICAO {icao}, RN {reg_num}, is " \
-                f"{location_description}. Altitude {altitude_feet} ft, speed {speed_knots} kt. {link}"
-        uploaded_media_ids = []
-        # generate and upload screenshot image
-        if self.enable_screenshot and self.enable_tweets:
-            # initialize a binary stream to write then read the png screenshot, all in memory
-            with BytesIO() as b:
-                b.write(self.screenshotter.get_globe_screenshot(icao))
-                b.seek(0)  # set byte stream position to the start
+                f"{', callsign ' + callsign if callsign else ''}, hex ID {hex_code.upper()}, RN {reg_num}, is " \
+                f"{location_description}. Altitude {altitude_feet} ft, {speed}. {link}"
+        logger.info(f"Generated tweet text: {tweet}")
+        if len(tweet) <= 280:
+            valid_tweet = True
+        else:
+            logger.error(f"Tweet is too long: {len(tweet)}/280 characters. Skipping!")
+            valid_tweet = False
+        if self._enable_tweets and valid_tweet:
+            uploaded_media_ids = []
+            # generate and upload screenshot image
+            if self.enable_screenshot:
+                # initialize a binary stream to write then read the png screenshot, all in memory
+                with BytesIO() as b:
+                    screenshot_binary = self.screenshotter.get_globe_screenshot(hex_code)
+                    if screenshot_binary:
+                        b.write(screenshot_binary)
+                        b.seek(0)  # set byte stream position to the start
+                        try:
+                            # Twitter api v2 does not support media upload, so we need a
+                            #  v1.1 tweepy.api instance for media upload
+                            screenshot_media = self._v1_api.media_upload(filename="screenshot.png", file=b)
+                            uploaded_media_ids.append(screenshot_media.media_id)
+                        except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
+                            # if upload fails, handle exception and proceed gracefully without an image
+                            logger.warning(f"Error uploading screenshot", exc_info=True)
+                    else:
+                        logger.warning("No screenshot uploaded!")
+            # find and upload aircraft image from file specified in watchlist
+            if image_path:
                 try:
-                    screenshot_media = self._api.media_upload(filename="screenshot.png", file=b)
-                    uploaded_media_ids.append(screenshot_media.media_id)
-                except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
-                    # if upload fails, handle exception and proceed gracefully without an image
-                    logger.warning(f"Error uploading screenshot", exc_info=True)
-        # find and upload aircraft image from file specified in watchlist
-        if aircraft['img']:
-            image_path = "images/" + aircraft['img']  # hardcoded to look in images/ subfolder
-            if self.enable_tweets:
-                try:
-                    # if an image path is specified, upload it
+                    # if an image path is specified, upload it.
+                    # Twitter api v2 does not support media upload, so we need a
+                    #  v1.1 tweepy.api instance for media upload
                     logger.debug(f"Uploading image from {image_path}")
-                    image_media = self._api.media_upload(image_path)
+                    image_media = self._v1_api.media_upload(image_path)
                     uploaded_media_ids.append(image_media.media_id)
                 except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
                     # if upload fails, handle exception and proceed gracefully without an image
                     logger.warning(f"Error uploading image from {image_path}, check if file exists",
                                    exc_info=True)
-        logger.info(f"Generated tweet: {tweet}")
-        logger.info(f"Attached Media IDs: {uploaded_media_ids}")
-        if self.enable_tweets:
+            logger.info(f"Attached Media IDs: {uploaded_media_ids}")
             logger.info(f'Sending tweet...')
             try:
-                self._api.update_status(tweet, media_ids=uploaded_media_ids)
+                if len(uploaded_media_ids) > 0:
+                    self._client.create_tweet(text=tweet, media_ids=uploaded_media_ids)
+                else:
+                    self._client.create_tweet(text=tweet)
                 logger.info("Tweet successful!")
-            except (tweepy.errors.TweepyException, tweepy.errors.HTTPException):
-                logger.critical('Error sending tweet', exc_info=True)
-                raise KeyboardInterrupt
-
-    def _link_reply(self):
-        # TODO: function to reply to to a tweet with a link defined in watchlist.csv
-        pass
+            except tweepy.errors.TweepyException:
+                logger.error('Error sending tweet', exc_info=True)
 
 
-def run_bot(config_path: str, watchlist_path: str):
+def run_bot(config_path: str,
+            watchlist_path: str,
+            image_dir: str,
+            user_agent: str,
+            enable_tweets: bool):
     """
     Main program loop of airspotbot. Handles initial configuration and instantiation of
      config, SpotBot and Spotter objects. After this, runs an infinite loop for checking ADSBX API
@@ -248,17 +279,27 @@ def run_bot(config_path: str, watchlist_path: str):
     Args:
         config_path: String containing relative or absolute path to config INI file.
         watchlist_path: String containing relative or absolute path to watchlist CSV file.
+        image_dir: String containing relative or absoluter path to directory of images
+        user_agent: User agent string used in API requests
+        enable_tweets: Boolean, if True enables Twitter authentication and creation of tweets.
+          Otherwise, tweet text will only be printed to the log.
     """
 
     config = read_config(config_path)
-    bot = SpotBot(config)
-    spots = adsbget.Spotter(config, watchlist_path)
+    bot = SpotBot(config_parsed=config,
+                  user_agent=user_agent,
+                  enable_tweets=enable_tweets)
+    spots = adsbget.Spotter(config_parsed=config,
+                            watchlist_path=watchlist_path,
+                            image_dir=image_dir,
+                            user_agent=user_agent)
     bot_time_seconds = time()
     spot_time_seconds = time()
     # check for aircraft and tweet any when bot first starts
     spots.check_spots()
-    for _ in range(0, len(spots.spot_queue)):
-        spot = spots.spot_queue.pop(0)
+    logger.info(f"{len(spots.spot_queue)} spots in tweet queue.")
+    while spots.spot_queue:
+        spot = spots.spot_queue.popleft()
         bot.tweet_spot(spot)
     # perpetually loop through checking aircraft spots and tweeting according to interval in config
     while True:
@@ -266,8 +307,9 @@ def run_bot(config_path: str, watchlist_path: str):
             spots.check_spots()
             spot_time_seconds = time()
         elif time() > bot_time_seconds + bot.tweet_interval_seconds:
-            for _ in range(0, len(spots.spot_queue)):
-                spot = spots.spot_queue.pop(0)
+            logger.info(f"{len(spots.spot_queue)} spots in tweet queue.")
+            while spots.spot_queue:
+                spot = spots.spot_queue.popleft()
                 bot.tweet_spot(spot)
             bot_time_seconds = time()
         else:

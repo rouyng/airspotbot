@@ -9,6 +9,8 @@ import pytest
 import random
 import sys
 
+USER_AGENT = "airspotbot/testing"
+
 
 @pytest.fixture
 def generate_manual_location_config(scope="module"):
@@ -65,9 +67,11 @@ def test_import():
 
 class TestLocationValidation:
     """Tests validation of location configuration"""
+
     def test_manual_location(self, generate_manual_location_config):
         """Test that manual location reporting is properly validated"""
-        loc = airspotbot.location.Locator(generate_manual_location_config)
+        loc = airspotbot.location.Locator(config_parsed=generate_manual_location_config,
+                                          user_agent=USER_AGENT)
         assert loc.location_type == 'MANUAL'
         assert loc.location_manual_description == "near somewhere"
         # test 5 random lat/lon pairs
@@ -78,34 +82,40 @@ class TestLocationValidation:
 
     def test_coordinate_location(self, generate_coordinate_location_config):
         """Test that coordinate location reporting is properly validated"""
-        loc = airspotbot.location.Locator(generate_coordinate_location_config)
+        loc = airspotbot.location.Locator(config_parsed=generate_coordinate_location_config,
+                                          user_agent=USER_AGENT)
         assert loc.location_type == "COORDINATE"
         assert loc.location_manual_description == ""
         # test 5 random lat/lon pairs
         for _ in range(0, 5):
             random_lat = random.uniform(-90, 90)
             random_lon = random.uniform(-180, 180)
-            assert loc.get_location_description(random_lat, random_lon) == f"near {round(random_lat, 4)}, {round(random_lon, 4)}"
+            assert loc.get_location_description(random_lat,
+                                                random_lon) == f"near {round(random_lat, 4)}, {round(random_lon, 4)}"
 
     def test_empty_location_type(self, generate_empty_config):
         """Test that an empty location type defaults to coordinate description"""
-        loc = airspotbot.location.Locator(generate_empty_config)
+        loc = airspotbot.location.Locator(config_parsed=generate_empty_config,
+                                          user_agent=USER_AGENT)
         assert loc.location_type == 'COORDINATE'
 
     def test_empty_manual(self, generate_empty_config):
         """Test config that MANUAL location type but no location description defaults to coordinate"""
         generate_empty_config['LOCATION']['location_type'] = 'manual'
-        loc = airspotbot.location.Locator(generate_empty_config)
+        loc = airspotbot.location.Locator(config_parsed=generate_empty_config,
+                                          user_agent=USER_AGENT)
         assert loc.location_type == 'COORDINATE'
 
     def test_empty_host(self, generate_pelias_location_config):
         """test that pelias location type w/o a host raises an exception"""
         generate_pelias_location_config['LOCATION']['pelias_host'] = ""
         with pytest.raises(configparser.NoOptionError):
-            airspotbot.location.Locator(generate_pelias_location_config)
+            airspotbot.location.Locator(config_parsed=generate_pelias_location_config,
+                                        user_agent=USER_AGENT)
 
     def test_empty_port(self, generate_pelias_location_config):
         """test that pelias location type w/o a port raises an exception"""
         generate_pelias_location_config['LOCATION']['pelias_port'] = ""
         with pytest.raises(configparser.NoOptionError):
-            airspotbot.location.Locator(generate_pelias_location_config)
+            airspotbot.location.Locator(config_parsed=generate_pelias_location_config,
+                                        user_agent=USER_AGENT)

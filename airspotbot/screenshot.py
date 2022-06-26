@@ -4,8 +4,12 @@ Uses Selenium WebDriver to control a headless instance of the Chrome web browser
 """
 
 import logging
+
+import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.expected_conditions import presence_of_element_located
 from sys import platform
 from time import sleep
 
@@ -42,7 +46,13 @@ class Screenshotter:
         # The following two options help the webdriver play nice in Docker environment
         options.add_argument('disable-dev-shm-usage')
         options.add_argument('no-sandbox')
-        options.add_argument('log-level=3')  # suppress chrome logging messages
+        if logger.parent.level == 50:
+            options.add_argument('log-level="SEVERE"')
+            options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        elif logger.parent.level == 10:
+            options.add_argument('log-level="DEBUG"')
+        else:
+            options.add_argument('log-level="INFO"')
         if platform == 'win32':
             driver = webdriver.Chrome(
                 executable_path=WINDOWS_CHROMEDRIVER_PATH,
@@ -56,7 +66,7 @@ class Screenshotter:
             logger.debug('Starting chromedriver from system path')
         return driver
 
-    def get_globe_screenshot(self, icao: str) -> str:
+    def get_globe_screenshot(self, icao: str) -> str | None:
         """
         Retrieve a screenshot showing the map location and flightpath of an aircraft with the
         specified ICAO address.
@@ -67,10 +77,17 @@ class Screenshotter:
              PNG screenshot as binary data
         """
         logger.debug(f"Getting browser screenshot for ICAO {icao}")
-        self.driver.get(f"https://globe.adsbexchange.com/?icao={icao}&zoom={self.zoom}")
-        # TODO: use a webdriver wait instead of sleep
-        sleep(2)  # sleep to let the page finish loading, otherwise a shaded grid overlay appears
-        # execute javascript to hide ad banners
+        url = f"https://globe.adsbexchange.com/?icao={icao}&zoom={self.zoom}"
+        try:
+            self.driver.get(url)
+            map_element = WebDriverWait(self.driver, timeout=10)\
+                .until(presence_of_element_located((By.CSS_SELECTOR, "div.ol-layer")))
+            sleep(5)  # hardcoded delay to let map canvas render fully
+        except selenium.common.exceptions.TimeoutException:
+            logger.error(f"Screenshotter could not find canvas.ol-layer element at {url}, "
+                         f"timed out")
+            logger.debug(f"Page source: {self.driver.page_source}")
+            return None
         self.driver.execute_script("""
             // javascript snippet to hide ad banner elements
             var ad_selectors = [".FIOnDemandWrapper"]; // banner selectors
@@ -80,6 +97,4 @@ class Screenshotter:
                     ad_element.style.display = "none";
             }
         """)
-        map_element = self.driver.find_element(by=By.CSS_SELECTOR, value="canvas.ol-layer")
-
         return map_element.screenshot_as_png
