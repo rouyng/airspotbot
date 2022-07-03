@@ -232,6 +232,7 @@ class Locator:
                 pelias_result = requests.get(self.pelias_url + f"&layers={self.pelias_point_layer}",
                                              headers={'User-Agent': self.user_agent})
                 pelias_result.raise_for_status()
+                logger.debug(f"Pelias response took {pelias_result.elapsed.total_seconds()} sec")
                 try:
                     point_name = pelias_result.json()["features"][0]["properties"]["name"]
                 except (AttributeError, KeyError, IndexError):
@@ -243,6 +244,7 @@ class Locator:
                 pelias_result = requests.get(self.pelias_url + f"&layers={self.pelias_area_layer}",
                                              headers={'User-Agent': self.user_agent})
                 pelias_result.raise_for_status()
+                logger.debug(f"Pelias response took {pelias_result.elapsed.total_seconds()} sec")
                 try:
                     area_name = pelias_result.json()["features"][0]["properties"]["name"]
                 except (AttributeError, KeyError, IndexError):
@@ -276,6 +278,8 @@ class Locator:
             response = requests.get(
                 f"https://api.3geonames.org/{latitude_degrees},{longitude_degrees}.json", timeout=4,
                 headers={'User-Agent': self.user_agent})
+            response.raise_for_status()
+            logger.debug(f"3geonames API response took {response.elapsed.total_seconds()} sec")
             return response.json()
         except (requests.exceptions.ConnectionError,
                 requests.exceptions.HTTPError) as conn_err:

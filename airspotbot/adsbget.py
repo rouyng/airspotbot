@@ -338,12 +338,13 @@ class Spotter:
         Aircraft that meet spotting criteria are passed to self._append_craft function.
         """
         logger.info(
-            f'Checking for aircraft via ADSBx API (endpoint: RapidAPI)')
+            f'Checking for aircraft via ADSBX API (endpoint: RapidAPI)')
         try:
             response = requests.request("GET", self.url, headers=self.headers,
                                         timeout=4)
             response.raise_for_status()
-            logger.debug('API request appears successful')
+            logger.debug(f'ADSBX API request successful, response took '
+                         f'{response.elapsed.total_seconds()} seconds')
             aircraft_nearby = response.json()['ac']
             if aircraft_nearby is None:
                 # prevent an empty list of spots from creating a TypeError in the next for loop
