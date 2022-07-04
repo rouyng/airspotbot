@@ -99,5 +99,5 @@ class Screenshotter:
             }
         """)
         end_time = perf_counter()
-        logger.debug(f"Screenshot generated in {end_time-start_time:0.2f} seconds")
+        logger.debug(f"Screenshot generated in {end_time-start_time:0.3f} seconds")
         return map_element.screenshot_as_png

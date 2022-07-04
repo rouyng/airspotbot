@@ -344,7 +344,7 @@ class Spotter:
                                         timeout=4)
             response.raise_for_status()
             logger.debug(f'ADSBX API request successful, response took '
-                         f'{response.elapsed.total_seconds()} seconds')
+                         f'{response.elapsed.total_seconds():0.3f} seconds')
             aircraft_nearby = response.json()['ac']
             if aircraft_nearby is None:
                 # prevent an empty list of spots from creating a TypeError in the next for loop
