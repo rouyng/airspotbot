@@ -262,8 +262,11 @@ class SpotBot:
                 else:
                     self._client.create_tweet(text=tweet)
                 logger.info("Tweet successful!")
-            except tweepy.errors.TweepyException:
+            except (tweepy.errors.TweepyException, ConnectionError):
                 logger.error('Error sending tweet', exc_info=True)
+                logger.error('Attempting to re-initialize Twitter API connection')
+                self._client = self._initialize_twitter_api()
+                self._v1_api = self._initialize_twitter_api_v1()
 
 
 def run_bot(config_path: str,
