@@ -298,25 +298,25 @@ def run_bot(config_path: str,
                             user_agent=user_agent)
     bot_time_seconds = time()
     spot_time_seconds = time()
-    # check for aircraft and tweet any when bot first starts
-    spots.check_spots()
-    logger.info(f"{len(spots.spot_queue)} spots in tweet queue.")
-    while spots.spot_queue:
-        spot = spots.spot_queue.popleft()
-        bot.tweet_spot(spot)
+    # set startup boolean to immediately check for aircraft and tweet when bot first starts
+    startup = True
     # perpetually loop through checking aircraft spots and tweeting according to interval in config
     while True:
-        if time() > spot_time_seconds + spots.adsb_interval_seconds:
+        if time() > spot_time_seconds + spots.adsb_interval_seconds or startup:
+            startup = False
             spots.check_spots()
             spot_time_seconds = time()
-        elif time() > bot_time_seconds + bot.tweet_interval_seconds:
             logger.info(f"{len(spots.spot_queue)} spots in tweet queue.")
+            first_spot_in_queue = True
             while spots.spot_queue:
+                if not first_spot_in_queue:
+                    logger.debug(f"Waiting {bot.tweet_interval_seconds} before next tweet")
+                    sleep(bot.tweet_interval_seconds)
                 spot = spots.spot_queue.popleft()
                 bot.tweet_spot(spot)
-            bot_time_seconds = time()
+                first_spot_in_queue = False
         else:
-            sleep(1)
+            sleep(0.2)
 
 
 def read_config(config_path: str) -> configparser.ConfigParser:
