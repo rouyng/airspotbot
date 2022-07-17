@@ -427,7 +427,7 @@ class TestADSBxCall:
         requests_mock.get(spots.url, json=no_aircraft_json, status_code=200)
         caplog.set_level(logging.DEBUG)
         spots.check_spots()
-        assert "API request appears successful" in caplog.text
+        assert "ADSBX API request successful" in caplog.text
         assert "No aircraft detected in spotting area" in caplog.text
 
     def test_bad_keys(self, requests_mock, generate_spotter, caplog, unexpected_adsbx_json):
