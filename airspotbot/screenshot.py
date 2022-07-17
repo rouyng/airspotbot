@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
 from sys import platform
-from time import sleep
+from time import sleep, perf_counter
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,7 @@ class Screenshotter:
              PNG screenshot as binary data
         """
         logger.debug(f"Getting browser screenshot for ICAO {icao}")
+        start_time = perf_counter()
         url = f"https://globe.adsbexchange.com/?icao={icao}&zoom={self.zoom}"
         try:
             self.driver.get(url)
@@ -97,4 +98,6 @@ class Screenshotter:
                     ad_element.style.display = "none";
             }
         """)
+        end_time = perf_counter()
+        logger.debug(f"Screenshot generated in {end_time-start_time:0.3f} seconds")
         return map_element.screenshot_as_png
