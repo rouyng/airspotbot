@@ -2,7 +2,7 @@ import logging
 from . import airspotbot
 import argparse
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 USER_AGENT = f"airspotbot/{VERSION} (https://github.com/rouyng/airspotbot)"
 DEFAULT_CONFIG_PATH = './config/asb.config'
 DEFAULT_WATCHLIST_PATH = './config/watchlist.csv'
