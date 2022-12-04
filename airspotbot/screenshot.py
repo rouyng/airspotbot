@@ -80,24 +80,29 @@ class Screenshotter:
         start_time = perf_counter()
         url = f"https://globe.adsbexchange.com/?icao={icao}&zoom={self.zoom}"
         try:
-            self.driver.get(url)
-            map_element = WebDriverWait(self.driver, timeout=10)\
-                .until(presence_of_element_located((By.CSS_SELECTOR, "div.ol-layer")))
-            sleep(5)  # hardcoded delay to let map canvas render fully
-        except selenium.common.exceptions.TimeoutException:
-            logger.error(f"Screenshotter could not find canvas.ol-layer element at {url}, "
-                         f"timed out")
-            logger.debug(f"Page source: {self.driver.page_source}")
+            try:
+                self.driver.get(url)
+                map_element = WebDriverWait(self.driver, timeout=10)\
+                    .until(presence_of_element_located((By.CSS_SELECTOR, "div.ol-layer")))
+                sleep(5)  # hardcoded delay to let map canvas render fully
+            except selenium.common.exceptions.TimeoutException:
+                logger.error(f"Screenshotter could not find canvas.ol-layer element at {url}, "
+                             f"timed out")
+                logger.debug(f"Page source: {self.driver.page_source}")
+                return None
+            self.driver.execute_script("""
+                // javascript snippet to hide ad banner elements
+                var ad_selectors = [".FIOnDemandWrapper"]; // banner selectors
+                for (var i=0;i<ad_selectors.length;i++) {
+                    let ad_element = document.querySelector(ad_selectors[i])
+                    if ( ad_element )
+                        ad_element.style.display = "none";
+                }
+            """)
+            end_time = perf_counter()
+            logger.debug(f"Screenshot generated in {end_time-start_time:0.3f} seconds")
+            return map_element.screenshot_as_png
+        except selenium.common.exceptions.WebDriverException:
+            # handle exception that occurs when pages/tabs crash
             return None
-        self.driver.execute_script("""
-            // javascript snippet to hide ad banner elements
-            var ad_selectors = [".FIOnDemandWrapper"]; // banner selectors
-            for (var i=0;i<ad_selectors.length;i++) {
-                let ad_element = document.querySelector(ad_selectors[i])
-                if ( ad_element )
-                    ad_element.style.display = "none";
-            }
-        """)
-        end_time = perf_counter()
-        logger.debug(f"Screenshot generated in {end_time-start_time:0.3f} seconds")
-        return map_element.screenshot_as_png
+
