@@ -8,7 +8,7 @@ chardet==4.0.0
 charset-normalizer==2.0.12
 colorama==0.4.4
 coverage==6.3.2
-cryptography==37.0.2
+cryptography==38.0.3
 dill==0.3.4
 h11==0.13.0
 idna==3.3
