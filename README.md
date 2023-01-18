@@ -2,6 +2,13 @@
 # airspotbot 2.0.1
 airspotbot is a Twitter bot designed to provide simple, flexible way to report interesting aircraft activity in a designated area via twitter posts. It uses [Tweepy](https://www.tweepy.org/) and the [ADS-B exchange API](https://www.adsbexchange.com/data/). airspotbot is designed to be extremely configurable, so it can be used to monitor diverse kinds of activity.
 
+## January 2023 status: read this first!
+In December 2022, Twitter suspended several accounts involved in aircraft tracking (including @elonjet and @adsbexchange). At the same time, the Twitter TOS was changed to [forbid posting of "live location information"](https://help.twitter.com/en/rules-and-policies/personal-information), a policy change which was specifically targeted at aircraft tracking accounts.  In response, I suspended my own instances of airspotbot and took the repository temporarily private in order to observe the state of aircraft tracking on Twitter and consider what the next steps should be for airspotbot. 
+
+As of January 2023 I have made the repository public again. Currently, it appears that some automated aircraft tracking accounts continue to operate on Twitter. I am not personally aware of moderation actions taken against any airspotbot-based account (but please let me know if you have been affected). **However, due to the intentionally broad wording and inconsistent enforcement of the Twitter TOS (as well as Musk's personal animus against sharing public aircraft tracking data), I cannot guarantee that an account run with airspotbot will not be suspended. Therefore, please understand that use of airspotbot is at your own risk.** 
+
+What does the future hold for airspotbot? After this episode, I am personally less interested in supporting Twitter with my open source work due to the platform's increased hostility to aircraft tracking activities and third party development in general. Nevertheless, I have no plans to take airspotbot private again or to remove existing Twitter support. I am exploring the possibility of adding compatibility with other platforms, including federated services such as Mastodon. Your suggestions and code contributions are welcome.
+
 
 ## What can it do?
 You can configure airspotbot to tweet multiple kinds of aircraft activity within a certain area. The list below provides some examples.  See the "Configuration" section for details on how to configure airspotbot for one of these use cases. airspotbot is designed so that a single bot can be configured to fulfill multiple use cases simultaneously. 
@@ -21,9 +28,6 @@ airspotbot is intended to monitor a specific area, such as an airport or city. D
  
 airspotbot is only as good as the data it receives. While ADS-B Exchange is a great resource that provides a huge amount of unfiltered data, there are still gaps in coverage. There are also many military aircraft that cannot be tracked or identified using their transponders. See [the ADS-B Exchange FAQ](https://www.adsbexchange.com/faq/) for more details.
 
-### Example accounts
-airspotbot currently runs [@phxairspots on twitter](https://www.twitter.com/phxairspots). If you use airspotbot to run a Twitter account and would like it listed here, let me know via opening an issue or create a pull request adding it to this section in `README.md`.
-
 ## Usage
 
 ### Requirements
@@ -33,7 +37,7 @@ airspotbot currently runs [@phxairspots on twitter](https://www.twitter.com/phxa
  - Valid [ADS-B Exchange API](https://www.adsbexchange.com/data/) key (v2 only). An API key can be obtained through [their RapidAPI endpoint](https://rapidapi.com/adsbx/api/adsbexchange-com1)
  - (Optional) Chrome/Chromium web browser and a compatible version of [ChromeDriver](https://chromedriver.chromium.org/home). Used to capture screenshots of globe.adsbexchange.com for inclusion in tweets.
  
-Please operate your installation of airspotbot in accordance with all relevant API terms of service. 
+Please operate your installation of airspotbot in accordance with all relevant API terms of service.
 
 ### Setup
 1. Clone this repository using git: `git clone https://github.com/rouyng/airspotbot.git` OR download a zip file of the repository using the green "Code" button at the top of the GitHub repository page.
